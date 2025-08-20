@@ -117,6 +117,12 @@
         "allowDeclarations": true
       }
     ],
-    "typescript/no-unnecessary-type-constraint": "error"
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-extraneous-class": [
+      "error",
+      {
+        "allowWithDecorator": true
+      }
+    ]
   }
 }

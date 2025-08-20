@@ -1,0 +1,15 @@
+{
+  "watch": ["src/**/*"],
+  "ext": "ts,js,mjs,json",
+  "ignore": [
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "dist/**/*",
+    "lib/**/*",
+    "node_modules/**/*"
+  ],
+  "exec": "node --import @swc-node/register/esm-register src/main.ts",
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
