@@ -1,0 +1,48 @@
+# local
+.local
+
+# yarn
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+.yarn/versions
+
+# compiled output
+*dist
+/tmp
+/out-tsc
+.nyc_output
+.coverage
+.swc
+lib
+
+# dependencies
+node_modules
+
+# IDEs and editors
+**/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.template.json
+!.vscode/launch.template.json
+!.vscode/extensions.json
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# env
+.env
+*.env.local
+*.local.env
+.history
+
+# cache
+.eslintcache

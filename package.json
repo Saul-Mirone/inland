@@ -1,0 +1,46 @@
+{
+  "name": "@inland/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "prepare": "husky",
+    "tsc": "tsc -b tsconfig.json --verbose",
+    "codegen": "tsx ./scripts/gen-ts-config.ts",
+    "lint:ox": "oxlint .",
+    "lint:eslint": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" eslint . --cache",
+    "lint:eslint:fix": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" eslint . --cache --fix",
+    "lint:prettier": "prettier --check .",
+    "lint:prettier:fix": "prettier --write .",
+    "commitlint": "commitlint --edit"
+  },
+  "lint-staged": {
+    "*": "prettier --write --ignore-unknown --cache",
+    "*.{ts,tsx,mjs,js,jsx}": [
+      "prettier --ignore-unknown --write",
+      "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" eslint --cache --fix"
+    ]
+  },
+  "packageManager": "yarn@4.9.2",
+  "dependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@inland/dev": "workspace:*",
+    "@types/node": "^20.10.0",
+    "cross-env": "^10.0.0",
+    "eslint": "^9.33.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-perfectionist": "^4.15.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "oxlint": "^1.12.0",
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.4",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.40.0"
+  }
+}
