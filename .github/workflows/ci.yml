@@ -1,0 +1,46 @@
+name: CI workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+
+      - name: Run Check
+        run: |
+          yarn codegen
+          git status --porcelain | grep . && {
+            echo "Run 'yarn codegen' and make sure all changes are submitted"
+            exit 1
+          } || {
+            echo "All changes are submitted"
+          }
+
+      - name: Run lint
+        run: |
+          yarn dedupe
+          yarn tsc
+          yarn lint:ox
+          yarn lint:prettier
+          yarn lint:eslint
+
+      # - name: Run tests
+      #   run: yarn test
+
+      # - name: Run build
+      #   run: yarn build

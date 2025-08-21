@@ -1,0 +1,24 @@
+name: Setup
+description: Setup the environment
+
+runs:
+  using: composite
+  steps:
+    - name: Setup corepack
+      run: npm i -g corepack@latest
+      shell: bash
+
+    - name: Setup yarn
+      run: corepack enable
+      shell: bash
+
+    - name: Setup node
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: ./.nvmrc
+        cache: yarn
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install
+      run: yarn install --immutable
+      shell: bash
