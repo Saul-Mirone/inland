@@ -32,7 +32,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@inland/dev": "workspace:*",
-    "@types/node": "^20.10.0",
+    "@types/node": "^22.0.0",
     "cross-env": "^10.0.0",
     "eslint": "^9.33.0",
     "eslint-import-resolver-typescript": "^4.4.4",
