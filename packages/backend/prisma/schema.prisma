@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  gitIntegrations GitIntegration[]
+  sites           Site[]
+
+  @@map("users")
+}
+
+// Git platform integration model
+model GitIntegration {
+  id               String   @id @default(cuid())
+  userId           String   @map("user_id")
+  platform         String   // "github", "gitlab", etc.
+  platformUsername String   @map("platform_username")
+  accessToken      String   @map("access_token")
+  installationId   String?  @map("installation_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@map("git_integrations")
+}
+
+// Site model
+model Site {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  name         String
+  gitRepo      String   @map("git_repo")
+  platform     String   @default("github")
+  deployStatus String   @default("pending") @map("deploy_status")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articles Article[]
+  media    Media[]
+
+  @@unique([userId, name])
+  @@map("sites")
+}
+
+// Article model
+model Article {
+  id        String   @id @default(cuid())
+  siteId    String   @map("site_id")
+  title     String
+  slug      String
+  content   String   @db.Text
+  status    String   @default("draft")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, slug])
+  @@map("articles")
+}
+
+// Media/attachment model
+model Media {
+  id           String   @id @default(cuid())
+  siteId       String   @map("site_id")
+  filename     String
+  originalName String   @map("original_name")
+  filePath     String   @map("file_path")
+  fileSize     BigInt   @map("file_size")
+  mimeType     String   @map("mime_type")
+  storageType  String   @default("github") @map("storage_type")
+  externalUrl  String?  @map("external_url")
+  alt          String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, filePath])
+  @@map("media")
+}

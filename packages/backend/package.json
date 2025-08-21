@@ -6,12 +6,19 @@
   "scripts": {
     "build": "tsx scripts/build.ts",
     "dev": "nodemon",
-    "start:prod": "node dist/main.js"
+    "start:prod": "node dist/main.js",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",
+    "@prisma/client": "^6.14.0",
     "fastify": "^5.5.0",
-    "lodash-es": "^4.17.21"
+    "fastify-plugin": "^5.0.1",
+    "lodash-es": "^4.17.21",
+    "prisma": "^6.14.0"
   },
   "devDependencies": {
     "@swc-node/register": "^1.11.1",

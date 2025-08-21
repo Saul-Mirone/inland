@@ -46,3 +46,6 @@ Thumbs.db
 
 # cache
 .eslintcache
+
+# generated files
+generated/
