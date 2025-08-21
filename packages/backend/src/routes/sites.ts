@@ -17,23 +17,20 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
     async (request, reply) => {
       try {
         const userPayload = request.jwtPayload!
-        const { name, gitRepo, platform } = request.body as {
+        const { name, description } = request.body as {
           name: string
-          gitRepo: string
-          platform?: string
+          description?: string
         }
 
         const createSite = Effect.gen(function* () {
           // Validate input data
           const validName = yield* SiteService.validateSiteName(name)
-          const validGitRepo = yield* SiteService.validateGitRepo(gitRepo)
 
-          // Create the site
+          // Create the site with GitHub integration
           const site = yield* SiteService.createSite({
             userId: userPayload.userId,
             name: validName,
-            gitRepo: validGitRepo,
-            platform,
+            description,
           })
 
           return { site }
@@ -46,11 +43,48 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
 
         if (error instanceof Error) {
           // Handle validation errors
-          if (
-            error.message.includes('Site name') ||
-            error.message.includes('Git repository')
-          ) {
+          if (error.message.includes('Site name')) {
             return reply.code(400).send({ error: error.message })
+          }
+
+          // Handle GitHub API errors
+          if (error.message.includes('GitHubAPIError')) {
+            return reply.code(502).send({
+              error:
+                'GitHub API error. Please check your access token and try again.',
+            })
+          }
+
+          // Handle repository creation errors
+          if (error.message.includes('RepositoryCreationError')) {
+            return reply.code(400).send({
+              error:
+                'Failed to create GitHub repository. Repository name might already exist.',
+            })
+          }
+
+          // Handle GitHub Pages deployment errors
+          if (error.message.includes('PagesDeploymentError')) {
+            return reply.code(502).send({
+              error:
+                'Repository created but GitHub Pages setup failed. You can enable it manually.',
+            })
+          }
+
+          // Handle missing GitHub integration
+          if (error.message.includes('No GitHub integration found')) {
+            return reply.code(400).send({
+              error:
+                'No GitHub account connected. Please connect your GitHub account first.',
+            })
+          }
+
+          // Handle invalid GitHub token
+          if (error.message.includes('GitHub token is invalid')) {
+            return reply.code(401).send({
+              error:
+                'Your GitHub connection has expired. Please reconnect your GitHub account.',
+            })
           }
 
           // Handle duplicate site name

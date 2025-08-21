@@ -53,6 +53,7 @@ model Site {
   gitRepo      String   @map("git_repo")
   platform     String   @default("github")
   deployStatus String   @default("pending") @map("deploy_status")
+  deployUrl    String?  @map("deploy_url")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

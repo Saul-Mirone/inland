@@ -1,6 +1,8 @@
 import { Effect, Data } from 'effect'
 
+import * as AuthService from './auth-service'
 import { DatabaseService } from './database-service'
+import * as GitHubService from './github-service'
 
 export class SiteNotFoundError extends Data.TaggedError('SiteNotFoundError')<{
   readonly siteId: string
@@ -27,8 +29,7 @@ export class DuplicateSiteNameError extends Data.TaggedError(
 export interface CreateSiteData {
   readonly userId: string
   readonly name: string
-  readonly gitRepo: string
-  readonly platform?: string
+  readonly description?: string
 }
 
 export interface UpdateSiteData {
@@ -43,17 +44,37 @@ export const createSite = (data: CreateSiteData) =>
     const { prisma } = yield* DatabaseService
 
     try {
+      // Step 1: Get user's GitHub access token
+      const accessToken = yield* AuthService.getUserGitHubToken(data.userId)
+
+      // Step 2: Create GitHub repository with Pages
+      const githubRepo = yield* GitHubService.createRepositoryWithPages(
+        accessToken,
+        {
+          name: data.name,
+          description: data.description,
+        }
+      )
+
+      // Step 3: Save site to database
       const site = yield* Effect.promise(() =>
         prisma.site.create({
           data: {
             userId: data.userId,
             name: data.name,
-            gitRepo: data.gitRepo,
-            platform: data.platform || 'github',
+            gitRepo: githubRepo.fullName,
+            platform: 'github',
+            deployStatus: 'deployed',
+            deployUrl: githubRepo.pagesUrl,
           },
         })
       )
-      return site
+
+      return {
+        ...site,
+        githubUrl: githubRepo.htmlUrl,
+        pagesUrl: githubRepo.pagesUrl,
+      }
     } catch (error) {
       if (
         error instanceof Error &&

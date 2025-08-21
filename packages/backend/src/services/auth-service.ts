@@ -2,6 +2,7 @@ import { Effect, Data } from 'effect'
 
 import type { GitHubUser, GitHubEmail, JWTPayload } from '../types/auth'
 
+import { DatabaseService } from './database-service'
 import * as UserService from './user-service'
 
 export class GitHubAPIError extends Data.TaggedError('GitHubAPIError')<{
@@ -84,6 +85,64 @@ export const fetchGitHubUserEmail = (accessToken: string) =>
 
     const primaryEmail = emails.find((e) => e.primary)
     return primaryEmail?.email || null
+  })
+
+export const getUserGitHubToken = (userId: string) =>
+  Effect.gen(function* () {
+    const { prisma } = yield* DatabaseService
+
+    const gitIntegration = yield* Effect.promise(() =>
+      prisma.gitIntegration.findFirst({
+        where: {
+          userId,
+          platform: 'github',
+        },
+        select: {
+          id: true,
+          accessToken: true,
+        },
+      })
+    )
+
+    if (!gitIntegration) {
+      return yield* Effect.fail('No GitHub integration found for user')
+    }
+
+    const accessToken = (gitIntegration as { id: string; accessToken: string })
+      .accessToken
+
+    // Validate token by testing it with GitHub API
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        fetch('https://api.github.com/user', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'User-Agent': 'Inland-CMS/1.0',
+          },
+        }),
+      catch: () => new Error('Failed to validate GitHub token'),
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token is invalid, clear it from database
+        yield* Effect.promise(() =>
+          prisma.gitIntegration.update({
+            where: { id: (gitIntegration as { id: string }).id },
+            data: {
+              accessToken: '',
+              updatedAt: new Date(),
+            },
+          })
+        )
+        return yield* Effect.fail(
+          'GitHub token is invalid. Please reconnect your GitHub account.'
+        )
+      }
+      return yield* Effect.fail(`GitHub API error: ${response.status}`)
+    }
+
+    return accessToken
   })
 
 export const processGitHubOAuth = (accessToken: string) =>
