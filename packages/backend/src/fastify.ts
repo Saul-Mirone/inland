@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 
 import { fastifyAuthPlugin } from './plugins/auth'
 import { prismaPlugin } from './plugins/database'
+import { articleRoutes } from './routes/articles'
 import { authEffectRoutes } from './routes/auth'
 import { siteRoutes } from './routes/sites'
 
@@ -27,6 +28,9 @@ await fastify.register(authEffectRoutes)
 
 // Register site management routes
 await fastify.register(siteRoutes)
+
+// Register article management routes
+await fastify.register(articleRoutes)
 
 // Routes
 fastify.get('/', async () => {

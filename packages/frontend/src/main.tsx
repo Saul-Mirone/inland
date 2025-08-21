@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { ArticleManager } from './components/articles/article-manager'
 import { AuthCallback } from './components/auth/auth-callback'
 import { LoginButton } from './components/auth/login-button'
 import { UserInfo } from './components/auth/user-info'
@@ -32,6 +33,7 @@ const App = () => {
           <button onClick={logout}>Logout</button>
           <UserInfo />
           <SiteManager />
+          <ArticleManager />
         </div>
       ) : (
         <div>
