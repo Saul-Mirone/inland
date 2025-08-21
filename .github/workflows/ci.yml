@@ -34,6 +34,7 @@ jobs:
       - name: Run lint
         run: |
           yarn dedupe
+          yarn workspace @inland/backend db:generate
           yarn tsc
           yarn lint:ox
           yarn lint:prettier
