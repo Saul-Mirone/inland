@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { AuthCallback } from './components/auth/auth-callback'
 import { LoginButton } from './components/auth/login-button'
 import { UserInfo } from './components/auth/user-info'
+import { SiteManager } from './components/sites/site-manager'
 import { isAuthenticated, logout } from './utils/auth'
 
 const App = () => {
@@ -30,6 +31,7 @@ const App = () => {
           <p>Welcome! You are logged in.</p>
           <button onClick={logout}>Logout</button>
           <UserInfo />
+          <SiteManager />
         </div>
       ) : (
         <div>

@@ -3,6 +3,7 @@ import Fastify from 'fastify'
 import { fastifyAuthPlugin } from './plugins/auth'
 import { prismaPlugin } from './plugins/database'
 import { authEffectRoutes } from './routes/auth'
+import { siteRoutes } from './routes/sites'
 
 export const fastify = Fastify({
   logger: true,
@@ -17,10 +18,15 @@ await fastify.register(fastifyAuthPlugin)
 // Register CORS plugin
 await fastify.register(import('@fastify/cors'), {
   origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 })
 
-// Register Effect-based auth routes
+// Register auth routes
 await fastify.register(authEffectRoutes)
+
+// Register site management routes
+await fastify.register(siteRoutes)
 
 // Routes
 fastify.get('/', async () => {
