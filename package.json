@@ -15,7 +15,10 @@
     "lint:eslint:fix": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" eslint . --cache --fix",
     "lint:prettier": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "dev:env": "./scripts/dev-up.sh",
+    "dev:fe": "yarn workspace @inland/frontend dev",
+    "dev:be": "yarn workspace @inland/backend dev"
   },
   "lint-staged": {
     "*": "prettier --write --ignore-unknown --cache",
