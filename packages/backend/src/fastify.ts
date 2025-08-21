@@ -1,22 +1,30 @@
 import Fastify from 'fastify'
 
-import databasePlugin from './plugins/database'
+import { fastifyAuthPlugin } from './plugins/auth'
+import { prismaPlugin } from './plugins/database'
+import { authEffectRoutes } from './routes/auth'
 
 export const fastify = Fastify({
   logger: true,
 })
 
 // Register database plugin
-await fastify.register(databasePlugin)
+await fastify.register(prismaPlugin)
+
+// Register authentication plugin
+await fastify.register(fastifyAuthPlugin)
 
 // Register CORS plugin
 await fastify.register(import('@fastify/cors'), {
   origin: true,
 })
 
+// Register Effect-based auth routes
+await fastify.register(authEffectRoutes)
+
 // Routes
 fastify.get('/', async () => {
-  return { message: 'Hello World!' }
+  return { message: 'Inland CMS Backend with Effect-TS!' }
 })
 
 fastify.get('/health', async () => {

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 
-import fp from 'fastify-plugin'
+import fastifyPlugin from 'fastify-plugin'
 
 import { prisma } from '../database/client'
 
@@ -30,6 +30,6 @@ async function databasePlugin(fastify: FastifyInstance) {
   })
 }
 
-export default fp(databasePlugin, {
+export const prismaPlugin = fastifyPlugin(databasePlugin, {
   name: 'database',
 })
