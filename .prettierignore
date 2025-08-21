@@ -6,3 +6,4 @@
 **/templates/*.md
 yarn.lock
 **/node_modules
+**/generated
