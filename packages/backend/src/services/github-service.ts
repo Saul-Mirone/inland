@@ -1,4 +1,4 @@
-import { Effect, Data } from 'effect'
+import { Effect, Data, Schedule } from 'effect'
 
 export class GitHubAPIError extends Data.TaggedError('GitHubAPIError')<{
   readonly message: string
@@ -22,6 +22,16 @@ export class PagesDeploymentError extends Data.TaggedError(
 export interface CreateRepoData {
   readonly name: string
   readonly description?: string
+  readonly templateOwner?: string
+  readonly templateRepo?: string
+}
+
+export interface TemplateData {
+  readonly siteName: string
+  readonly siteDescription: string
+  readonly siteNameSlug: string
+  readonly siteAuthor: string
+  readonly githubUsername: string
 }
 
 export interface GitHubRepo {
@@ -47,6 +57,20 @@ interface GitHubFileResponse {
   readonly sha: string
   readonly name: string
   readonly path: string
+  readonly content: string
+}
+
+interface GitHubTreeResponse {
+  readonly tree: Array<{
+    readonly path: string
+    readonly type: string
+    readonly sha: string
+  }>
+}
+
+interface GitHubFileContentResponse {
+  readonly content: string
+  readonly sha: string
 }
 
 const makeGitHubRequest = (
@@ -69,10 +93,12 @@ const makeGitHubRequest = (
 
     if (!response.ok) {
       const errorText = yield* Effect.promise(() => response.text())
-      return yield* new GitHubAPIError({
-        message: `GitHub API error: ${errorText}`,
-        status: response.status,
-      })
+      return yield* Effect.fail(
+        new GitHubAPIError({
+          message: `GitHub API error: ${errorText}`,
+          status: response.status,
+        })
+      )
     }
 
     return yield* Effect.promise(() => response.json())
@@ -80,26 +106,29 @@ const makeGitHubRequest = (
 
 export const createRepositoryWithPages = (
   accessToken: string,
-  data: CreateRepoData
+  data: CreateRepoData,
+  templateData?: TemplateData
 ) =>
   Effect.gen(function* () {
     try {
-      // Step 1: Create repository
-      const repoData = yield* makeGitHubRequest(accessToken, '/user/repos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description || `Blog site: ${data.name}`,
-          private: false,
-          auto_init: true,
-          license_template: 'mit',
-        }),
-      })
+      // Step 1: Create repository from template (always use template)
+      const repoData = (yield* makeGitHubRequest(
+        accessToken,
+        `/repos/${data.templateOwner}/${data.templateRepo}/generate`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: data.name,
+            description: data.description || `Blog site: ${data.name}`,
+            private: false,
+          }),
+        }
+      )) as GitHubRepoResponse
 
-      const repoResponse = repoData as GitHubRepoResponse
+      const repoResponse = repoData
 
       const repo: GitHubRepo = {
         id: repoResponse.id,
@@ -110,11 +139,22 @@ export const createRepositoryWithPages = (
         defaultBranch: repoResponse.default_branch,
       }
 
-      // Step 2: Create initial blog structure
-      yield* createInitialBlogStructure(accessToken, repo.fullName)
+      // Step 2: Replace template placeholders (always needed since we always use template)
+      if (templateData) {
+        yield* replaceTemplatePlaceholders(
+          accessToken,
+          repo.fullName,
+          repo.defaultBranch,
+          templateData
+        )
+      }
 
-      // Step 3: Enable GitHub Pages
-      const pagesUrl = yield* enableGitHubPages(accessToken, repo.fullName)
+      // Step 3: Enable GitHub Pages with GitHub Actions as source
+      const pagesUrl = yield* enableGitHubPages(
+        accessToken,
+        repo.fullName,
+        repo.defaultBranch
+      )
 
       return {
         ...repo,
@@ -128,306 +168,51 @@ export const createRepositoryWithPages = (
     }
   })
 
-const createInitialBlogStructure = (
+const enableGitHubPages = (
   accessToken: string,
-  repoFullName: string
+  repoFullName: string,
+  defaultBranch: string
 ) =>
   Effect.gen(function* () {
-    // Create main index.html
-    const indexContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Blog</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <header>
-        <h1>My Blog</h1>
-        <nav>
-            <a href="#home">Home</a>
-            <a href="#articles">Articles</a>
-        </nav>
-    </header>
-    
-    <main>
-        <section id="hero">
-            <h2>Welcome to My Blog</h2>
-            <p>This blog is powered by Inland CMS. Articles will appear here automatically when you publish them.</p>
-        </section>
-        
-        <section id="articles">
-            <h2>Recent Articles</h2>
-            <div id="article-list">
-                <p>No articles yet. Create your first article in Inland CMS!</p>
-            </div>
-        </section>
-    </main>
-    
-    <footer>
-        <p>Powered by <a href="https://github.com/your-org/inland" target="_blank">Inland CMS</a></p>
-    </footer>
-</body>
-</html>`
-
-    yield* makeGitHubRequest(
-      accessToken,
-      `/repos/${repoFullName}/contents/index.html`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Initial blog setup by Inland CMS',
-          content: Buffer.from(indexContent).toString('base64'),
-        }),
-      }
+    yield* Effect.logInfo(
+      `Enabling GitHub Pages for repository: ${repoFullName} with branch: ${defaultBranch}`
     )
 
-    // Create CSS styles
-    const cssContent = `/* Modern Blog Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background-color: #fafafa;
-}
-
-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 2rem 0;
-    text-align: center;
-}
-
-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-}
-
-nav a {
-    color: white;
-    text-decoration: none;
-    margin: 0 1rem;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-}
-
-nav a:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-main {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 0 2rem;
-}
-
-#hero {
-    text-align: center;
-    margin-bottom: 3rem;
-    padding: 2rem;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-#hero h2 {
-    color: #667eea;
-    margin-bottom: 1rem;
-}
-
-#articles {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.article {
-    border-bottom: 1px solid #eee;
-    padding: 1.5rem 0;
-    margin-bottom: 1.5rem;
-}
-
-.article:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-}
-
-.article h3 {
-    color: #333;
-    margin-bottom: 0.5rem;
-}
-
-.article-meta {
-    color: #888;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-}
-
-.article-excerpt {
-    margin-bottom: 1rem;
-}
-
-.read-more {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.read-more:hover {
-    text-decoration: underline;
-}
-
-footer {
-    text-align: center;
-    padding: 2rem;
-    color: #888;
-    border-top: 1px solid #eee;
-    margin-top: 3rem;
-}
-
-footer a {
-    color: #667eea;
-    text-decoration: none;
-}
-
-footer a:hover {
-    text-decoration: underline;
-}
-
-/* Article page styles */
-.article-page {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-}
-
-.article-header {
-    border-bottom: 1px solid #eee;
-    padding-bottom: 1rem;
-    margin-bottom: 2rem;
-}
-
-.article-title {
-    color: #333;
-    margin-bottom: 0.5rem;
-}
-
-.article-content {
-    line-height: 1.8;
-}
-
-.article-content p {
-    margin-bottom: 1.5rem;
-}
-
-.article-content h1,
-.article-content h2,
-.article-content h3 {
-    margin: 2rem 0 1rem 0;
-    color: #333;
-}
-
-.article-content blockquote {
-    border-left: 4px solid #667eea;
-    padding-left: 1rem;
-    margin: 1.5rem 0;
-    font-style: italic;
-    color: #666;
-}
-
-.article-content code {
-    background-color: #f5f5f5;
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-}
-
-.article-content pre {
-    background-color: #f5f5f5;
-    padding: 1rem;
-    border-radius: 5px;
-    overflow-x: auto;
-    margin: 1.5rem 0;
-}
-
-.back-link {
-    display: inline-block;
-    color: #667eea;
-    text-decoration: none;
-    margin-bottom: 1rem;
-    padding: 0.5rem 1rem;
-    border: 1px solid #667eea;
-    border-radius: 5px;
-    transition: all 0.3s;
-}
-
-.back-link:hover {
-    background-color: #667eea;
-    color: white;
-}
-
-@media (max-width: 768px) {
-    header h1 {
-        font-size: 2rem;
-    }
-    
-    main {
-        padding: 0 1rem;
-    }
-    
-    nav a {
-        display: block;
-        margin: 0.5rem 0;
-    }
-}`
-
-    yield* makeGitHubRequest(
-      accessToken,
-      `/repos/${repoFullName}/contents/styles.css`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Add blog styles',
-          content: Buffer.from(cssContent).toString('base64'),
-        }),
-      }
-    )
-
-    return true
-  })
-
-const enableGitHubPages = (accessToken: string, repoFullName: string) =>
-  Effect.gen(function* () {
     try {
-      yield* makeGitHubRequest(accessToken, `/repos/${repoFullName}/pages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          source: {
-            branch: 'main',
-            path: '/',
+      // First check if workflow file exists
+      try {
+        const workflowCheck = yield* makeGitHubRequest(
+          accessToken,
+          `/repos/${repoFullName}/contents/.github/workflows/deploy.yml`
+        )
+        yield* Effect.logInfo(`Workflow file found in ${repoFullName}`, {
+          workflowCheck,
+        })
+      } catch (workflowError) {
+        yield* Effect.logError(`Workflow file not found in ${repoFullName}`, {
+          workflowError,
+        })
+      }
+
+      // Try to enable Pages with workflow build type
+      const response = yield* makeGitHubRequest(
+        accessToken,
+        `/repos/${repoFullName}/pages`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        }),
-      })
+          body: JSON.stringify({
+            build_type: 'workflow',
+          }),
+        }
+      )
+
+      yield* Effect.logInfo(
+        `GitHub Pages enabled with workflow build type for ${repoFullName}`,
+        { response }
+      )
 
       // Generate the GitHub Pages URL
       const [owner, repo] = repoFullName.split('/')
@@ -435,6 +220,22 @@ const enableGitHubPages = (accessToken: string, repoFullName: string) =>
 
       return pagesUrl
     } catch (error) {
+      yield* Effect.logError(
+        `Failed to enable GitHub Pages for ${repoFullName}`,
+        { error }
+      )
+
+      // If it's a GitHubAPIError, extract more details
+      if (error instanceof GitHubAPIError) {
+        yield* Effect.logError(
+          `GitHub API Error - Status: ${error.status}, Message: ${error.message}`
+        )
+        return yield* new PagesDeploymentError({
+          repoName: repoFullName,
+          reason: `GitHub API Error (${error.status}): ${error.message}`,
+        })
+      }
+
       return yield* new PagesDeploymentError({
         repoName: repoFullName,
         reason: error instanceof Error ? error.message : 'Unknown error',
@@ -474,7 +275,7 @@ export const publishArticleToRepo = (
             <a href="../index.html" class="back-link">← Back to Home</a>
         </nav>
     </header>
-    
+
     <main>
         <article class="article-page">
             <div class="article-header">
@@ -495,7 +296,7 @@ export const publishArticleToRepo = (
             </div>
         </article>
     </main>
-    
+
     <footer>
         <p>Powered by <a href="https://github.com/your-org/inland" target="_blank">Inland CMS</a></p>
     </footer>
@@ -566,4 +367,152 @@ export const deleteArticleFromRepo = (
       // File might not exist, which is fine for delete operations
       return { deleted: false, reason: 'File not found' }
     }
+  })
+
+const replaceTemplatePlaceholders = (
+  accessToken: string,
+  repoFullName: string,
+  defaultBranch: string,
+  templateData: TemplateData
+) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(
+      `Starting template placeholder replacement for ${repoFullName} on branch ${defaultBranch}`
+    )
+    yield* Effect.logInfo(`Creating with template data:`, { templateData })
+
+    // Get all files in the repository, with retry for empty repos
+    yield* Effect.logInfo(`Waiting for repository files to be available...`)
+    const files = yield* getRepoFiles(
+      accessToken,
+      repoFullName,
+      defaultBranch
+    ).pipe(
+      Effect.retry(
+        Schedule.exponential(1000).pipe(
+          Schedule.intersect(Schedule.recurs(9)), // 10 total attempts
+          Schedule.whileInput((error: unknown) => {
+            if (error instanceof GitHubAPIError) {
+              const isEmptyRepo =
+                error.status === 409 ||
+                error.status === 422 ||
+                error.message.includes('Git Repository is empty')
+              if (isEmptyRepo) {
+                Effect.logInfo(`Repository not ready, retrying...`).pipe(
+                  Effect.runSync
+                )
+                return true
+              }
+            }
+            return false
+          })
+        )
+      )
+    )
+    yield* Effect.logInfo(`Found ${files.length} files to process`)
+
+    // Define placeholder mappings
+    const placeholders = {
+      '{{SITE_NAME}}': templateData.siteName,
+      '{{SITE_DESCRIPTION}}': templateData.siteDescription,
+      '{{SITE_NAME_SLUG}}': templateData.siteNameSlug,
+      '{{SITE_AUTHOR}}': templateData.siteAuthor,
+      '{{GITHUB_USERNAME}}': templateData.githubUsername,
+    }
+
+    // Process each file that might contain placeholders
+    for (const file of files) {
+      if (shouldProcessFile(file.path)) {
+        yield* processFileWithPlaceholders(
+          accessToken,
+          repoFullName,
+          file,
+          placeholders
+        )
+      }
+    }
+
+    return true
+  })
+
+const getRepoFiles = (
+  accessToken: string,
+  repoFullName: string,
+  defaultBranch: string
+) =>
+  Effect.gen(function* () {
+    const response = yield* makeGitHubRequest(
+      accessToken,
+      `/repos/${repoFullName}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`
+    )
+
+    const tree = response as GitHubTreeResponse
+    return tree.tree.filter((item) => item.type === 'blob')
+  })
+
+const shouldProcessFile = (filePath: string): boolean => {
+  // Process text files that might contain placeholders
+  const textExtensions = [
+    '.html',
+    '.css',
+    '.js',
+    '.json',
+    '.md',
+    '.yml',
+    '.yaml',
+    '.txt',
+  ]
+  return textExtensions.some((ext) => filePath.endsWith(ext))
+}
+
+const processFileWithPlaceholders = (
+  accessToken: string,
+  repoFullName: string,
+  file: { path: string; sha: string },
+  placeholders: Record<string, string>
+) =>
+  Effect.gen(function* () {
+    // Get file content
+    const fileResponse = yield* makeGitHubRequest(
+      accessToken,
+      `/repos/${repoFullName}/contents/${file.path}`
+    )
+
+    const fileData = fileResponse as GitHubFileContentResponse
+    const content = Buffer.from(fileData.content, 'base64').toString('utf-8')
+
+    // Replace placeholders
+    let updatedContent = content
+    let hasChanges = false
+
+    for (const [placeholder, value] of Object.entries(placeholders)) {
+      if (updatedContent.includes(placeholder)) {
+        updatedContent = updatedContent.replace(
+          new RegExp(placeholder, 'g'),
+          value
+        )
+        hasChanges = true
+      }
+    }
+
+    // Update file if there were changes
+    if (hasChanges) {
+      yield* makeGitHubRequest(
+        accessToken,
+        `/repos/${repoFullName}/contents/${file.path}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: `Replace template placeholders in ${file.path}`,
+            content: Buffer.from(updatedContent).toString('base64'),
+            sha: fileData.sha,
+          }),
+        }
+      )
+    }
+
+    return hasChanges
   })

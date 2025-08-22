@@ -55,7 +55,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
     callbackUri:
       process.env.AUTH_CALLBACK_URL ||
       'http://localhost:3001/auth/github/callback',
-    scope: ['user:email', 'public_repo'],
+    scope: ['user:email', 'public_repo', 'workflow'],
   })
 
   // JWT verification decorator

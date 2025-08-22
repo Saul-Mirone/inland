@@ -17,9 +17,10 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
     async (request, reply) => {
       try {
         const userPayload = request.jwtPayload!
-        const { name, description } = request.body as {
+        const { name, description, author } = request.body as {
           name: string
           description?: string
+          author?: string
         }
 
         const createSite = Effect.gen(function* () {
@@ -31,6 +32,7 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
             userId: userPayload.userId,
             name: validName,
             description,
+            author,
           })
 
           return { site }

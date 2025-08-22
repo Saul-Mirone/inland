@@ -30,6 +30,9 @@ export interface CreateSiteData {
   readonly userId: string
   readonly name: string
   readonly description?: string
+  readonly author?: string
+  readonly templateOwner?: string
+  readonly templateRepo?: string
 }
 
 export interface UpdateSiteData {
@@ -47,16 +50,28 @@ export const createSite = (data: CreateSiteData) =>
       // Step 1: Get user's GitHub access token
       const accessToken = yield* AuthService.getUserGitHubToken(data.userId)
 
-      // Step 2: Create GitHub repository with Pages
+      // Step 2: Get user's GitHub username for template data
+      const githubUser = yield* AuthService.fetchGitHubUser(accessToken)
+
+      // Step 3: Create GitHub repository with Pages (always use template)
       const githubRepo = yield* GitHubService.createRepositoryWithPages(
         accessToken,
         {
           name: data.name,
           description: data.description,
+          templateOwner: data.templateOwner || 'Saul-Mirone',
+          templateRepo: data.templateRepo || 'inland-template-basic',
+        },
+        {
+          siteName: data.name,
+          siteDescription: data.description || `Blog site: ${data.name}`,
+          siteNameSlug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          siteAuthor: data.author || githubUser.login,
+          githubUsername: githubUser.login,
         }
       )
 
-      // Step 3: Save site to database
+      // Step 4: Save site to database
       const site = yield* Effect.promise(() =>
         prisma.site.create({
           data: {
