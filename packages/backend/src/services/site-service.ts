@@ -1,5 +1,6 @@
 import { Effect, Data } from 'effect'
 
+import * as ArticleService from './article-service'
 import * as AuthService from './auth-service'
 import { DatabaseService } from './database-service'
 import * as GitHubService from './github-service'
@@ -84,6 +85,23 @@ export const createSite = (data: CreateSiteData) =>
           },
         })
       )
+
+      // Step 5: Import existing articles from GitHub repo
+      try {
+        const importResult = yield* ArticleService.importArticlesFromGitHub(
+          site.id,
+          data.userId
+        )
+
+        yield* Effect.logInfo(
+          `Imported ${importResult.imported}/${importResult.total} articles for site ${site.name}`
+        )
+      } catch (importError) {
+        // Don't fail site creation if import fails, just log the error
+        yield* Effect.logError('Failed to import articles from GitHub repo', {
+          importError,
+        })
+      }
 
       return {
         ...site,

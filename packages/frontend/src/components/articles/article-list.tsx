@@ -6,7 +6,9 @@ interface Article {
   id: string
   title: string
   slug: string
+  content: string
   status: 'draft' | 'published'
+  siteId: string
   createdAt: string
   updatedAt: string
   site: {
@@ -17,13 +19,15 @@ interface Article {
 
 interface ArticleListProps {
   siteId?: string
+  onEditArticle?: (article: Article) => void
 }
 
-export const ArticleList = ({ siteId }: ArticleListProps) => {
+export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [publishingId, setPublishingId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -95,14 +99,75 @@ export const ArticleList = ({ siteId }: ArticleListProps) => {
         throw new Error(errorData.error || 'Failed to delete article')
       }
 
+      const result = await response.json()
+
       // Remove the article from the list
       setArticles((prevArticles) =>
         prevArticles.filter((article) => article.id !== articleId)
       )
+
+      // Show detailed success message
+      let message = 'Article deleted successfully from database'
+      if (result.hasGitHubRepo) {
+        if (result.gitHubDeleted) {
+          message += ' and GitHub repository'
+        } else if (result.gitHubError) {
+          message += `, but failed to delete from GitHub: ${result.gitHubError}`
+        } else {
+          message += ', file was not found in GitHub repository'
+        }
+      }
+      alert(message)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  const publishArticle = async (articleId: string) => {
+    setPublishingId(articleId)
+    const token = getAuthToken()
+
+    if (!token) {
+      setError('No authentication token found')
+      setPublishingId(null)
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:3001/articles/${articleId}/publish`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to publish article')
+      }
+
+      const result = await response.json()
+
+      // Update the article status in the list
+      setArticles((prevArticles) =>
+        prevArticles.map((article) =>
+          article.id === articleId
+            ? { ...article, status: 'published' as const }
+            : article
+        )
+      )
+
+      const action = result.wasUpdate ? 'updated' : 'published'
+      alert(`Article ${action} successfully! File: ${result.filePath}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setPublishingId(null)
     }
   }
 
@@ -124,12 +189,39 @@ export const ArticleList = ({ siteId }: ArticleListProps) => {
               {!siteId && <p>Site: {article.site.name}</p>}
               <p>Created: {new Date(article.createdAt).toLocaleDateString()}</p>
               <p>Updated: {new Date(article.updatedAt).toLocaleDateString()}</p>
-              <button
-                onClick={() => deleteArticle(article.id)}
-                disabled={deletingId === article.id}
-              >
-                {deletingId === article.id ? 'Deleting...' : 'Delete Article'}
-              </button>
+              <div style={{ marginTop: '0.5rem' }}>
+                {onEditArticle && (
+                  <button
+                    onClick={() => onEditArticle(article)}
+                    style={{ marginRight: '0.5rem' }}
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => publishArticle(article.id)}
+                  disabled={publishingId === article.id}
+                  style={{
+                    marginRight: '0.5rem',
+                    backgroundColor:
+                      article.status === 'published' ? '#007bff' : '#28a745',
+                    color: 'white',
+                  }}
+                >
+                  {publishingId === article.id
+                    ? 'Publishing...'
+                    : article.status === 'published'
+                      ? 'Re-publish'
+                      : 'Publish'}
+                </button>
+                <button
+                  onClick={() => deleteArticle(article.id)}
+                  disabled={deletingId === article.id}
+                  style={{ backgroundColor: '#dc3545', color: 'white' }}
+                >
+                  {deletingId === article.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
             </div>
           ))}
         </div>

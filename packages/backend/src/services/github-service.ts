@@ -73,7 +73,7 @@ interface GitHubFileContentResponse {
   readonly sha: string
 }
 
-const makeGitHubRequest = (
+export const makeGitHubRequest = (
   accessToken: string,
   endpoint: string,
   options: RequestInit = {}
@@ -337,36 +337,45 @@ export const deleteArticleFromRepo = (
   articleSlug: string
 ) =>
   Effect.gen(function* () {
-    const filePath = `articles/${articleSlug}.html`
+    const filePath = `content/${articleSlug}.md`
 
-    try {
-      // Get the current file to get its SHA
-      const currentFileResponse = yield* makeGitHubRequest(
-        accessToken,
-        `/repos/${repoFullName}/contents/${filePath}`
-      )
-      const currentFile = currentFileResponse as GitHubFileResponse
-
-      yield* makeGitHubRequest(
-        accessToken,
-        `/repos/${repoFullName}/contents/${filePath}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: `Delete article: ${articleSlug}`,
-            sha: currentFile.sha,
-          }),
+    // Get the current file to get its SHA
+    const currentFileResult = yield* makeGitHubRequest(
+      accessToken,
+      `/repos/${repoFullName}/contents/${filePath}`
+    ).pipe(
+      Effect.catchTag('GitHubAPIError', (error) => {
+        // File doesn't exist (404), which means it's already "deleted"
+        if (error.status === 404) {
+          return Effect.succeed(null)
         }
-      )
+        // Re-throw other GitHub API errors
+        return Effect.fail(error)
+      })
+    )
 
-      return { deleted: true, filePath }
-    } catch (error) {
-      // File might not exist, which is fine for delete operations
+    if (!currentFileResult) {
       return { deleted: false, reason: 'File not found' }
     }
+
+    const currentFile = currentFileResult as GitHubFileResponse
+
+    yield* makeGitHubRequest(
+      accessToken,
+      `/repos/${repoFullName}/contents/${filePath}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: `Delete article: ${articleSlug}`,
+          sha: currentFile.sha,
+        }),
+      }
+    )
+
+    return { deleted: true, filePath }
   })
 
 const replaceTemplatePlaceholders = (
@@ -383,6 +392,8 @@ const replaceTemplatePlaceholders = (
 
     // Get all files in the repository, with retry for empty repos
     yield* Effect.logInfo(`Waiting for repository files to be available...`)
+    yield* Effect.sleep(1000) // Initial wait to allow repo to be ready
+
     const files = yield* getRepoFiles(
       accessToken,
       repoFullName,
@@ -516,3 +527,97 @@ const processFileWithPlaceholders = (
 
     return hasChanges
   })
+
+export const getMarkdownFilesFromRepo = (
+  accessToken: string,
+  repoFullName: string,
+  defaultBranch: string
+) =>
+  Effect.gen(function* () {
+    yield* Effect.logInfo(`Fetching markdown files from ${repoFullName}`)
+
+    // Get all files in the content directory
+    const files = yield* getRepoFiles(accessToken, repoFullName, defaultBranch)
+
+    // Filter for markdown files in content directory
+    const markdownFiles = files.filter(
+      (file) => file.path.startsWith('content/') && file.path.endsWith('.md')
+    )
+
+    yield* Effect.logInfo(`Found ${markdownFiles.length} markdown files`)
+
+    // Fetch content for each markdown file
+    const articles = []
+    for (const file of markdownFiles) {
+      try {
+        const fileResponse = yield* makeGitHubRequest(
+          accessToken,
+          `/repos/${repoFullName}/contents/${file.path}`
+        )
+
+        const fileData = fileResponse as GitHubFileContentResponse
+        const content = Buffer.from(fileData.content, 'base64').toString(
+          'utf-8'
+        )
+
+        // Parse front matter and content
+        const article = parseMarkdownContent(content, file.path)
+        if (article) {
+          articles.push(article)
+        }
+      } catch (error) {
+        yield* Effect.logError(`Failed to fetch ${file.path}:`, { error })
+      }
+    }
+
+    return articles
+  })
+
+const parseMarkdownContent = (content: string, filePath: string) => {
+  try {
+    // Extract filename without extension for slug
+    const slug = filePath.replace('content/', '').replace('.md', '')
+
+    // Parse front matter
+    const frontMatterMatch = content.match(
+      /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/
+    )
+
+    if (!frontMatterMatch) {
+      // No front matter, use content as-is
+      return {
+        title: slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        slug,
+        content: content.trim(),
+        status: 'published' as const,
+      }
+    }
+
+    const [, frontMatterText, markdownContent] = frontMatterMatch
+    const frontMatter: Record<string, string> = {}
+
+    // Simple front matter parser
+    frontMatterText.split('\n').forEach((line) => {
+      const colonIndex = line.indexOf(':')
+      if (colonIndex > 0) {
+        const key = line.substring(0, colonIndex).trim()
+        const value = line.substring(colonIndex + 1).trim()
+        frontMatter[key] = value
+      }
+    })
+
+    return {
+      title:
+        frontMatter.title ||
+        slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+      slug: frontMatter.slug || slug,
+      content: markdownContent.trim(),
+      status: (frontMatter.status === 'draft' ? 'draft' : 'published') as
+        | 'draft'
+        | 'published',
+    }
+  } catch (error) {
+    console.error(`Failed to parse markdown content for ${filePath}:`, error)
+    return null
+  }
+}

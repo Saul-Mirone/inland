@@ -319,4 +319,58 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
       }
     }
   )
+
+  // Publish an article to GitHub
+  fastify.post(
+    '/articles/:id/publish',
+    {
+      preHandler: [fastify.authenticate],
+    },
+    async (request, reply) => {
+      try {
+        const userPayload = request.jwtPayload!
+        const { id } = request.params as { id: string }
+
+        const publishArticle = Effect.gen(function* () {
+          const result = yield* ArticleService.publishArticleToGitHub(
+            id,
+            userPayload.userId
+          )
+          return {
+            message: 'Article published successfully',
+            ...result,
+          }
+        })
+
+        const result = await runtime.runPromise(publishArticle)
+        return reply.send(result)
+      } catch (error) {
+        fastify.log.error(error)
+
+        if (error instanceof Error) {
+          if (error.message.includes('ArticleNotFoundError')) {
+            return reply.code(404).send({ error: 'Article not found' })
+          }
+
+          if (error.message.includes('ArticleAccessDeniedError')) {
+            return reply.code(403).send({ error: 'Access denied' })
+          }
+
+          if (error.message.includes('SiteAccessError')) {
+            return reply
+              .code(403)
+              .send({ error: 'You do not have access to this site' })
+          }
+
+          if (error.message.includes('GitHubAPIError')) {
+            return reply.code(502).send({
+              error: 'Failed to publish to GitHub: ' + error.message,
+            })
+          }
+        }
+
+        return reply.code(500).send({ error: 'Failed to publish article' })
+      }
+    }
+  )
 }

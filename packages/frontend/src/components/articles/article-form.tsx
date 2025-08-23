@@ -7,11 +7,26 @@ interface Site {
   name: string
 }
 
-interface ArticleFormProps {
-  onArticleCreated: () => void
+interface Article {
+  id: string
+  title: string
+  slug: string
+  content: string
+  status: 'draft' | 'published'
+  siteId: string
 }
 
-export const ArticleForm = ({ onArticleCreated }: ArticleFormProps) => {
+interface ArticleFormProps {
+  onArticleCreated: () => void
+  editingArticle?: Article | null
+  onCancelEdit?: () => void
+}
+
+export const ArticleForm = ({
+  onArticleCreated,
+  editingArticle,
+  onCancelEdit,
+}: ArticleFormProps) => {
   const [sites, setSites] = useState<Site[]>([])
   const [formData, setFormData] = useState({
     siteId: '',
@@ -23,6 +38,27 @@ export const ArticleForm = ({ onArticleCreated }: ArticleFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // Load editing article data when editingArticle changes
+  useEffect(() => {
+    if (editingArticle) {
+      setFormData({
+        siteId: editingArticle.siteId,
+        title: editingArticle.title,
+        slug: editingArticle.slug,
+        content: editingArticle.content,
+        status: editingArticle.status,
+      })
+    } else {
+      setFormData({
+        siteId: '',
+        title: '',
+        slug: '',
+        content: '',
+        status: 'draft',
+      })
+    }
+  }, [editingArticle])
 
   useEffect(() => {
     const fetchSites = async () => {
@@ -75,8 +111,14 @@ export const ArticleForm = ({ onArticleCreated }: ArticleFormProps) => {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/articles', {
-        method: 'POST',
+      const isEditing = !!editingArticle
+      const url = isEditing
+        ? `http://localhost:3001/articles/${editingArticle.id}`
+        : 'http://localhost:3001/articles'
+      const method = isEditing ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -86,17 +128,22 @@ export const ArticleForm = ({ onArticleCreated }: ArticleFormProps) => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create article')
+        throw new Error(
+          errorData.error ||
+            `Failed to ${isEditing ? 'update' : 'create'} article`
+        )
       }
 
-      // Reset form
-      setFormData({
-        siteId: '',
-        title: '',
-        slug: '',
-        content: '',
-        status: 'draft',
-      })
+      // Reset form only if creating new article
+      if (!isEditing) {
+        setFormData({
+          siteId: '',
+          title: '',
+          slug: '',
+          content: '',
+          status: 'draft',
+        })
+      }
 
       onArticleCreated()
     } catch (err) {
@@ -122,7 +169,7 @@ export const ArticleForm = ({ onArticleCreated }: ArticleFormProps) => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3>Create New Article</h3>
+      <h3>{editingArticle ? 'Edit Article' : 'Create New Article'}</h3>
 
       {error && (
         <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>
@@ -206,13 +253,30 @@ export const ArticleForm = ({ onArticleCreated }: ArticleFormProps) => {
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        style={{ padding: '0.5rem 1rem' }}
-      >
-        {isSubmitting ? 'Creating...' : 'Create Article'}
-      </button>
+      <div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          style={{ padding: '0.5rem 1rem', marginRight: '0.5rem' }}
+        >
+          {isSubmitting
+            ? editingArticle
+              ? 'Updating...'
+              : 'Creating...'
+            : editingArticle
+              ? 'Update Article'
+              : 'Create Article'}
+        </button>
+        {editingArticle && onCancelEdit && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   )
 }
