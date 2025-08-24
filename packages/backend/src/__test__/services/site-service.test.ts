@@ -1,9 +1,9 @@
 import { ManagedRuntime, Exit } from 'effect'
 import { describe, it, expect, beforeEach } from 'vitest'
 
-import * as SiteService from '../services/site-service'
-import { mockPrisma, resetMockPrisma } from './helpers/mock-database'
-import { TestRepositoryLayer } from './helpers/test-layers'
+import * as SiteService from '../../services/site-service'
+import { mockPrisma, resetMockPrisma } from '../helpers/mock-database'
+import { TestRepositoryLayer } from '../helpers/test-layers'
 
 // Create test runtime
 const testRuntime = ManagedRuntime.make(TestRepositoryLayer)
