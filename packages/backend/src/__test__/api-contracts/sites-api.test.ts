@@ -1,7 +1,7 @@
 import { ManagedRuntime } from 'effect'
 import { describe, it, expect, beforeEach } from 'vitest'
 
-import * as SiteService from '../../services/site-service'
+import * as SiteService from '../../services/site'
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database'
 import { TestRepositoryLayer } from '../helpers/test-layers'
 
