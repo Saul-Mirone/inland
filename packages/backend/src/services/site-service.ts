@@ -1,7 +1,7 @@
 import { Effect, Data } from 'effect'
 
 import { SiteRepository } from '../repositories/site-repository'
-import * as ArticleService from './article-service'
+import * as ArticleService from './article'
 import * as AuthService from './auth-service'
 import * as GitHubService from './github-service'
 

@@ -1,7 +1,7 @@
 import { ManagedRuntime, Exit } from 'effect'
 import { describe, it, expect, beforeEach } from 'vitest'
 
-import * as ArticleService from '../services/article-service'
+import * as ArticleService from '../services/article'
 import { mockPrisma, resetMockPrisma } from './helpers/mock-database'
 import { TestRepositoryLayer } from './helpers/test-layers'
 

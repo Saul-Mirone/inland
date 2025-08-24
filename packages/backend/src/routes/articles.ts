@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
-import * as ArticleService from '../services/article-service'
+import * as ArticleService from '../services/article'
 import { createAppRuntime } from '../utils/effect-runtime'
 
 export const articleRoutes = async (fastify: FastifyInstance) => {
