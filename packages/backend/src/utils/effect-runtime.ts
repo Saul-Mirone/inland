@@ -6,11 +6,13 @@ import { Layer, Exit, ManagedRuntime } from 'effect'
 import type { prisma } from '../database/client'
 import type { ArticleRepository } from '../repositories/article-repository'
 import type { SiteRepository } from '../repositories/site-repository'
+import type { UserRepositoryService } from '../repositories/user-repository'
 import type { ConfigService } from '../services/config-service'
 import type { DatabaseService } from '../services/database-service'
 
 import { PrismaArticleRepositoryLive } from '../repositories/implementations/prisma-article-repository'
 import { PrismaSiteRepositoryLive } from '../repositories/implementations/prisma-site-repository'
+import { PrismaUserRepositoryLive } from '../repositories/implementations/prisma-user-repository'
 import { makeConfigService } from '../services/config-service'
 import { makeDatabaseService } from '../services/database-service'
 
@@ -19,7 +21,8 @@ export const createAppRuntime = (prismaClient: typeof prisma) => {
     makeDatabaseService(prismaClient),
     makeConfigService,
     PrismaArticleRepositoryLive,
-    PrismaSiteRepositoryLive
+    PrismaSiteRepositoryLive,
+    PrismaUserRepositoryLive
   )
 
   return ManagedRuntime.make(AppLayer)
@@ -27,7 +30,11 @@ export const createAppRuntime = (prismaClient: typeof prisma) => {
 
 export const runEffect = async <A, E>(
   runtime: ManagedRuntime.ManagedRuntime<
-    DatabaseService | ConfigService | ArticleRepository | SiteRepository,
+    | DatabaseService
+    | ConfigService
+    | ArticleRepository
+    | SiteRepository
+    | UserRepositoryService,
     never
   >,
   effect: Effect.Effect<A, E>,
