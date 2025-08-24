@@ -1,8 +1,8 @@
 import { Effect, Data } from 'effect'
 
+import { SiteRepository } from '../repositories/site-repository'
 import * as ArticleService from './article-service'
 import * as AuthService from './auth-service'
-import { DatabaseService } from './database-service'
 import * as GitHubService from './github-service'
 
 export class SiteNotFoundError extends Data.TaggedError('SiteNotFoundError')<{
@@ -45,7 +45,7 @@ export interface UpdateSiteData {
 
 export const createSite = (data: CreateSiteData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
 
     try {
       // Step 1: Get user's GitHub access token
@@ -73,18 +73,14 @@ export const createSite = (data: CreateSiteData) =>
       )
 
       // Step 4: Save site to database
-      const site = yield* Effect.promise(() =>
-        prisma.site.create({
-          data: {
-            userId: data.userId,
-            name: data.name,
-            gitRepo: githubRepo.fullName,
-            platform: 'github',
-            deployStatus: 'deployed',
-            deployUrl: githubRepo.pagesUrl,
-          },
-        })
-      )
+      const site = yield* siteRepo.create({
+        userId: data.userId,
+        name: data.name,
+        gitRepo: githubRepo.fullName,
+        platform: 'github',
+        deployStatus: 'deployed',
+        deployUrl: githubRepo.pagesUrl,
+      })
 
       // Step 5: Import existing articles from GitHub repo
       try {
@@ -126,45 +122,9 @@ export const createSite = (data: CreateSiteData) =>
 
 export const findSiteById = (siteId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
 
-    const site = yield* Effect.promise(() =>
-      prisma.site.findUnique({
-        where: { id: siteId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          articles: {
-            select: {
-              id: true,
-              title: true,
-              status: true,
-              createdAt: true,
-            },
-            orderBy: {
-              updatedAt: 'desc',
-            },
-            take: 5,
-          },
-          media: {
-            select: {
-              id: true,
-              filename: true,
-              fileSize: true,
-              createdAt: true,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
-            take: 5,
-          },
-        },
-      })
-    )
+    const site = yield* siteRepo.findByIdWithFullDetails(siteId)
 
     if (!site) {
       return yield* new SiteNotFoundError({ siteId })
@@ -175,26 +135,8 @@ export const findSiteById = (siteId: string) =>
 
 export const findUserSites = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
-
-    const sites = yield* Effect.promise(() =>
-      prisma.site.findMany({
-        where: { userId },
-        include: {
-          _count: {
-            select: {
-              articles: true,
-              media: true,
-            },
-          },
-        },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-      })
-    )
-
-    return sites
+    const siteRepo = yield* SiteRepository
+    return yield* siteRepo.findByUserIdWithCounts(userId)
   })
 
 export const updateSite = (
@@ -203,15 +145,10 @@ export const updateSite = (
   data: UpdateSiteData
 ) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
 
     // First check if site exists and user has access
-    const existingSite = yield* Effect.promise(() =>
-      prisma.site.findUnique({
-        where: { id: siteId },
-        select: { userId: true },
-      })
-    )
+    const existingSite = yield* siteRepo.findByIdWithUserId(siteId)
 
     if (!existingSite) {
       return yield* new SiteNotFoundError({ siteId })
@@ -222,18 +159,7 @@ export const updateSite = (
     }
 
     try {
-      const updatedSite = yield* Effect.promise(() =>
-        prisma.site.update({
-          where: { id: siteId },
-          data: {
-            ...(data.name && { name: data.name }),
-            ...(data.gitRepo && { gitRepo: data.gitRepo }),
-            ...(data.platform && { platform: data.platform }),
-            ...(data.deployStatus && { deployStatus: data.deployStatus }),
-          },
-        })
-      )
-
+      const updatedSite = yield* siteRepo.update(siteId, data)
       return updatedSite
     } catch (error) {
       if (
@@ -253,15 +179,10 @@ export const updateSite = (
 
 export const deleteSite = (siteId: string, userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
 
     // First check if site exists and user has access
-    const existingSite = yield* Effect.promise(() =>
-      prisma.site.findUnique({
-        where: { id: siteId },
-        select: { userId: true },
-      })
-    )
+    const existingSite = yield* siteRepo.findByIdWithUserId(siteId)
 
     if (!existingSite) {
       return yield* new SiteNotFoundError({ siteId })
@@ -271,12 +192,7 @@ export const deleteSite = (siteId: string, userId: string) =>
       return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
-    const deletedSite = yield* Effect.promise(() =>
-      prisma.site.delete({
-        where: { id: siteId },
-      })
-    )
-
+    const deletedSite = yield* siteRepo.delete(siteId)
     return deletedSite
   })
 
