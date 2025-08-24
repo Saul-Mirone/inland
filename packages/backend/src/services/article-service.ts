@@ -1,7 +1,12 @@
 import { Effect, Data } from 'effect'
 
+import {
+  ArticleRepository,
+  type ArticleCreateData,
+  type ArticleUpdateData,
+} from '../repositories/article-repository'
+import { SiteRepository } from '../repositories/site-repository'
 import * as AuthService from './auth-service'
-import { DatabaseService } from './database-service'
 import * as GitHubService from './github-service'
 
 export class ArticleNotFoundError extends Data.TaggedError(
@@ -50,15 +55,11 @@ export interface UpdateArticleData {
 
 export const createArticle = (userId: string, data: CreateArticleData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
+    const articleRepo = yield* ArticleRepository
 
     // First verify user has access to the site
-    const site = yield* Effect.promise(() =>
-      prisma.site.findUnique({
-        where: { id: data.siteId },
-        select: { userId: true },
-      })
-    )
+    const site = yield* siteRepo.findByIdWithUserId(data.siteId)
 
     if (!site) {
       return yield* new SiteAccessError({
@@ -75,25 +76,14 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
     }
 
     try {
-      const article = yield* Effect.promise(() =>
-        prisma.article.create({
-          data: {
-            siteId: data.siteId,
-            title: data.title,
-            slug: data.slug,
-            content: data.content,
-            status: data.status || 'draft',
-          },
-          include: {
-            site: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        })
-      )
+      const repoData: ArticleCreateData = {
+        siteId: data.siteId,
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        status: data.status || 'draft',
+      }
+      const article = yield* articleRepo.create(repoData)
       return article
     } catch (error) {
       if (
@@ -113,22 +103,9 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
 
 export const findArticleById = (articleId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const articleRepo = yield* ArticleRepository
 
-    const article = yield* Effect.promise(() =>
-      prisma.article.findUnique({
-        where: { id: articleId },
-        include: {
-          site: {
-            select: {
-              id: true,
-              name: true,
-              userId: true,
-            },
-          },
-        },
-      })
-    )
+    const article = yield* articleRepo.findById(articleId)
 
     if (!article) {
       return yield* new ArticleNotFoundError({ articleId })
@@ -139,15 +116,11 @@ export const findArticleById = (articleId: string) =>
 
 export const findSiteArticles = (siteId: string, userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
+    const articleRepo = yield* ArticleRepository
 
     // First verify user has access to the site
-    const site = yield* Effect.promise(() =>
-      prisma.site.findUnique({
-        where: { id: siteId },
-        select: { userId: true },
-      })
-    )
+    const site = yield* siteRepo.findByIdWithUserId(siteId)
 
     if (!site) {
       return yield* new SiteAccessError({
@@ -163,50 +136,16 @@ export const findSiteArticles = (siteId: string, userId: string) =>
       })
     }
 
-    const articles = yield* Effect.promise(() =>
-      prisma.article.findMany({
-        where: { siteId },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      })
-    )
+    const articles = yield* articleRepo.findBySiteId(siteId)
 
     return articles
   })
 
 export const findUserArticles = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const articleRepo = yield* ArticleRepository
 
-    const articles = yield* Effect.promise(() =>
-      prisma.article.findMany({
-        where: {
-          site: {
-            userId,
-          },
-        },
-        include: {
-          site: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: {
-          updatedAt: 'desc',
-        },
-      })
-    )
+    const articles = yield* articleRepo.findByUserId(userId)
 
     return articles
   })
@@ -217,19 +156,10 @@ export const updateArticle = (
   data: UpdateArticleData
 ) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const articleRepo = yield* ArticleRepository
 
     // First check if article exists and user has access
-    const existingArticle = yield* Effect.promise(() =>
-      prisma.article.findUnique({
-        where: { id: articleId },
-        include: {
-          site: {
-            select: { userId: true },
-          },
-        },
-      })
-    )
+    const existingArticle = yield* articleRepo.findById(articleId)
 
     if (!existingArticle) {
       return yield* new ArticleNotFoundError({ articleId })
@@ -240,25 +170,13 @@ export const updateArticle = (
     }
 
     try {
-      const updatedArticle = yield* Effect.promise(() =>
-        prisma.article.update({
-          where: { id: articleId },
-          data: {
-            ...(data.title && { title: data.title }),
-            ...(data.slug && { slug: data.slug }),
-            ...(data.content !== undefined && { content: data.content }),
-            ...(data.status && { status: data.status }),
-          },
-          include: {
-            site: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        })
-      )
+      const repoData: ArticleUpdateData = {
+        ...(data.title && { title: data.title }),
+        ...(data.slug && { slug: data.slug }),
+        ...(data.content !== undefined && { content: data.content }),
+        ...(data.status && { status: data.status }),
+      }
+      const updatedArticle = yield* articleRepo.update(articleId, repoData)
 
       return updatedArticle
     } catch (error) {
@@ -279,22 +197,10 @@ export const updateArticle = (
 
 export const deleteArticle = (articleId: string, userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const articleRepo = yield* ArticleRepository
 
     // First check if article exists and user has access
-    const existingArticle = yield* Effect.promise(() =>
-      prisma.article.findUnique({
-        where: { id: articleId },
-        include: {
-          site: {
-            select: {
-              userId: true,
-              gitRepo: true,
-            },
-          },
-        },
-      })
-    )
+    const existingArticle = yield* articleRepo.findById(articleId)
 
     if (!existingArticle) {
       return yield* new ArticleNotFoundError({ articleId })
@@ -339,11 +245,7 @@ export const deleteArticle = (articleId: string, userId: string) =>
     }
 
     // Delete from database
-    const deletedArticle = yield* Effect.promise(() =>
-      prisma.article.delete({
-        where: { id: articleId },
-      })
-    )
+    const deletedArticle = yield* articleRepo.delete(articleId)
 
     return {
       article: deletedArticle,
@@ -417,19 +319,11 @@ export const generateSlugFromTitle = (title: string) =>
 
 export const importArticlesFromGitHub = (siteId: string, userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const siteRepo = yield* SiteRepository
+    const articleRepo = yield* ArticleRepository
 
     // Get site information and verify access
-    const site = yield* Effect.promise(() =>
-      prisma.site.findUnique({
-        where: { id: siteId },
-        select: {
-          id: true,
-          gitRepo: true,
-          userId: true,
-        },
-      })
-    )
+    const site = yield* siteRepo.findByIdWithDetails(siteId)
 
     if (!site) {
       return yield* new SiteAccessError({ siteId, userId })
@@ -470,13 +364,9 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
     for (const articleData of articles) {
       try {
         // Check if article with this slug already exists
-        const existingArticle = yield* Effect.promise(() =>
-          prisma.article.findFirst({
-            where: {
-              siteId: site.id,
-              slug: articleData.slug,
-            },
-          })
+        const existingArticle = yield* articleRepo.findBySiteIdAndSlug(
+          site.id,
+          articleData.slug
         )
 
         if (existingArticle) {
@@ -487,25 +377,14 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
         }
 
         // Create new article
-        const article = yield* Effect.promise(() =>
-          prisma.article.create({
-            data: {
-              siteId: site.id,
-              title: articleData.title,
-              slug: articleData.slug,
-              content: articleData.content,
-              status: articleData.status,
-            },
-            include: {
-              site: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          })
-        )
+        const repoData: ArticleCreateData = {
+          siteId: site.id,
+          title: articleData.title,
+          slug: articleData.slug,
+          content: articleData.content,
+          status: articleData.status,
+        }
+        const article = yield* articleRepo.create(repoData)
 
         importedArticles.push(article)
         yield* Effect.logInfo(`Imported article: ${articleData.title}`)
@@ -526,24 +405,10 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
 
 export const publishArticleToGitHub = (articleId: string, userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const articleRepo = yield* ArticleRepository
 
     // Get article with site information
-    const article = yield* Effect.promise(() =>
-      prisma.article.findUnique({
-        where: { id: articleId },
-        include: {
-          site: {
-            select: {
-              id: true,
-              name: true,
-              gitRepo: true,
-              userId: true,
-            },
-          },
-        },
-      })
-    )
+    const article = yield* articleRepo.findById(articleId)
 
     if (!article) {
       return yield* new ArticleNotFoundError({ articleId })
@@ -622,15 +487,10 @@ excerpt: ${excerpt}
     )
 
     // Always update article status to published and update timestamp
-    const updatedArticle = yield* Effect.promise(() =>
-      prisma.article.update({
-        where: { id: articleId },
-        data: {
-          status: 'published',
-          updatedAt: new Date(),
-        },
-      })
-    )
+    const repoData: ArticleUpdateData = {
+      status: 'published',
+    }
+    const updatedArticle = yield* articleRepo.update(articleId, repoData)
 
     return {
       article: updatedArticle,
