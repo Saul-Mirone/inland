@@ -19,9 +19,7 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
 
       // Process GitHub OAuth using Effect services
       const processOAuth = Effect.gen(function* () {
-        const { user } = yield* AuthService.processGitHubOAuth(
-          token.access_token
-        )
+        const { user } = yield* AuthService.processOAuth(token.access_token)
         const config = yield* ConfigService
 
         // Generate JWT payload

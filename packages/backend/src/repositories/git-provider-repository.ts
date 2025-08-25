@@ -1,6 +1,6 @@
 import { Context, type Effect } from 'effect'
 
-// Common Git provider types
+// Common Git provider types (platform-agnostic)
 export interface GitRepo {
   readonly id: string | number
   readonly name: string
@@ -23,7 +23,7 @@ export interface TemplateData {
   readonly siteDescription: string
   readonly siteNameSlug: string
   readonly siteAuthor: string
-  readonly githubUsername: string
+  readonly platformUsername: string
 }
 
 export interface GitFile {
@@ -55,26 +55,7 @@ export interface PagesDeploymentError {
   readonly reason: string
 }
 
-// GitHub user authentication types
-export interface GitHubUser {
-  readonly id: number
-  readonly login: string
-  readonly email: string | null
-  readonly avatar_url: string
-}
-
-export interface GitHubEmail {
-  readonly email: string
-  readonly primary: boolean
-  readonly verified: boolean
-}
-
-export interface GitHubTokenValidationResult {
-  readonly isValid: boolean
-  readonly reason?: string
-}
-
-// Main Git provider interface
+// Main Git provider interface (platform-agnostic)
 export interface GitProviderRepositoryService {
   /**
    * Create a repository with Pages enabled from a template
@@ -134,27 +115,6 @@ export interface GitProviderRepositoryService {
     { defaultBranch: string; [key: string]: unknown },
     GitProviderError
   >
-
-  /**
-   * Fetch GitHub user information
-   */
-  readonly fetchGitHubUser: (
-    accessToken: string
-  ) => Effect.Effect<GitHubUser, GitProviderError>
-
-  /**
-   * Fetch GitHub user email information
-   */
-  readonly fetchGitHubUserEmail: (
-    accessToken: string
-  ) => Effect.Effect<string | null, GitProviderError>
-
-  /**
-   * Validate GitHub access token
-   */
-  readonly validateGitHubToken: (
-    accessToken: string
-  ) => Effect.Effect<GitHubTokenValidationResult, GitProviderError>
 }
 
 // Effect Context for dependency injection

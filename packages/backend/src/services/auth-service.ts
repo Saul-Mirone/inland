@@ -2,16 +2,18 @@ import { Effect, Data } from 'effect'
 
 import type { JWTPayload } from '../types/auth'
 
-import { GitProviderRepository } from '../repositories/git-provider-repository'
+import { AuthProviderRepository } from '../repositories/auth-provider-repository'
 import { UserRepository } from '../repositories/user-repository'
 import * as UserService from './user'
 
-export class GitHubAPIError extends Data.TaggedError('GitHubAPIError')<{
+export class AuthProviderAPIError extends Data.TaggedError(
+  'AuthProviderAPIError'
+)<{
   readonly message: string
   readonly status?: number
 }> {}
 
-export class GitHubTokenError extends Data.TaggedError('GitHubTokenError')<{
+export class AuthTokenError extends Data.TaggedError('AuthTokenError')<{
   readonly message: string
 }> {}
 
@@ -21,76 +23,76 @@ export class TokenGenerationError extends Data.TaggedError(
   readonly reason: string
 }> {}
 
-export interface GitHubTokenResponse {
+export interface TokenResponse {
   readonly access_token: string
   readonly token_type: string
   readonly scope: string
 }
 
-export const fetchGitHubUser = (accessToken: string) =>
+export const fetchUser = (accessToken: string) =>
   Effect.gen(function* () {
-    const gitProvider = yield* GitProviderRepository
-    return yield* gitProvider.fetchGitHubUser(accessToken)
+    const authProvider = yield* AuthProviderRepository
+    return yield* authProvider.fetchUser(accessToken)
   })
 
-export const fetchGitHubUserEmail = (accessToken: string) =>
+export const fetchUserEmail = (accessToken: string) =>
   Effect.gen(function* () {
-    const gitProvider = yield* GitProviderRepository
-    return yield* gitProvider.fetchGitHubUserEmail(accessToken)
+    const authProvider = yield* AuthProviderRepository
+    return yield* authProvider.fetchUserEmail(accessToken)
   })
 
-export const getUserGitHubToken = (userId: string) =>
+export const getUserAuthToken = (userId: string) =>
   Effect.gen(function* () {
     const userRepo = yield* UserRepository
-    const gitProvider = yield* GitProviderRepository
+    const authProvider = yield* AuthProviderRepository
 
-    const accessToken = yield* userRepo.getGitHubToken(userId)
+    const accessToken = yield* userRepo.getAuthToken(userId)
 
     if (!accessToken) {
-      return yield* new GitHubTokenError({
-        message: 'No GitHub integration found for user',
+      return yield* new AuthTokenError({
+        message: 'No auth integration found for user',
       })
     }
 
-    // Validate token using git provider
-    const validation = yield* gitProvider.validateGitHubToken(accessToken)
+    // Validate token using auth provider
+    const validation = yield* authProvider.validateToken(accessToken)
 
     if (!validation.isValid) {
       // Token is invalid, clear it from database
-      yield* userRepo.clearGitHubToken(userId)
-      return yield* new GitHubTokenError({
+      yield* userRepo.clearAuthToken(userId)
+      return yield* new AuthTokenError({
         message:
           validation.reason ||
-          'GitHub token is invalid. Please reconnect your GitHub account.',
+          'Auth token is invalid. Please reconnect your account.',
       })
     }
 
     return accessToken
   })
 
-export const processGitHubOAuth = (accessToken: string) =>
+export const processOAuth = (accessToken: string) =>
   Effect.gen(function* () {
-    const githubUser = yield* fetchGitHubUser(accessToken)
+    const platformUser = yield* fetchUser(accessToken)
 
-    let email = githubUser.email
+    let email = platformUser.email
     if (!email) {
-      email = yield* fetchGitHubUserEmail(accessToken)
+      email = yield* fetchUserEmail(accessToken)
     }
 
     const user = yield* UserService.upsertUser({
-      username: githubUser.login,
+      username: platformUser.username,
       email,
-      avatarUrl: githubUser.avatar_url,
+      avatarUrl: platformUser.avatarUrl,
     })
 
     yield* UserService.upsertGitIntegration({
       userId: user.id,
       platform: 'github',
-      platformUsername: githubUser.login,
+      platformUsername: platformUser.username,
       accessToken,
     })
 
-    return { user, githubUser }
+    return { user, platformUser }
   })
 
 export const generateJWTPayload = (user: {

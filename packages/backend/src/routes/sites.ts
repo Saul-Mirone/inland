@@ -50,7 +50,7 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
           }
 
           // Handle GitHub API errors
-          if (error.message.includes('GitHubAPIError')) {
+          if (error.message.includes('AuthProviderAPIError')) {
             return reply.code(502).send({
               error:
                 'GitHub API error. Please check your access token and try again.',

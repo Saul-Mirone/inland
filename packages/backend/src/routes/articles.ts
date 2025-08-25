@@ -362,7 +362,7 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
               .send({ error: 'You do not have access to this site' })
           }
 
-          if (error.message.includes('GitHubAPIError')) {
+          if (error.message.includes('AuthProviderAPIError')) {
             return reply.code(502).send({
               error: 'Failed to publish to GitHub: ' + error.message,
             })

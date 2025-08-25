@@ -99,7 +99,7 @@ const upsertGitIntegration = (data: CreateGitIntegrationData) =>
     )
   })
 
-const getGitHubToken = (userId: string) =>
+const getAuthToken = (userId: string) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService
 
@@ -118,7 +118,7 @@ const getGitHubToken = (userId: string) =>
     return gitIntegration?.accessToken || null
   })
 
-const clearGitHubToken = (userId: string) =>
+const clearAuthToken = (userId: string) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService
 
@@ -145,7 +145,7 @@ export const PrismaUserRepositoryLive = Layer.effect(
     findById: findUserById,
     upsert: upsertUser,
     upsertGitIntegration: upsertGitIntegration,
-    getGitHubToken: getGitHubToken,
-    clearGitHubToken: clearGitHubToken,
+    getAuthToken: getAuthToken,
+    clearAuthToken: clearAuthToken,
   } satisfies UserRepositoryService)
 )

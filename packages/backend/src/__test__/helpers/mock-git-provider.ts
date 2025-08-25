@@ -7,7 +7,6 @@ import {
   type CreateRepoData,
   type TemplateData,
   type ImportedArticle,
-  type GitHubUser,
 } from '../../repositories/git-provider-repository'
 
 // Mock implementation for testing
@@ -70,22 +69,6 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       id: 12345,
       name: repoFullName.split('/')[1],
       full_name: repoFullName,
-    }),
-
-  fetchGitHubUser: (_accessToken: string) =>
-    Effect.succeed({
-      id: 12345,
-      login: 'testuser',
-      email: 'test@example.com',
-      avatar_url: 'https://github.com/images/test-avatar.jpg',
-    } as GitHubUser),
-
-  fetchGitHubUserEmail: (_accessToken: string) =>
-    Effect.succeed('test@example.com'),
-
-  validateGitHubToken: (_accessToken: string) =>
-    Effect.succeed({
-      isValid: true,
     }),
 })
 

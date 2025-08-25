@@ -36,7 +36,7 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
     }
 
     // Get user's GitHub access token
-    const accessToken = yield* AuthService.getUserGitHubToken(userId)
+    const accessToken = yield* AuthService.getUserAuthToken(userId)
 
     // Fetch repository information to get default branch
     const repoInfo = yield* gitProvider.getRepositoryInfo(
@@ -122,7 +122,7 @@ export const publishArticleToGitHub = (articleId: string, userId: string) =>
     }
 
     // Get user's GitHub access token
-    const accessToken = yield* AuthService.getUserGitHubToken(userId)
+    const accessToken = yield* AuthService.getUserAuthToken(userId)
 
     // Create markdown file content with front matter (matching template format)
     const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD format
@@ -230,7 +230,7 @@ export const deleteArticleFromGitHub = (articleId: string, userId: string) =>
     }
 
     // Get user's GitHub access token
-    const accessToken = yield* AuthService.getUserGitHubToken(userId)
+    const accessToken = yield* AuthService.getUserAuthToken(userId)
 
     // Delete from Git repository
     const result = yield* gitProvider.deleteArticleFromRepo(

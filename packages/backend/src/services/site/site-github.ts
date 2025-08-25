@@ -17,10 +17,10 @@ export const createSite = (data: CreateSiteData) =>
 
     try {
       // Step 1: Get user's GitHub access token
-      const accessToken = yield* AuthService.getUserGitHubToken(data.userId)
+      const accessToken = yield* AuthService.getUserAuthToken(data.userId)
 
       // Step 2: Get user's GitHub username for template data
-      const githubUser = yield* AuthService.fetchGitHubUser(accessToken)
+      const githubUser = yield* AuthService.fetchUser(accessToken)
 
       // Step 3: Create GitHub repository with Pages (always use template)
       const githubRepo = yield* gitProvider.createRepositoryWithPages(
@@ -35,8 +35,8 @@ export const createSite = (data: CreateSiteData) =>
           siteName: data.name,
           siteDescription: data.description || `Blog site: ${data.name}`,
           siteNameSlug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          siteAuthor: data.author || githubUser.login,
-          githubUsername: githubUser.login,
+          siteAuthor: data.author || githubUser.username,
+          platformUsername: githubUser.username,
         }
       )
 

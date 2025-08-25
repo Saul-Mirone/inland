@@ -39,10 +39,10 @@ export interface UserRepositoryService {
   readonly upsertGitIntegration: (
     data: CreateGitIntegrationData
   ) => Effect.Effect<GitIntegration, never, DatabaseService>
-  readonly getGitHubToken: (
+  readonly getAuthToken: (
     userId: string
   ) => Effect.Effect<string | null, never, DatabaseService>
-  readonly clearGitHubToken: (
+  readonly clearAuthToken: (
     userId: string
   ) => Effect.Effect<void, never, DatabaseService>
 }
