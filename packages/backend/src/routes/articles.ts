@@ -332,7 +332,7 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
         const { id } = request.params as { id: string }
 
         const publishArticle = Effect.gen(function* () {
-          const result = yield* ArticleService.publishArticleToGitHub(
+          const result = yield* ArticleService.publishArticleToGit(
             id,
             userPayload.userId
           )

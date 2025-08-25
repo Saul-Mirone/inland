@@ -14,7 +14,7 @@ import {
   SiteAccessError,
 } from './article-types'
 
-export const importArticlesFromGitHub = (siteId: string, userId: string) =>
+export const importArticlesFromGit = (siteId: string, userId: string) =>
   Effect.gen(function* () {
     const siteRepo = yield* SiteRepository
     const articleRepo = yield* ArticleRepository
@@ -32,10 +32,10 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
     }
 
     if (!site.gitRepo) {
-      return yield* Effect.fail('Site does not have a linked GitHub repository')
+      return yield* Effect.fail('Site does not have a linked Git repository')
     }
 
-    // Get user's GitHub access token
+    // Get user's auth access token
     const accessToken = yield* AuthService.getUserAuthToken(userId)
 
     // Fetch repository information to get default branch
@@ -45,7 +45,7 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
     )
     const defaultBranch = repoInfo.defaultBranch
 
-    // Fetch markdown files from GitHub repo
+    // Fetch markdown files from Git repo
     const articles = yield* gitProvider.getMarkdownFilesFromRepo(
       accessToken,
       site.gitRepo,
@@ -100,7 +100,7 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
     }
   })
 
-export const publishArticleToGitHub = (articleId: string, userId: string) =>
+export const publishArticleToGit = (articleId: string, userId: string) =>
   Effect.gen(function* () {
     const articleRepo = yield* ArticleRepository
     const gitProvider = yield* GitProviderRepository
@@ -118,10 +118,10 @@ export const publishArticleToGitHub = (articleId: string, userId: string) =>
     }
 
     if (!article.site.gitRepo) {
-      return yield* Effect.fail('Site does not have a linked GitHub repository')
+      return yield* Effect.fail('Site does not have a linked Git repository')
     }
 
-    // Get user's GitHub access token
+    // Get user's auth access token
     const accessToken = yield* AuthService.getUserAuthToken(userId)
 
     // Create markdown file content with front matter (matching template format)
@@ -205,7 +205,7 @@ const generateExcerpt = (content: string): string => {
   return truncated + '...'
 }
 
-export const deleteArticleFromGitHub = (articleId: string, userId: string) =>
+export const deleteArticleFromGit = (articleId: string, userId: string) =>
   Effect.gen(function* () {
     const articleRepo = yield* ArticleRepository
     const gitProvider = yield* GitProviderRepository
@@ -229,7 +229,7 @@ export const deleteArticleFromGitHub = (articleId: string, userId: string) =>
       }
     }
 
-    // Get user's GitHub access token
+    // Get user's auth access token
     const accessToken = yield* AuthService.getUserAuthToken(userId)
 
     // Delete from Git repository

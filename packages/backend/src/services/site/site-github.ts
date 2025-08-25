@@ -52,7 +52,7 @@ export const createSite = (data: CreateSiteData) =>
 
       // Step 5: Import existing articles from GitHub repo
       try {
-        const importResult = yield* ArticleService.importArticlesFromGitHub(
+        const importResult = yield* ArticleService.importArticlesFromGit(
           site.id,
           data.userId
         )

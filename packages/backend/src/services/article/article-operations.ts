@@ -6,7 +6,7 @@ import {
   type ArticleUpdateData,
 } from '../../repositories/article-repository'
 import { SiteRepository } from '../../repositories/site-repository'
-import * as ArticleGitHub from './article-github'
+import * as ArticleGit from './article-git'
 import {
   ArticleNotFoundError,
   ArticleCreationError,
@@ -175,7 +175,7 @@ export const deleteArticle = (articleId: string, userId: string) =>
 
     if (hasGitRepo && existingArticle.status === 'published') {
       try {
-        const gitDeleteResult = yield* ArticleGitHub.deleteArticleFromGitHub(
+        const gitDeleteResult = yield* ArticleGit.deleteArticleFromGit(
           existingArticle.id, // Use the existing article ID since we found it
           userId
         )
