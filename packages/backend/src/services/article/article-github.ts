@@ -5,9 +5,9 @@ import {
   type ArticleCreateData,
   type ArticleUpdateData,
 } from '../../repositories/article-repository'
+import { GitProviderRepository } from '../../repositories/git-provider-repository'
 import { SiteRepository } from '../../repositories/site-repository'
 import * as AuthService from '../auth-service'
-import * as GitHubService from '../github-service'
 import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
@@ -18,6 +18,7 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
   Effect.gen(function* () {
     const siteRepo = yield* SiteRepository
     const articleRepo = yield* ArticleRepository
+    const gitProvider = yield* GitProviderRepository
 
     // Get site information and verify access
     const site = yield* siteRepo.findByIdWithDetails(siteId)
@@ -38,15 +39,14 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
     const accessToken = yield* AuthService.getUserGitHubToken(userId)
 
     // Fetch repository information to get default branch
-    const repoInfo = yield* GitHubService.makeGitHubRequest(
+    const repoInfo = yield* gitProvider.getRepositoryInfo(
       accessToken,
-      `/repos/${site.gitRepo}`
+      site.gitRepo
     )
-    const defaultBranch =
-      (repoInfo as { default_branch?: string }).default_branch || 'main'
+    const defaultBranch = repoInfo.defaultBranch
 
     // Fetch markdown files from GitHub repo
-    const articles = yield* GitHubService.getMarkdownFilesFromRepo(
+    const articles = yield* gitProvider.getMarkdownFilesFromRepo(
       accessToken,
       site.gitRepo,
       defaultBranch
@@ -103,6 +103,7 @@ export const importArticlesFromGitHub = (siteId: string, userId: string) =>
 export const publishArticleToGitHub = (articleId: string, userId: string) =>
   Effect.gen(function* () {
     const articleRepo = yield* ArticleRepository
+    const gitProvider = yield* GitProviderRepository
 
     // Get article with site information
     const article = yield* articleRepo.findById(articleId)
@@ -135,52 +136,17 @@ excerpt: ${excerpt}
 
 `
     const markdownContent = frontMatter + article.content
-    const filePath = `content/${article.slug}.md`
 
-    // Check if file already exists to get SHA for update
-    let fileSha: string | undefined
-    const existingFileResult = yield* GitHubService.makeGitHubRequest(
+    // Publish using the git provider
+    const result = yield* gitProvider.publishArticleToRepo(
       accessToken,
-      `/repos/${article.site.gitRepo}/contents/${filePath}`
-    ).pipe(
-      Effect.catchTag('GitHubAPIError', (error) => {
-        // File doesn't exist (404), which is fine for new files
-        if (error.status === 404) {
-          return Effect.succeed(null)
-        }
-        // Re-throw other GitHub API errors
-        return Effect.fail(error)
-      })
-    )
-
-    if (existingFileResult) {
-      fileSha = (existingFileResult as { sha: string }).sha
-      yield* Effect.logInfo(`Updating existing file: ${filePath}`)
-    } else {
-      yield* Effect.logInfo(`Creating new file: ${filePath}`)
-    }
-
-    // Publish to GitHub
-    const commitData = {
-      message: `${fileSha ? 'Update' : 'Add'} article: ${article.title}`,
-      content: Buffer.from(markdownContent).toString('base64'),
-      ...(fileSha && { sha: fileSha }),
-    }
-
-    const response = yield* GitHubService.makeGitHubRequest(
-      accessToken,
-      `/repos/${article.site.gitRepo}/contents/${filePath}`,
-      {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(commitData),
-      }
+      article.site.gitRepo,
+      article.slug,
+      markdownContent
     )
 
     yield* Effect.logInfo(
-      `Article published to GitHub: ${article.title} -> ${filePath}`
+      `Article published to Git repository: ${article.title} -> ${result.filePath}`
     )
 
     // Always update article status to published and update timestamp
@@ -191,10 +157,10 @@ excerpt: ${excerpt}
 
     return {
       article: updatedArticle,
-      published: true,
-      filePath,
-      commitSha: (response as { commit: { sha: string } }).commit.sha,
-      wasUpdate: fileSha !== undefined,
+      published: result.published,
+      filePath: result.filePath,
+      commitSha: result.commitSha,
+      wasUpdate: result.wasUpdate,
     }
   })
 
@@ -238,3 +204,48 @@ const generateExcerpt = (content: string): string => {
   // Otherwise, just truncate at 150 chars
   return truncated + '...'
 }
+
+export const deleteArticleFromGitHub = (articleId: string, userId: string) =>
+  Effect.gen(function* () {
+    const articleRepo = yield* ArticleRepository
+    const gitProvider = yield* GitProviderRepository
+
+    // Get article with site information
+    const article = yield* articleRepo.findById(articleId)
+
+    if (!article) {
+      return yield* new ArticleNotFoundError({ articleId })
+    }
+
+    // Check if user has access to this article
+    if (article.site.userId !== userId) {
+      return yield* new ArticleAccessDeniedError({ articleId, userId })
+    }
+
+    if (!article.site.gitRepo) {
+      return {
+        deleted: false,
+        reason: 'Site does not have a linked Git repository',
+      }
+    }
+
+    // Get user's GitHub access token
+    const accessToken = yield* AuthService.getUserGitHubToken(userId)
+
+    // Delete from Git repository
+    const result = yield* gitProvider.deleteArticleFromRepo(
+      accessToken,
+      article.site.gitRepo,
+      article.slug
+    )
+
+    yield* Effect.logInfo(
+      `Article deletion from Git repository: ${article.title} -> deleted: ${result.deleted}`
+    )
+
+    return {
+      deleted: result.deleted,
+      reason: result.reason,
+      filePath: result.filePath,
+    }
+  })

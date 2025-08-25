@@ -1,9 +1,9 @@
 import { Effect } from 'effect'
 
+import { GitProviderRepository } from '../../repositories/git-provider-repository'
 import { SiteRepository } from '../../repositories/site-repository'
 import * as ArticleService from '../article'
 import * as AuthService from '../auth-service'
-import * as GitHubService from '../github-service'
 import {
   SiteCreationError,
   DuplicateSiteNameError,
@@ -13,6 +13,7 @@ import {
 export const createSite = (data: CreateSiteData) =>
   Effect.gen(function* () {
     const siteRepo = yield* SiteRepository
+    const gitProvider = yield* GitProviderRepository
 
     try {
       // Step 1: Get user's GitHub access token
@@ -22,7 +23,7 @@ export const createSite = (data: CreateSiteData) =>
       const githubUser = yield* AuthService.fetchGitHubUser(accessToken)
 
       // Step 3: Create GitHub repository with Pages (always use template)
-      const githubRepo = yield* GitHubService.createRepositoryWithPages(
+      const githubRepo = yield* gitProvider.createRepositoryWithPages(
         accessToken,
         {
           name: data.name,

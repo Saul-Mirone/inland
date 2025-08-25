@@ -6,6 +6,7 @@ import {
   type ArticleUpdateData,
 } from '../../repositories/article-repository'
 import { SiteRepository } from '../../repositories/site-repository'
+import * as ArticleGitHub from './article-github'
 import {
   ArticleNotFoundError,
   ArticleCreationError,
@@ -164,7 +165,33 @@ export const deleteArticle = (articleId: string, userId: string) =>
       return yield* new ArticleAccessDeniedError({ articleId, userId })
     }
 
+    // Delete from database first (this is always safe)
     const article = yield* articleRepo.delete(articleId)
+
+    // Try to delete from Git repository if article was published
+    let gitDeleted = false
+    let gitError: string | null = null
+    const hasGitRepo = Boolean(existingArticle.site.gitRepo)
+
+    if (hasGitRepo && existingArticle.status === 'published') {
+      try {
+        const gitDeleteResult = yield* ArticleGitHub.deleteArticleFromGitHub(
+          existingArticle.id, // Use the existing article ID since we found it
+          userId
+        )
+        gitDeleted = gitDeleteResult.deleted
+        if (!gitDeleteResult.deleted && gitDeleteResult.reason) {
+          gitError = gitDeleteResult.reason
+        }
+      } catch (error) {
+        gitError = error instanceof Error ? error.message : 'Unknown Git error'
+        yield* Effect.logError('Failed to delete article from Git repository', {
+          error,
+          articleId,
+          userId,
+        })
+      }
+    }
 
     return {
       article: {
@@ -177,8 +204,8 @@ export const deleteArticle = (articleId: string, userId: string) =>
         createdAt: article.createdAt,
         updatedAt: article.updatedAt,
       },
-      gitHubDeleted: false, // Set this based on whether it was published to GitHub
-      gitHubError: null,
-      hasGitHubRepo: Boolean(existingArticle.site.gitRepo),
+      gitDeleted,
+      gitError,
+      hasGitRepo,
     }
   })
