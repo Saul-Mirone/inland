@@ -16,14 +16,14 @@ export const createSite = (data: CreateSiteData) =>
     const gitProvider = yield* GitProviderRepository
 
     try {
-      // Step 1: Get user's GitHub access token
+      // Step 1: Get user's auth access token
       const accessToken = yield* AuthService.getUserAuthToken(data.userId)
 
-      // Step 2: Get user's GitHub username for template data
-      const githubUser = yield* AuthService.fetchUser(accessToken)
+      // Step 2: Get user's platform username for template data
+      const platformUser = yield* AuthService.fetchUser(accessToken)
 
-      // Step 3: Create GitHub repository with Pages (always use template)
-      const githubRepo = yield* gitProvider.createRepositoryWithPages(
+      // Step 3: Create Git repository with Pages (always use template)
+      const gitRepo = yield* gitProvider.createRepositoryWithPages(
         accessToken,
         {
           name: data.name,
@@ -35,8 +35,8 @@ export const createSite = (data: CreateSiteData) =>
           siteName: data.name,
           siteDescription: data.description || `Blog site: ${data.name}`,
           siteNameSlug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          siteAuthor: data.author || githubUser.username,
-          platformUsername: githubUser.username,
+          siteAuthor: data.author || platformUser.username,
+          platformUsername: platformUser.username,
         }
       )
 
@@ -44,10 +44,10 @@ export const createSite = (data: CreateSiteData) =>
       const site = yield* siteRepo.create({
         userId: data.userId,
         name: data.name,
-        gitRepo: githubRepo.fullName,
+        gitRepo: gitRepo.fullName,
         platform: 'github',
         deployStatus: 'deployed',
-        deployUrl: githubRepo.pagesUrl,
+        deployUrl: gitRepo.pagesUrl,
       })
 
       // Step 5: Import existing articles from GitHub repo
@@ -62,15 +62,15 @@ export const createSite = (data: CreateSiteData) =>
         )
       } catch (importError) {
         // Don't fail site creation if import fails, just log the error
-        yield* Effect.logError('Failed to import articles from GitHub repo', {
+        yield* Effect.logError('Failed to import articles from Git repo', {
           importError,
         })
       }
 
       return {
         ...site,
-        githubUrl: githubRepo.htmlUrl,
-        pagesUrl: githubRepo.pagesUrl,
+        gitUrl: gitRepo.htmlUrl,
+        pagesUrl: gitRepo.pagesUrl,
       }
     } catch (error) {
       if (

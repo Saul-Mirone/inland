@@ -7,5 +7,5 @@ export * from './site-operations'
 // Validation utilities
 export * from './site-validation'
 
-// GitHub integration
-export * from './site-github'
+// Git integration
+export * from './site-git'
