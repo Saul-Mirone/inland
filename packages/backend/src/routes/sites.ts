@@ -15,90 +15,78 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      try {
-        const userPayload = request.jwtPayload!
-        const { name, description, author } = request.body as {
-          name: string
-          description?: string
-          author?: string
-        }
+      const userPayload = request.jwtPayload!
+      const { name, description, author } = request.body as {
+        name: string
+        description?: string
+        author?: string
+      }
 
-        const createSite = Effect.gen(function* () {
-          // Validate input data
-          const validName = yield* SiteService.validateSiteName(name)
+      const createSite = Effect.gen(function* () {
+        // Validate input data
+        const validName = yield* SiteService.validateSiteName(name)
 
-          // Create the site with GitHub integration
-          const site = yield* SiteService.createSite({
-            userId: userPayload.userId,
-            name: validName,
-            description,
-            author,
-          })
-
-          return { site }
+        // Create the site with GitHub integration
+        const site = yield* SiteService.createSite({
+          userId: userPayload.userId,
+          name: validName,
+          description,
+          author,
         })
 
-        const result = await runtime.runPromise(createSite)
-        return reply.code(201).send(result)
-      } catch (error) {
-        fastify.log.error(error)
+        return { site }
+      })
 
-        if (error instanceof Error) {
-          // Handle validation errors
-          if (error.message.includes('Site name')) {
-            return reply.code(400).send({ error: error.message })
-          }
+      return runtime.runPromise(
+        createSite.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
 
-          // Handle GitHub API errors
-          if (error.message.includes('AuthProviderAPIError')) {
-            return reply.code(502).send({
-              error:
-                'GitHub API error. Please check your access token and try again.',
-            })
-          }
+                // Type-safe error handling using _tag
+                if (
+                  typeof error === 'object' &&
+                  error !== null &&
+                  '_tag' in error
+                ) {
+                  switch (error._tag) {
+                    case 'SiteAccessError':
+                      return reply.code(403).send({
+                        error: 'Access denied to site',
+                      })
+                    case 'AuthTokenError':
+                      return reply.code(401).send({
+                        error:
+                          'Your connection has expired. Please reconnect your account.',
+                      })
+                    case 'DuplicateSiteNameError':
+                      return reply.code(409).send({
+                        error: 'A site with this name already exists',
+                      })
+                    case 'SiteCreationError':
+                      return reply.code(500).send({
+                        error: 'Failed to create site',
+                      })
+                  }
+                }
 
-          // Handle repository creation errors
-          if (error.message.includes('RepositoryCreationError')) {
-            return reply.code(400).send({
-              error:
-                'Failed to create GitHub repository. Repository name might already exist.',
-            })
-          }
+                // Fallback for non-tagged errors (validation errors)
+                if (error instanceof Error) {
+                  if (error.message.includes('Site name')) {
+                    return reply.code(400).send({ error: error.message })
+                  }
+                }
 
-          // Handle GitHub Pages deployment errors
-          if (error.message.includes('PagesDeploymentError')) {
-            return reply.code(502).send({
-              error:
-                'Repository created but GitHub Pages setup failed. You can enable it manually.',
-            })
-          }
-
-          // Handle missing GitHub integration
-          if (error.message.includes('No GitHub integration found')) {
-            return reply.code(400).send({
-              error:
-                'No GitHub account connected. Please connect your GitHub account first.',
-            })
-          }
-
-          // Handle invalid GitHub token
-          if (error.message.includes('GitHub token is invalid')) {
-            return reply.code(401).send({
-              error:
-                'Your GitHub connection has expired. Please reconnect your GitHub account.',
-            })
-          }
-
-          // Handle duplicate site name
-          if (error.message.includes('DuplicateSiteNameError')) {
-            return reply
-              .code(409)
-              .send({ error: 'A site with this name already exists' })
-          }
-        }
-
-        return reply.code(500).send({ error: 'Failed to create site' })
-      }
+                return reply.code(500).send({ error: 'Failed to create site' })
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.code(201).send(result)
+              }),
+          })
+        )
+      )
     }
   )
 
@@ -109,20 +97,28 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      try {
-        const userPayload = request.jwtPayload!
+      const userPayload = request.jwtPayload!
 
-        const getUserSites = Effect.gen(function* () {
-          const sites = yield* SiteService.findUserSites(userPayload.userId)
-          return { sites }
-        })
+      const getUserSites = Effect.gen(function* () {
+        const sites = yield* SiteService.findUserSites(userPayload.userId)
+        return { sites }
+      })
 
-        const result = await runtime.runPromise(getUserSites)
-        return reply.send(result)
-      } catch (error) {
-        fastify.log.error(error)
-        return reply.code(500).send({ error: 'Failed to fetch sites' })
-      }
+      return runtime.runPromise(
+        getUserSites.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
+                return reply.code(500).send({ error: 'Failed to fetch sites' })
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.send(result)
+              }),
+          })
+        )
+      )
     }
   )
 
@@ -133,41 +129,53 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      try {
-        const userPayload = request.jwtPayload!
-        const { id } = request.params as { id: string }
+      const userPayload = request.jwtPayload!
+      const { id } = request.params as { id: string }
 
-        const getSite = Effect.gen(function* () {
-          const site = yield* SiteService.findSiteById(id)
+      const getSite = Effect.gen(function* () {
+        const site = yield* SiteService.findSiteById(id)
 
-          // Check if user has access to this site
-          if (site.userId !== userPayload.userId) {
-            return yield* new SiteService.SiteAccessDeniedError({
-              siteId: id,
-              userId: userPayload.userId,
-            })
-          }
-
-          return { site }
-        })
-
-        const result = await runtime.runPromise(getSite)
-        return reply.send(result)
-      } catch (error) {
-        fastify.log.error(error)
-
-        if (error instanceof Error) {
-          if (error.message.includes('SiteNotFoundError')) {
-            return reply.code(404).send({ error: 'Site not found' })
-          }
-
-          if (error.message.includes('SiteAccessDeniedError')) {
-            return reply.code(403).send({ error: 'Access denied' })
-          }
+        // Check if user has access to this site
+        if (site.userId !== userPayload.userId) {
+          return yield* new SiteService.SiteAccessDeniedError({
+            siteId: id,
+            userId: userPayload.userId,
+          })
         }
 
-        return reply.code(500).send({ error: 'Failed to fetch site' })
-      }
+        return { site }
+      })
+
+      return runtime.runPromise(
+        getSite.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
+
+                // Type-safe error handling using _tag
+                if (
+                  typeof error === 'object' &&
+                  error !== null &&
+                  '_tag' in error
+                ) {
+                  switch (error._tag) {
+                    case 'SiteNotFoundError':
+                      return reply.code(404).send({ error: 'Site not found' })
+                    case 'SiteAccessDeniedError':
+                      return reply.code(403).send({ error: 'Access denied' })
+                  }
+                }
+
+                return reply.code(500).send({ error: 'Failed to fetch site' })
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.send(result)
+              }),
+          })
+        )
+      )
     }
   )
 
@@ -178,85 +186,98 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      try {
-        const userPayload = request.jwtPayload!
-        const { id } = request.params as { id: string }
-        const updateData = request.body as {
+      const userPayload = request.jwtPayload!
+      const { id } = request.params as { id: string }
+      const updateData = request.body as {
+        name?: string
+        gitRepo?: string
+        platform?: string
+        deployStatus?: string
+      }
+
+      const updateSite = Effect.gen(function* () {
+        // Validate updated data if provided
+        const validatedData: {
           name?: string
           gitRepo?: string
           platform?: string
           deployStatus?: string
-        }
+        } = {}
 
-        const updateSite = Effect.gen(function* () {
-          // Validate updated data if provided
-          const validatedData: {
-            name?: string
-            gitRepo?: string
-            platform?: string
-            deployStatus?: string
-          } = {}
-
-          if (updateData.name) {
-            validatedData.name = yield* SiteService.validateSiteName(
-              updateData.name
-            )
-          }
-
-          if (updateData.gitRepo) {
-            validatedData.gitRepo = yield* SiteService.validateGitRepo(
-              updateData.gitRepo
-            )
-          }
-
-          if (updateData.platform) {
-            validatedData.platform = updateData.platform
-          }
-
-          if (updateData.deployStatus) {
-            validatedData.deployStatus = updateData.deployStatus
-          }
-
-          // Update the site
-          const site = yield* SiteService.updateSite(
-            id,
-            userPayload.userId,
-            validatedData
+        if (updateData.name) {
+          validatedData.name = yield* SiteService.validateSiteName(
+            updateData.name
           )
-
-          return { site }
-        })
-
-        const result = await runtime.runPromise(updateSite)
-        return reply.send(result)
-      } catch (error) {
-        fastify.log.error(error)
-
-        if (error instanceof Error) {
-          if (error.message.includes('SiteNotFoundError')) {
-            return reply.code(404).send({ error: 'Site not found' })
-          }
-
-          if (error.message.includes('SiteAccessDeniedError')) {
-            return reply.code(403).send({ error: 'Access denied' })
-          }
-
-          if (error.message.includes('DuplicateSiteNameError')) {
-            return reply
-              .code(409)
-              .send({ error: 'A site with this name already exists' })
-          }
-
-          if (
-            error.message.includes('Site name') ||
-            error.message.includes('Git repository')
-          ) {
-            return reply.code(400).send({ error: error.message })
-          }
         }
 
-        return reply.code(500).send({ error: 'Failed to update site' })
-      }
+        if (updateData.gitRepo) {
+          validatedData.gitRepo = yield* SiteService.validateGitRepo(
+            updateData.gitRepo
+          )
+        }
+
+        if (updateData.platform) {
+          validatedData.platform = updateData.platform
+        }
+
+        if (updateData.deployStatus) {
+          validatedData.deployStatus = updateData.deployStatus
+        }
+
+        // Update the site
+        const site = yield* SiteService.updateSite(
+          id,
+          userPayload.userId,
+          validatedData
+        )
+
+        return { site }
+      })
+
+      return runtime.runPromise(
+        updateSite.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
+
+                // Type-safe error handling using _tag
+                if (
+                  typeof error === 'object' &&
+                  error !== null &&
+                  '_tag' in error
+                ) {
+                  switch (error._tag) {
+                    case 'SiteNotFoundError':
+                      return reply.code(404).send({ error: 'Site not found' })
+                    case 'SiteAccessDeniedError':
+                      return reply.code(403).send({ error: 'Access denied' })
+                    case 'DuplicateSiteNameError':
+                      return reply.code(409).send({
+                        error: 'A site with this name already exists',
+                      })
+                  }
+                }
+
+                // Fallback for non-tagged errors (validation errors)
+                if (error instanceof Error) {
+                  if (
+                    error.message.includes('Site name') ||
+                    error.message.includes('Git repository')
+                  ) {
+                    return reply.code(400).send({ error: error.message })
+                  }
+                }
+
+                return reply.code(500).send({ error: 'Failed to update site' })
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.send(result)
+              }),
+          })
+        )
+      )
     }
   )
 
@@ -267,32 +288,44 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      try {
-        const userPayload = request.jwtPayload!
-        const { id } = request.params as { id: string }
+      const userPayload = request.jwtPayload!
+      const { id } = request.params as { id: string }
 
-        const deleteSite = Effect.gen(function* () {
-          const site = yield* SiteService.deleteSite(id, userPayload.userId)
-          return { message: 'Site deleted successfully', site }
-        })
+      const deleteSite = Effect.gen(function* () {
+        const site = yield* SiteService.deleteSite(id, userPayload.userId)
+        return { message: 'Site deleted successfully', site }
+      })
 
-        const result = await runtime.runPromise(deleteSite)
-        return reply.send(result)
-      } catch (error) {
-        fastify.log.error(error)
+      return runtime.runPromise(
+        deleteSite.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
 
-        if (error instanceof Error) {
-          if (error.message.includes('SiteNotFoundError')) {
-            return reply.code(404).send({ error: 'Site not found' })
-          }
+                // Type-safe error handling using _tag
+                if (
+                  typeof error === 'object' &&
+                  error !== null &&
+                  '_tag' in error
+                ) {
+                  switch (error._tag) {
+                    case 'SiteNotFoundError':
+                      return reply.code(404).send({ error: 'Site not found' })
+                    case 'SiteAccessDeniedError':
+                      return reply.code(403).send({ error: 'Access denied' })
+                  }
+                }
 
-          if (error.message.includes('SiteAccessDeniedError')) {
-            return reply.code(403).send({ error: 'Access denied' })
-          }
-        }
-
-        return reply.code(500).send({ error: 'Failed to delete site' })
-      }
+                return reply.code(500).send({ error: 'Failed to delete site' })
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.send(result)
+              }),
+          })
+        )
+      )
     }
   )
 }

@@ -33,8 +33,44 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
         }
       })
 
-      const result = await runtime.runPromise(processOAuth)
-      return reply.redirect(result.redirectUrl)
+      return runtime.runPromise(
+        processOAuth.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
+
+                // Type-safe error handling using _tag
+                if (
+                  typeof error === 'object' &&
+                  error !== null &&
+                  '_tag' in error
+                ) {
+                  switch (error._tag) {
+                    case 'AuthProviderAPIError':
+                      return reply.redirect(
+                        'http://localhost:3000/auth/error?reason=provider'
+                      )
+                    case 'AuthTokenError':
+                      return reply.redirect(
+                        'http://localhost:3000/auth/error?reason=token'
+                      )
+                    case 'UserCreationError':
+                      return reply.redirect(
+                        'http://localhost:3000/auth/error?reason=user'
+                      )
+                  }
+                }
+
+                return reply.redirect('http://localhost:3000/auth/error')
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.redirect(result.redirectUrl)
+              }),
+          })
+        )
+      )
     } catch (error) {
       fastify.log.error(error)
       return reply.redirect('http://localhost:3000/auth/error')
@@ -48,33 +84,56 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      try {
-        const userPayload = request.jwtPayload!
+      const userPayload = request.jwtPayload!
 
-        const getUserInfo = Effect.gen(function* () {
-          const user = yield* UserService.findUserById(userPayload.userId)
+      const getUserInfo = Effect.gen(function* () {
+        const user = yield* UserService.findUserById(userPayload.userId)
 
-          return {
-            user: {
-              id: user.id,
-              username: user.username,
-              email: user.email,
-              avatarUrl: user.avatarUrl,
-              createdAt: user.createdAt,
-              gitIntegrations: user.gitIntegrations.map((integration) => ({
-                platform: integration.platform,
-                platformUsername: integration.platformUsername,
-              })),
-            },
-          }
-        })
+        return {
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            avatarUrl: user.avatarUrl,
+            createdAt: user.createdAt,
+            gitIntegrations: user.gitIntegrations.map((integration) => ({
+              platform: integration.platform,
+              platformUsername: integration.platformUsername,
+            })),
+          },
+        }
+      })
 
-        const result = await runtime.runPromise(getUserInfo)
-        return reply.send(result)
-      } catch (error) {
-        fastify.log.error(error)
-        return reply.code(404).send({ error: 'User not found' })
-      }
+      return runtime.runPromise(
+        getUserInfo.pipe(
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.sync(() => {
+                fastify.log.error(error)
+
+                // Type-safe error handling using _tag
+                if (
+                  typeof error === 'object' &&
+                  error !== null &&
+                  '_tag' in error
+                ) {
+                  switch (error._tag) {
+                    case 'UserNotFoundError':
+                      return reply.code(404).send({ error: 'User not found' })
+                  }
+                }
+
+                return reply
+                  .code(500)
+                  .send({ error: 'Failed to fetch user info' })
+              }),
+            onSuccess: (result) =>
+              Effect.sync(() => {
+                return reply.send(result)
+              }),
+          })
+        )
+      )
     }
   )
 
