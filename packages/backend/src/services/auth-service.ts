@@ -3,7 +3,7 @@ import { Effect, Data } from 'effect'
 import type { GitHubUser, GitHubEmail, JWTPayload } from '../types/auth'
 
 import { DatabaseService } from './database-service'
-import * as UserService from './user-service'
+import * as UserService from './user'
 
 export class GitHubAPIError extends Data.TaggedError('GitHubAPIError')<{
   readonly message: string

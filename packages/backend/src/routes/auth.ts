@@ -4,7 +4,7 @@ import { Effect } from 'effect'
 
 import * as AuthService from '../services/auth-service'
 import { ConfigService } from '../services/config-service'
-import * as UserService from '../services/user-service'
+import * as UserService from '../services/user'
 import { createAppRuntime } from '../utils/effect-runtime'
 
 export const authEffectRoutes = async (fastify: FastifyInstance) => {
