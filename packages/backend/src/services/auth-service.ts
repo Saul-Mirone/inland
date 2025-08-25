@@ -1,13 +1,18 @@
 import { Effect, Data } from 'effect'
 
-import type { GitHubUser, GitHubEmail, JWTPayload } from '../types/auth'
+import type { JWTPayload } from '../types/auth'
 
-import { DatabaseService } from './database-service'
+import { GitProviderRepository } from '../repositories/git-provider-repository'
+import { UserRepository } from '../repositories/user-repository'
 import * as UserService from './user'
 
 export class GitHubAPIError extends Data.TaggedError('GitHubAPIError')<{
   readonly message: string
   readonly status?: number
+}> {}
+
+export class GitHubTokenError extends Data.TaggedError('GitHubTokenError')<{
+  readonly message: string
 }> {}
 
 export class TokenGenerationError extends Data.TaggedError(
@@ -24,122 +29,40 @@ export interface GitHubTokenResponse {
 
 export const fetchGitHubUser = (accessToken: string) =>
   Effect.gen(function* () {
-    const response = yield* Effect.tryPromise({
-      try: () =>
-        fetch('https://api.github.com/user', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'User-Agent': 'Inland-CMS',
-          },
-        }),
-      catch: (error) =>
-        new GitHubAPIError({
-          message: error instanceof Error ? error.message : 'Network error',
-        }),
-    })
-
-    if (!response.ok) {
-      return yield* new GitHubAPIError({
-        message: 'Failed to fetch user info from GitHub',
-        status: response.status,
-      })
-    }
-
-    const user = yield* Effect.tryPromise({
-      try: () => response.json() as Promise<GitHubUser>,
-      catch: () =>
-        new GitHubAPIError({
-          message: 'Failed to parse GitHub user response',
-        }),
-    })
-
-    return user
+    const gitProvider = yield* GitProviderRepository
+    return yield* gitProvider.fetchGitHubUser(accessToken)
   })
 
 export const fetchGitHubUserEmail = (accessToken: string) =>
   Effect.gen(function* () {
-    const response = yield* Effect.tryPromise({
-      try: () =>
-        fetch('https://api.github.com/user/emails', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'User-Agent': 'Inland-CMS',
-          },
-        }),
-      catch: (error) =>
-        new GitHubAPIError({
-          message: error instanceof Error ? error.message : 'Network error',
-        }),
-    })
-
-    if (!response.ok) {
-      return null
-    }
-
-    const emails = yield* Effect.tryPromise({
-      try: () => response.json() as Promise<GitHubEmail[]>,
-      catch: () => null,
-    })
-
-    if (!emails) return null
-
-    const primaryEmail = emails.find((e) => e.primary)
-    return primaryEmail?.email || null
+    const gitProvider = yield* GitProviderRepository
+    return yield* gitProvider.fetchGitHubUserEmail(accessToken)
   })
 
 export const getUserGitHubToken = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const userRepo = yield* UserRepository
+    const gitProvider = yield* GitProviderRepository
 
-    const gitIntegration = yield* Effect.promise(() =>
-      prisma.gitIntegration.findFirst({
-        where: {
-          userId,
-          platform: 'github',
-        },
-        select: {
-          id: true,
-          accessToken: true,
-        },
+    const accessToken = yield* userRepo.getGitHubToken(userId)
+
+    if (!accessToken) {
+      return yield* new GitHubTokenError({
+        message: 'No GitHub integration found for user',
       })
-    )
-
-    if (!gitIntegration) {
-      return yield* Effect.fail('No GitHub integration found for user')
     }
 
-    const accessToken = (gitIntegration as { id: string; accessToken: string })
-      .accessToken
+    // Validate token using git provider
+    const validation = yield* gitProvider.validateGitHubToken(accessToken)
 
-    // Validate token by testing it with GitHub API
-    const response = yield* Effect.tryPromise({
-      try: () =>
-        fetch('https://api.github.com/user', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'User-Agent': 'Inland-CMS/1.0',
-          },
-        }),
-      catch: () => new Error('Failed to validate GitHub token'),
-    })
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token is invalid, clear it from database
-        yield* Effect.promise(() =>
-          prisma.gitIntegration.update({
-            where: { id: (gitIntegration as { id: string }).id },
-            data: {
-              accessToken: '',
-              updatedAt: new Date(),
-            },
-          })
-        )
-        return yield* Effect.fail(
-          'GitHub token is invalid. Please reconnect your GitHub account.'
-        )
-      }
-      return yield* Effect.fail(`GitHub API error: ${response.status}`)
+    if (!validation.isValid) {
+      // Token is invalid, clear it from database
+      yield* userRepo.clearGitHubToken(userId)
+      return yield* new GitHubTokenError({
+        message:
+          validation.reason ||
+          'GitHub token is invalid. Please reconnect your GitHub account.',
+      })
     }
 
     return accessToken

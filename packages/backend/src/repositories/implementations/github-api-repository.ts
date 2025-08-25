@@ -9,6 +9,8 @@ import type {
   GitProviderError,
   RepositoryCreationError,
   PagesDeploymentError,
+  GitHubUser,
+  GitHubEmail,
 } from '../git-provider-repository'
 
 // GitHub API response types
@@ -539,4 +541,43 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         ...(repoInfo as Record<string, unknown>),
       }
     }),
+
+  fetchGitHubUser: (accessToken: string) =>
+    Effect.gen(function* () {
+      const user = yield* makeGitHubApiRequest(accessToken, '/user')
+      return user as GitHubUser
+    }),
+
+  fetchGitHubUserEmail: (accessToken: string) =>
+    Effect.gen(function* () {
+      const emails = yield* makeGitHubApiRequest(accessToken, '/user/emails')
+
+      if (!Array.isArray(emails)) {
+        return null
+      }
+
+      const emailArray = emails as GitHubEmail[]
+      const primaryEmail = emailArray.find((e) => e.primary)
+      return primaryEmail?.email || null
+    }).pipe(Effect.catchAll(() => Effect.succeed(null))),
+
+  validateGitHubToken: (accessToken: string) =>
+    Effect.gen(function* () {
+      try {
+        yield* makeGitHubApiRequest(accessToken, '/user')
+        return { isValid: true }
+      } catch {
+        return {
+          isValid: false,
+          reason: 'GitHub token is invalid or expired',
+        }
+      }
+    }).pipe(
+      Effect.catchAll(() =>
+        Effect.succeed({
+          isValid: false,
+          reason: 'GitHub token validation failed',
+        })
+      )
+    ),
 })

@@ -99,6 +99,43 @@ const upsertGitIntegration = (data: CreateGitIntegrationData) =>
     )
   })
 
+const getGitHubToken = (userId: string) =>
+  Effect.gen(function* () {
+    const { prisma } = yield* DatabaseService
+
+    const gitIntegration = yield* Effect.promise(() =>
+      prisma.gitIntegration.findFirst({
+        where: {
+          userId,
+          platform: 'github',
+        },
+        select: {
+          accessToken: true,
+        },
+      })
+    )
+
+    return gitIntegration?.accessToken || null
+  })
+
+const clearGitHubToken = (userId: string) =>
+  Effect.gen(function* () {
+    const { prisma } = yield* DatabaseService
+
+    yield* Effect.promise(() =>
+      prisma.gitIntegration.updateMany({
+        where: {
+          userId,
+          platform: 'github',
+        },
+        data: {
+          accessToken: '',
+          updatedAt: new Date(),
+        },
+      })
+    )
+  })
+
 // Repository implementation using atomic operations
 export const PrismaUserRepositoryLive = Layer.effect(
   UserRepository,
@@ -108,5 +145,7 @@ export const PrismaUserRepositoryLive = Layer.effect(
     findById: findUserById,
     upsert: upsertUser,
     upsertGitIntegration: upsertGitIntegration,
+    getGitHubToken: getGitHubToken,
+    clearGitHubToken: clearGitHubToken,
   } satisfies UserRepositoryService)
 )

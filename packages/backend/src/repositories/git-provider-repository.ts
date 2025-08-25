@@ -55,6 +55,25 @@ export interface PagesDeploymentError {
   readonly reason: string
 }
 
+// GitHub user authentication types
+export interface GitHubUser {
+  readonly id: number
+  readonly login: string
+  readonly email: string | null
+  readonly avatar_url: string
+}
+
+export interface GitHubEmail {
+  readonly email: string
+  readonly primary: boolean
+  readonly verified: boolean
+}
+
+export interface GitHubTokenValidationResult {
+  readonly isValid: boolean
+  readonly reason?: string
+}
+
 // Main Git provider interface
 export interface GitProviderRepositoryService {
   /**
@@ -115,6 +134,27 @@ export interface GitProviderRepositoryService {
     { defaultBranch: string; [key: string]: unknown },
     GitProviderError
   >
+
+  /**
+   * Fetch GitHub user information
+   */
+  readonly fetchGitHubUser: (
+    accessToken: string
+  ) => Effect.Effect<GitHubUser, GitProviderError>
+
+  /**
+   * Fetch GitHub user email information
+   */
+  readonly fetchGitHubUserEmail: (
+    accessToken: string
+  ) => Effect.Effect<string | null, GitProviderError>
+
+  /**
+   * Validate GitHub access token
+   */
+  readonly validateGitHubToken: (
+    accessToken: string
+  ) => Effect.Effect<GitHubTokenValidationResult, GitProviderError>
 }
 
 // Effect Context for dependency injection
