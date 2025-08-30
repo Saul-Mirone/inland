@@ -15,6 +15,34 @@ import { createAppRuntime } from '../utils/effect-runtime'
 export const authEffectRoutes = async (fastify: FastifyInstance) => {
   const runtime = createAppRuntime(fastify.prisma)
 
+  // Atomic effect to get app URL for redirects
+  const getAppUrl = Effect.gen(function* () {
+    const config = yield* ConfigService
+    return config.appUrl
+  })
+
+  // Atomic effect to create error redirect URL
+  const createErrorRedirect = (reason?: string) =>
+    Effect.gen(function* () {
+      const appUrl = yield* getAppUrl
+      const errorPath = reason ? `/auth/error?reason=${reason}` : '/auth/error'
+      return `${appUrl}${errorPath}`
+    })
+
+  // Atomic effect to get GitHub access token
+  const getGitHubToken = (
+    request: TypedFastifyRequest<unknown, unknown, Schemas.GitHubCallbackQuery>
+  ) =>
+    Effect.tryPromise({
+      try: () =>
+        fastify.github.getAccessTokenFromAuthorizationCodeFlow(request),
+      catch: (error) =>
+        new AuthService.GitHubTokenError({
+          message: 'Failed to get GitHub access token',
+          cause: error,
+        }),
+    })
+
   // GitHub OAuth callback handler with Effect
   fastify.get(
     '/auth/github/callback',
@@ -33,67 +61,61 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
       >,
       reply
     ) => {
-      try {
+      const handleOAuthCallback = Effect.gen(function* () {
         const query = request.validatedQuery!
 
         // Check for OAuth errors first
         if (query.error) {
-          fastify.log.warn(
+          yield* Effect.logWarning(
             `OAuth error: ${query.error} - ${query.error_description || 'No description'}`
           )
-          return reply.redirect(
-            'http://localhost:3000/auth/error?reason=provider'
-          )
+
+          const redirectUrl = yield* createErrorRedirect('provider')
+          return reply.redirect(redirectUrl)
         }
 
-        // Exchange code for access token (keeping this as regular async/await)
-        const { token } =
-          await fastify.github.getAccessTokenFromAuthorizationCodeFlow(request)
+        // Exchange code for access token using Effect
+        const { token } = yield* getGitHubToken(request)
 
         // Process GitHub OAuth using Effect services
-        const processOAuth = Effect.gen(function* () {
-          const { user } = yield* AuthService.processOAuth(token.access_token)
-          const config = yield* ConfigService
+        const { user } = yield* AuthService.processOAuth(token.access_token)
+        const config = yield* ConfigService
 
-          // Generate JWT payload
-          const jwtPayload = AuthService.generateJWTPayload(user)
+        // Generate JWT payload
+        const jwtPayload = AuthService.generateJWTPayload(user)
 
-          // Generate JWT token
-          const jwtToken = fastify.jwt.sign(jwtPayload)
+        // Generate JWT token
+        const jwtToken = fastify.jwt.sign(jwtPayload)
 
-          return {
-            redirectUrl: `${config.appUrl}/auth/callback?token=${jwtToken}`,
-          }
-        })
+        const successUrl = `${config.appUrl}/auth/callback?token=${jwtToken}`
+        return reply.redirect(successUrl)
+      })
 
-        return runtime.runPromise(
-          processOAuth.pipe(
-            Effect.catchTag('AuthProviderAPIError', () =>
-              Effect.sync(() =>
-                reply.redirect(
-                  'http://localhost:3000/auth/error?reason=provider'
-                )
-              )
-            ),
-            Effect.matchEffect({
-              onFailure: (error) =>
-                Effect.sync(() => {
-                  fastify.log.error(error)
-                  return reply.redirect('http://localhost:3000/auth/error')
-                }),
-              onSuccess: (result) =>
-                Effect.sync(() => {
-                  return reply.redirect(
-                    (result as { redirectUrl: string }).redirectUrl
-                  )
-                }),
-            })
-          )
+      return runtime.runPromise(
+        handleOAuthCallback.pipe(
+          Effect.catchTags({
+            GitHubTokenError: () =>
+              Effect.gen(function* () {
+                const redirectUrl = yield* createErrorRedirect('provider')
+                return reply.redirect(redirectUrl)
+              }),
+            AuthProviderAPIError: () =>
+              Effect.gen(function* () {
+                const redirectUrl = yield* createErrorRedirect('provider')
+                return reply.redirect(redirectUrl)
+              }),
+          }),
+          Effect.matchEffect({
+            onFailure: (error) =>
+              Effect.gen(function* () {
+                yield* Effect.logError('OAuth callback failed', error)
+                const redirectUrl = yield* createErrorRedirect()
+                return reply.redirect(redirectUrl)
+              }),
+            onSuccess: (result) => Effect.succeed(result),
+          })
         )
-      } catch (error) {
-        fastify.log.error(error)
-        return reply.redirect('http://localhost:3000/auth/error')
-      }
+      )
     }
   )
 

@@ -16,6 +16,11 @@ export class TokenGenerationError extends Data.TaggedError(
   readonly reason: string
 }> {}
 
+export class GitHubTokenError extends Data.TaggedError('GitHubTokenError')<{
+  readonly message: string
+  readonly cause?: unknown
+}> {}
+
 export interface TokenResponse {
   readonly access_token: string
   readonly token_type: string
