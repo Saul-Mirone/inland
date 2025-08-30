@@ -2,6 +2,11 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
+import {
+  withSchemaValidation,
+  type TypedFastifyRequest,
+} from '../plugins/schema-validation'
+import * as Schemas from '../schemas'
 import * as SiteService from '../services/site'
 import { createAppRuntime } from '../utils/effect-runtime'
 
@@ -12,15 +17,16 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
   fastify.post(
     '/sites',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          body: Schemas.CreateSiteData,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (request: TypedFastifyRequest<Schemas.CreateSiteData>, reply) => {
       const userPayload = request.jwtPayload!
-      const { name, description, author } = request.body as {
-        name: string
-        description?: string
-        author?: string
-      }
+      const { name, description, author } = request.validatedBody!
 
       const createSite = Effect.gen(function* () {
         // Validate input data
@@ -126,11 +132,16 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
   fastify.get(
     '/sites/:id',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.SiteParam,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (request: TypedFastifyRequest<never, Schemas.SiteParam>, reply) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
+      const { id } = request.validatedParams!
 
       const getSite = Effect.gen(function* () {
         const site = yield* SiteService.findSiteById(id)
@@ -183,17 +194,21 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
   fastify.put(
     '/sites/:id',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.SiteParam,
+          body: Schemas.UpdateSiteData,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<Schemas.UpdateSiteData, Schemas.SiteParam>,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
-      const updateData = request.body as {
-        name?: string
-        gitRepo?: string
-        platform?: string
-        deployStatus?: string
-      }
+      const { id } = request.validatedParams!
+      const updateData = request.validatedBody!
 
       const updateSite = Effect.gen(function* () {
         // Validate updated data if provided
@@ -285,11 +300,16 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
   fastify.delete(
     '/sites/:id',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.SiteParam,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (request: TypedFastifyRequest<unknown, Schemas.SiteParam>, reply) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
+      const { id } = request.validatedParams!
 
       const deleteSite = Effect.gen(function* () {
         const site = yield* SiteService.deleteSite(id, userPayload.userId)

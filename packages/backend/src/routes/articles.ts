@@ -2,6 +2,11 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
+import {
+  withSchemaValidation,
+  type TypedFastifyRequest,
+} from '../plugins/schema-validation'
+import * as Schemas from '../schemas'
 import * as ArticleService from '../services/article'
 import { createAppRuntime } from '../utils/effect-runtime'
 
@@ -12,17 +17,16 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
   fastify.post(
     '/articles',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          body: Schemas.CreateArticleData,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (request: TypedFastifyRequest<Schemas.CreateArticleData>, reply) => {
       const userPayload = request.jwtPayload!
-      const { siteId, title, slug, content, status } = request.body as {
-        siteId: string
-        title: string
-        slug?: string
-        content: string
-        status?: 'draft' | 'published'
-      }
+      const { siteId, title, slug, content, status } = request.validatedBody!
 
       const createArticle = Effect.gen(function* () {
         // Validate input data
@@ -102,11 +106,19 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
   fastify.get(
     '/sites/:siteId/articles',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.SiteIdParam,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<unknown, Schemas.SiteIdParam>,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
-      const { siteId } = request.params as { siteId: string }
+      const { siteId } = request.validatedParams!
 
       const getSiteArticles = Effect.gen(function* () {
         const articles = yield* ArticleService.findSiteArticles(
@@ -191,11 +203,19 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
   fastify.get(
     '/articles/:id',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.ArticleIdParam,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<unknown, Schemas.ArticleIdParam>,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
+      const { id } = request.validatedParams!
 
       const getArticle = Effect.gen(function* () {
         const article = yield* ArticleService.findArticleById(id)
@@ -252,17 +272,24 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
   fastify.put(
     '/articles/:id',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.ArticleIdParam,
+          body: Schemas.UpdateArticleData,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<
+        Schemas.UpdateArticleData,
+        Schemas.ArticleIdParam
+      >,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
-      const updateData = request.body as {
-        title?: string
-        slug?: string
-        content?: string
-        status?: 'draft' | 'published'
-      }
+      const { id } = request.validatedParams!
+      const updateData = request.validatedBody!
 
       const updateArticle = Effect.gen(function* () {
         // Validate updated data if provided
@@ -359,11 +386,19 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
   fastify.delete(
     '/articles/:id',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.ArticleIdParam,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<unknown, Schemas.ArticleIdParam>,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
+      const { id } = request.validatedParams!
 
       const deleteArticle = Effect.gen(function* () {
         const article = yield* ArticleService.deleteArticle(
@@ -410,15 +445,23 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
     }
   )
 
-  // Publish an article to GitHub
+  // Publish an article to Git
   fastify.post(
     '/articles/:id/publish',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          params: Schemas.ArticleIdParam,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<unknown, Schemas.ArticleIdParam>,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
-      const { id } = request.params as { id: string }
+      const { id } = request.validatedParams!
 
       const publishArticle = Effect.gen(function* () {
         const result = yield* ArticleService.publishArticleToGit(

@@ -2,6 +2,11 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
+import {
+  withSchemaValidation,
+  type TypedFastifyRequest,
+} from '../plugins/schema-validation'
+import * as Schemas from '../schemas'
 import * as AuthService from '../services/auth-service'
 import { ConfigService } from '../services/config-service'
 import * as UserService from '../services/user'
@@ -11,71 +16,100 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
   const runtime = createAppRuntime(fastify.prisma)
 
   // GitHub OAuth callback handler with Effect
-  fastify.get('/auth/github/callback', async (request, reply) => {
-    try {
-      // Exchange code for access token (keeping this as regular async/await)
-      const { token } =
-        await fastify.github.getAccessTokenFromAuthorizationCodeFlow(request)
+  fastify.get(
+    '/auth/github/callback',
+    {
+      preHandler: [
+        withSchemaValidation({
+          querystring: Schemas.GitHubCallbackQuery,
+        }),
+      ],
+    },
+    async (
+      request: TypedFastifyRequest<
+        unknown,
+        unknown,
+        Schemas.GitHubCallbackQuery
+      >,
+      reply
+    ) => {
+      try {
+        const query = request.validatedQuery!
 
-      // Process GitHub OAuth using Effect services
-      const processOAuth = Effect.gen(function* () {
-        const { user } = yield* AuthService.processOAuth(token.access_token)
-        const config = yield* ConfigService
-
-        // Generate JWT payload
-        const jwtPayload = AuthService.generateJWTPayload(user)
-
-        // Generate JWT token
-        const jwtToken = fastify.jwt.sign(jwtPayload)
-
-        return {
-          redirectUrl: `${config.appUrl}/auth/callback?token=${jwtToken}`,
+        // Check for OAuth errors first
+        if (query.error) {
+          fastify.log.warn(
+            `OAuth error: ${query.error} - ${query.error_description || 'No description'}`
+          )
+          return reply.redirect(
+            'http://localhost:3000/auth/error?reason=provider'
+          )
         }
-      })
 
-      return runtime.runPromise(
-        processOAuth.pipe(
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
+        // Exchange code for access token (keeping this as regular async/await)
+        const { token } =
+          await fastify.github.getAccessTokenFromAuthorizationCodeFlow(request)
 
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'AuthProviderAPIError':
-                      return reply.redirect(
-                        'http://localhost:3000/auth/error?reason=provider'
-                      )
-                    case 'AuthTokenError':
-                      return reply.redirect(
-                        'http://localhost:3000/auth/error?reason=token'
-                      )
-                    case 'UserCreationError':
-                      return reply.redirect(
-                        'http://localhost:3000/auth/error?reason=user'
-                      )
+        // Process GitHub OAuth using Effect services
+        const processOAuth = Effect.gen(function* () {
+          const { user } = yield* AuthService.processOAuth(token.access_token)
+          const config = yield* ConfigService
+
+          // Generate JWT payload
+          const jwtPayload = AuthService.generateJWTPayload(user)
+
+          // Generate JWT token
+          const jwtToken = fastify.jwt.sign(jwtPayload)
+
+          return {
+            redirectUrl: `${config.appUrl}/auth/callback?token=${jwtToken}`,
+          }
+        })
+
+        return runtime.runPromise(
+          processOAuth.pipe(
+            Effect.matchEffect({
+              onFailure: (error) =>
+                Effect.sync(() => {
+                  fastify.log.error(error)
+
+                  // Type-safe error handling using _tag
+                  if (
+                    typeof error === 'object' &&
+                    error !== null &&
+                    '_tag' in error
+                  ) {
+                    switch (error._tag) {
+                      case 'AuthProviderAPIError':
+                        return reply.redirect(
+                          'http://localhost:3000/auth/error?reason=provider'
+                        )
+                      case 'AuthTokenError':
+                        return reply.redirect(
+                          'http://localhost:3000/auth/error?reason=token'
+                        )
+                      case 'UserCreationError':
+                        return reply.redirect(
+                          'http://localhost:3000/auth/error?reason=user'
+                        )
+                    }
                   }
-                }
 
-                return reply.redirect('http://localhost:3000/auth/error')
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.redirect(result.redirectUrl)
-              }),
-          })
+                  return reply.redirect('http://localhost:3000/auth/error')
+                }),
+              onSuccess: (result) =>
+                Effect.sync(() => {
+                  return reply.redirect(result.redirectUrl)
+                }),
+            })
+          )
         )
-      )
-    } catch (error) {
-      fastify.log.error(error)
-      return reply.redirect('http://localhost:3000/auth/error')
+      } catch (error) {
+        fastify.log.error(error)
+        return reply.redirect('http://localhost:3000/auth/error')
+      }
     }
-  })
+  )
 
   // Get current user info with Effect
   fastify.get(

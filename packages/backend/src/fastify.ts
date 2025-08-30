@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 
 import { fastifyAuthPlugin } from './plugins/auth'
 import { prismaPlugin } from './plugins/database'
+import { schemaValidationPlugin } from './plugins/schema-validation'
 import { articleRoutes } from './routes/articles'
 import { authEffectRoutes } from './routes/auth'
 import { siteRoutes } from './routes/sites'
@@ -15,6 +16,9 @@ await fastify.register(prismaPlugin)
 
 // Register authentication plugin
 await fastify.register(fastifyAuthPlugin)
+
+// Register schema validation plugin
+await fastify.register(schemaValidationPlugin)
 
 // Register CORS plugin
 await fastify.register(import('@fastify/cors'), {
