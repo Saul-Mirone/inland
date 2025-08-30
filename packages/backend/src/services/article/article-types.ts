@@ -37,6 +37,11 @@ export class ArticleValidationError extends Data.TaggedError(
   readonly message: string
 }> {}
 
+export class GitRepositoryError extends Data.TaggedError('GitRepositoryError')<{
+  readonly siteId: string
+  readonly message: string
+}> {}
+
 // Domain types
 export interface CreateArticleData {
   readonly siteId: string

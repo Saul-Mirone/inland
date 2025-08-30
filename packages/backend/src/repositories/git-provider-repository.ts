@@ -1,4 +1,4 @@
-import { Context, type Effect } from 'effect'
+import { Context, Data, type Effect } from 'effect'
 
 // Common Git provider types (platform-agnostic)
 export interface GitRepo {
@@ -40,20 +40,24 @@ export interface ImportedArticle {
 }
 
 // Git provider errors
-export interface GitProviderError {
+export class GitProviderError extends Data.TaggedError('GitProviderError')<{
   readonly message: string
   readonly status?: number
-}
+}> {}
 
-export interface RepositoryCreationError {
+export class RepositoryCreationError extends Data.TaggedError(
+  'RepositoryCreationError'
+)<{
   readonly repoName: string
   readonly reason: string
-}
+}> {}
 
-export interface PagesDeploymentError {
+export class PagesDeploymentError extends Data.TaggedError(
+  'PagesDeploymentError'
+)<{
   readonly repoName: string
   readonly reason: string
-}
+}> {}
 
 // Main Git provider interface (platform-agnostic)
 export interface GitProviderRepositoryService {

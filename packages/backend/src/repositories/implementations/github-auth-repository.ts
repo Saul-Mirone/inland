@@ -90,15 +90,8 @@ export const makeGitHubAuthRepository = (): AuthProviderRepositoryService => ({
 
   validateToken: (accessToken: string) =>
     Effect.gen(function* () {
-      try {
-        yield* makeGitHubApiRequest(accessToken, '/user')
-        return { isValid: true }
-      } catch {
-        return {
-          isValid: false,
-          reason: 'GitHub token is invalid or expired',
-        }
-      }
+      yield* makeGitHubApiRequest(accessToken, '/user')
+      return { isValid: true }
     }).pipe(
       Effect.catchAll(() =>
         Effect.succeed({

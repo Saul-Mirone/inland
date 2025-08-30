@@ -12,6 +12,7 @@ import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
   SiteAccessError,
+  GitRepositoryError,
 } from './article-types'
 
 export const importArticlesFromGit = (siteId: string, userId: string) =>
@@ -32,7 +33,10 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
     }
 
     if (!site.gitRepo) {
-      return yield* Effect.fail('Site does not have a linked Git repository')
+      return yield* new GitRepositoryError({
+        siteId,
+        message: 'Site does not have a linked Git repository',
+      })
     }
 
     // Get user's auth access token
@@ -118,7 +122,10 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
     }
 
     if (!article.site.gitRepo) {
-      return yield* Effect.fail('Site does not have a linked Git repository')
+      return yield* new GitRepositoryError({
+        siteId: article.site.id,
+        message: 'Site does not have a linked Git repository',
+      })
     }
 
     // Get user's auth access token

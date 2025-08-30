@@ -6,6 +6,9 @@ import type {
   CreateRepoData,
   TemplateData,
   ImportedArticle,
+} from '../git-provider-repository'
+
+import {
   GitProviderError,
   RepositoryCreationError,
   PagesDeploymentError,
@@ -124,10 +127,10 @@ const makeGitHubApiRequest = (
 
     if (!response.ok) {
       const errorText = yield* Effect.promise(() => response.text())
-      return yield* Effect.fail({
+      return yield* new GitProviderError({
         message: `GitHub API error: ${errorText}`,
         status: response.status,
-      } as GitProviderError)
+      })
     }
 
     return yield* Effect.promise(() => response.json())
@@ -398,21 +401,22 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
               `Failed to enable GitHub Pages for ${gitRepo.fullName}`,
               { error }
             )
-            return yield* Effect.fail({
+            return yield* new PagesDeploymentError({
               repoName: gitRepo.fullName,
               reason: error instanceof Error ? error.message : 'Unknown error',
-            } as PagesDeploymentError)
+            })
           })
         )
       )
 
       return { ...gitRepo, pagesUrl }
     }).pipe(
-      Effect.catchAll((error) =>
-        Effect.fail({
-          repoName: data.name,
-          reason: error instanceof Error ? error.message : 'Unknown error',
-        } as RepositoryCreationError)
+      Effect.catchAll(
+        (error) =>
+          new RepositoryCreationError({
+            repoName: data.name,
+            reason: error instanceof Error ? error.message : 'Unknown error',
+          })
       )
     ),
 
