@@ -140,23 +140,13 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         getUserInfo.pipe(
+          Effect.catchTag('UserNotFoundError', () =>
+            Effect.sync(() => reply.code(404).send({ error: 'User not found' }))
+          ),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'UserNotFoundError':
-                      return reply.code(404).send({ error: 'User not found' })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to fetch user info' })

@@ -30,6 +30,13 @@ export class SiteAccessError extends Data.TaggedError('SiteAccessError')<{
   readonly userId: string
 }> {}
 
+export class ArticleValidationError extends Data.TaggedError(
+  'ArticleValidationError'
+)<{
+  readonly field: 'title' | 'slug' | 'content'
+  readonly message: string
+}> {}
+
 // Domain types
 export interface CreateArticleData {
   readonly siteId: string

@@ -54,40 +54,37 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         createArticle.pipe(
+          Effect.catchTags({
+            DuplicateSlugError: () =>
+              Effect.sync(() =>
+                reply.code(409).send({
+                  error:
+                    'An article with this slug already exists in this site',
+                })
+              ),
+            SiteAccessError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({
+                  error: 'You do not have access to this site',
+                })
+              ),
+            ArticleCreationError: (error) =>
+              Effect.sync(() =>
+                reply.code(500).send({
+                  error: `Failed to create article: ${error.reason}`,
+                })
+              ),
+            ArticleValidationError: (error) =>
+              Effect.sync(() =>
+                reply.code(400).send({
+                  error: error.message,
+                })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'DuplicateSlugError':
-                      return reply.code(409).send({
-                        error:
-                          'An article with this slug already exists in this site',
-                      })
-                    case 'SiteAccessError':
-                      return reply.code(403).send({
-                        error: 'You do not have access to this site',
-                      })
-                  }
-                }
-
-                // Fallback for non-tagged errors (validation errors)
-                if (error instanceof Error) {
-                  if (
-                    error.message.includes('title') ||
-                    error.message.includes('slug')
-                  ) {
-                    return reply.code(400).send({ error: error.message })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to create article' })
@@ -130,25 +127,17 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         getSiteArticles.pipe(
+          Effect.catchTag('SiteAccessError', () =>
+            Effect.sync(() =>
+              reply.code(403).send({
+                error: 'You do not have access to this site',
+              })
+            )
+          ),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'SiteAccessError':
-                      return reply.code(403).send({
-                        error: 'You do not have access to this site',
-                      })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to fetch articles' })
@@ -233,27 +222,20 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         getArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Article not found' })
+              ),
+            ArticleAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'ArticleNotFoundError':
-                      return reply
-                        .code(404)
-                        .send({ error: 'Article not found' })
-                    case 'ArticleAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to fetch article' })
@@ -332,42 +314,33 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         updateArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Article not found' })
+              ),
+            ArticleAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+            DuplicateSlugError: () =>
+              Effect.sync(() =>
+                reply.code(409).send({
+                  error:
+                    'An article with this slug already exists in this site',
+                })
+              ),
+            ArticleValidationError: (error) =>
+              Effect.sync(() =>
+                reply.code(400).send({
+                  error: error.message,
+                })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'ArticleNotFoundError':
-                      return reply
-                        .code(404)
-                        .send({ error: 'Article not found' })
-                    case 'ArticleAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                    case 'DuplicateSlugError':
-                      return reply.code(409).send({
-                        error:
-                          'An article with this slug already exists in this site',
-                      })
-                  }
-                }
-
-                // Fallback for non-tagged errors (validation errors)
-                if (error instanceof Error) {
-                  if (
-                    error.message.includes('title') ||
-                    error.message.includes('slug')
-                  ) {
-                    return reply.code(400).send({ error: error.message })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to update article' })
@@ -410,27 +383,20 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         deleteArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Article not found' })
+              ),
+            ArticleAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'ArticleNotFoundError':
-                      return reply
-                        .code(404)
-                        .send({ error: 'Article not found' })
-                    case 'ArticleAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to delete article' })
@@ -476,32 +442,27 @@ export const articleRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         publishArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Article not found' })
+              ),
+            ArticleAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+            AuthTokenError: () =>
+              Effect.sync(() =>
+                reply.code(401).send({
+                  error:
+                    'Authentication token is invalid. Please reconnect your account.',
+                })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'ArticleNotFoundError':
-                      return reply
-                        .code(404)
-                        .send({ error: 'Article not found' })
-                    case 'ArticleAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                    case 'AuthTokenError':
-                      return reply.code(401).send({
-                        error:
-                          'Authentication token is invalid. Please reconnect your account.',
-                      })
-                  }
-                }
-
                 return reply
                   .code(500)
                   .send({ error: 'Failed to publish article' })
