@@ -22,6 +22,13 @@ export class DuplicateSiteNameError extends Data.TaggedError(
   readonly userId: string
 }> {}
 
+export class SiteValidationError extends Data.TaggedError(
+  'SiteValidationError'
+)<{
+  readonly field: 'name' | 'gitRepo'
+  readonly message: string
+}> {}
+
 export interface CreateSiteData {
   readonly userId: string
   readonly name: string

@@ -45,45 +45,43 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         createSite.pipe(
+          Effect.catchTags({
+            SiteAccessError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({
+                  error: 'Access denied to site',
+                })
+              ),
+            AuthTokenError: () =>
+              Effect.sync(() =>
+                reply.code(401).send({
+                  error:
+                    'Your connection has expired. Please reconnect your account.',
+                })
+              ),
+            DuplicateSiteNameError: () =>
+              Effect.sync(() =>
+                reply.code(409).send({
+                  error: 'A site with this name already exists',
+                })
+              ),
+            SiteCreationError: () =>
+              Effect.sync(() =>
+                reply.code(500).send({
+                  error: 'Failed to create site',
+                })
+              ),
+            SiteValidationError: (error) =>
+              Effect.sync(() =>
+                reply.code(400).send({
+                  error: error.message,
+                })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'SiteAccessError':
-                      return reply.code(403).send({
-                        error: 'Access denied to site',
-                      })
-                    case 'AuthTokenError':
-                      return reply.code(401).send({
-                        error:
-                          'Your connection has expired. Please reconnect your account.',
-                      })
-                    case 'DuplicateSiteNameError':
-                      return reply.code(409).send({
-                        error: 'A site with this name already exists',
-                      })
-                    case 'SiteCreationError':
-                      return reply.code(500).send({
-                        error: 'Failed to create site',
-                      })
-                  }
-                }
-
-                // Fallback for non-tagged errors (validation errors)
-                if (error instanceof Error) {
-                  if (error.message.includes('Site name')) {
-                    return reply.code(400).send({ error: error.message })
-                  }
-                }
-
                 return reply.code(500).send({ error: 'Failed to create site' })
               }),
             onSuccess: (result) =>
@@ -159,25 +157,20 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         getSite.pipe(
+          Effect.catchTags({
+            SiteNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Site not found' })
+              ),
+            SiteAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'SiteNotFoundError':
-                      return reply.code(404).send({ error: 'Site not found' })
-                    case 'SiteAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                  }
-                }
-
                 return reply.code(500).send({ error: 'Failed to fetch site' })
               }),
             onSuccess: (result) =>
@@ -251,39 +244,32 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         updateSite.pipe(
+          Effect.catchTags({
+            SiteNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Site not found' })
+              ),
+            SiteAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+            DuplicateSiteNameError: () =>
+              Effect.sync(() =>
+                reply.code(409).send({
+                  error: 'A site with this name already exists',
+                })
+              ),
+            SiteValidationError: (error) =>
+              Effect.sync(() =>
+                reply.code(400).send({
+                  error: error.message,
+                })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'SiteNotFoundError':
-                      return reply.code(404).send({ error: 'Site not found' })
-                    case 'SiteAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                    case 'DuplicateSiteNameError':
-                      return reply.code(409).send({
-                        error: 'A site with this name already exists',
-                      })
-                  }
-                }
-
-                // Fallback for non-tagged errors (validation errors)
-                if (error instanceof Error) {
-                  if (
-                    error.message.includes('Site name') ||
-                    error.message.includes('Git repository')
-                  ) {
-                    return reply.code(400).send({ error: error.message })
-                  }
-                }
-
                 return reply.code(500).send({ error: 'Failed to update site' })
               }),
             onSuccess: (result) =>
@@ -318,25 +304,20 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
 
       return runtime.runPromise(
         deleteSite.pipe(
+          Effect.catchTags({
+            SiteNotFoundError: () =>
+              Effect.sync(() =>
+                reply.code(404).send({ error: 'Site not found' })
+              ),
+            SiteAccessDeniedError: () =>
+              Effect.sync(() =>
+                reply.code(403).send({ error: 'Access denied' })
+              ),
+          }),
           Effect.matchEffect({
             onFailure: (error) =>
               Effect.sync(() => {
                 fastify.log.error(error)
-
-                // Type-safe error handling using _tag
-                if (
-                  typeof error === 'object' &&
-                  error !== null &&
-                  '_tag' in error
-                ) {
-                  switch (error._tag) {
-                    case 'SiteNotFoundError':
-                      return reply.code(404).send({ error: 'Site not found' })
-                    case 'SiteAccessDeniedError':
-                      return reply.code(403).send({ error: 'Access denied' })
-                  }
-                }
-
                 return reply.code(500).send({ error: 'Failed to delete site' })
               }),
             onSuccess: (result) =>
