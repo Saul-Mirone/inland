@@ -1,4 +1,4 @@
-import { Context, type Effect } from 'effect'
+import { Context, Data, type Effect } from 'effect'
 
 // Generic platform user information
 export interface PlatformUser {
@@ -9,10 +9,12 @@ export interface PlatformUser {
 }
 
 // Generic auth provider errors
-export interface AuthProviderError {
+export class AuthProviderAPIError extends Data.TaggedError(
+  'AuthProviderAPIError'
+)<{
   readonly message: string
   readonly status?: number
-}
+}> {}
 
 export interface TokenValidationResult {
   readonly isValid: boolean
@@ -26,7 +28,7 @@ export interface AuthProviderRepositoryService {
    */
   readonly fetchUser: (
     accessToken: string
-  ) => Effect.Effect<PlatformUser, AuthProviderError>
+  ) => Effect.Effect<PlatformUser, AuthProviderAPIError>
 
   /**
    * Fetch user email from the platform
@@ -34,14 +36,14 @@ export interface AuthProviderRepositoryService {
    */
   readonly fetchUserEmail: (
     accessToken: string
-  ) => Effect.Effect<string | null, AuthProviderError>
+  ) => Effect.Effect<string | null, AuthProviderAPIError>
 
   /**
    * Validate access token with the platform
    */
   readonly validateToken: (
     accessToken: string
-  ) => Effect.Effect<TokenValidationResult, AuthProviderError>
+  ) => Effect.Effect<TokenValidationResult, AuthProviderAPIError>
 }
 
 // Effect Context for dependency injection

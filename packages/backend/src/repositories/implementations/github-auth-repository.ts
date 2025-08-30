@@ -4,7 +4,7 @@ import {
   AuthProviderRepository,
   type AuthProviderRepositoryService,
   type PlatformUser,
-  type AuthProviderError,
+  AuthProviderAPIError,
 } from '../auth-provider-repository'
 
 // GitHub-specific types
@@ -33,23 +33,25 @@ const makeGitHubApiRequest = (accessToken: string, endpoint: string) =>
             Accept: 'application/vnd.github.v3+json',
           },
         }),
-      catch: (error) => ({
-        message: error instanceof Error ? error.message : 'Network error',
-      }),
+      catch: (error) =>
+        new AuthProviderAPIError({
+          message: error instanceof Error ? error.message : 'Network error',
+        }),
     })
 
     if (!response.ok) {
-      return yield* Effect.fail({
+      return yield* new AuthProviderAPIError({
         message: `GitHub API error: ${response.status} ${response.statusText}`,
         status: response.status,
-      } as AuthProviderError)
+      })
     }
 
     const data = yield* Effect.tryPromise({
       try: () => response.json(),
-      catch: () => ({
-        message: 'Failed to parse GitHub API response',
-      }),
+      catch: () =>
+        new AuthProviderAPIError({
+          message: 'Failed to parse GitHub API response',
+        }),
     })
 
     return data

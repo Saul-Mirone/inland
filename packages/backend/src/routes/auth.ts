@@ -68,38 +68,24 @@ export const authEffectRoutes = async (fastify: FastifyInstance) => {
 
         return runtime.runPromise(
           processOAuth.pipe(
+            Effect.catchTag('AuthProviderAPIError', () =>
+              Effect.sync(() =>
+                reply.redirect(
+                  'http://localhost:3000/auth/error?reason=provider'
+                )
+              )
+            ),
             Effect.matchEffect({
               onFailure: (error) =>
                 Effect.sync(() => {
                   fastify.log.error(error)
-
-                  // Type-safe error handling using _tag
-                  if (
-                    typeof error === 'object' &&
-                    error !== null &&
-                    '_tag' in error
-                  ) {
-                    switch (error._tag) {
-                      case 'AuthProviderAPIError':
-                        return reply.redirect(
-                          'http://localhost:3000/auth/error?reason=provider'
-                        )
-                      case 'AuthTokenError':
-                        return reply.redirect(
-                          'http://localhost:3000/auth/error?reason=token'
-                        )
-                      case 'UserCreationError':
-                        return reply.redirect(
-                          'http://localhost:3000/auth/error?reason=user'
-                        )
-                    }
-                  }
-
                   return reply.redirect('http://localhost:3000/auth/error')
                 }),
               onSuccess: (result) =>
                 Effect.sync(() => {
-                  return reply.redirect(result.redirectUrl)
+                  return reply.redirect(
+                    (result as { redirectUrl: string }).redirectUrl
+                  )
                 }),
             })
           )

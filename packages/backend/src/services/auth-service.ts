@@ -6,13 +6,6 @@ import { AuthProviderRepository } from '../repositories/auth-provider-repository
 import { UserRepository } from '../repositories/user-repository'
 import * as UserService from './user'
 
-export class AuthProviderAPIError extends Data.TaggedError(
-  'AuthProviderAPIError'
-)<{
-  readonly message: string
-  readonly status?: number
-}> {}
-
 export class AuthTokenError extends Data.TaggedError('AuthTokenError')<{
   readonly message: string
 }> {}
