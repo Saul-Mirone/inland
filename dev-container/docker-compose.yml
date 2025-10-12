@@ -3,7 +3,9 @@ name: inland-dev
 services:
   # PostgreSQL database
   postgres:
-    image: postgres:18-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
     ports:
       - '5432:5432'
     environment:
@@ -21,7 +23,9 @@ services:
 
   # Redis cache
   redis:
-    image: redis:8-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.redis
     ports:
       - '6379:6379'
     volumes:
@@ -65,4 +69,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local

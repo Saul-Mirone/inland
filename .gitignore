@@ -49,3 +49,6 @@ Thumbs.db
 
 # generated files
 generated/
+
+# dev-container data
+dev-container/data/

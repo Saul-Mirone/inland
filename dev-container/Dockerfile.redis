@@ -1,0 +1,5 @@
+FROM redis:8-alpine
+
+# Pre-create the data directory to avoid mount issues in Docker-in-Docker
+RUN mkdir -p /data && \
+    chown -R redis:redis /data
