@@ -32,6 +32,7 @@ CREATE TABLE "public"."sites" (
     "git_repo" TEXT NOT NULL,
     "platform" TEXT NOT NULL DEFAULT 'github',
     "deploy_status" TEXT NOT NULL DEFAULT 'pending',
+    "deploy_url" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
