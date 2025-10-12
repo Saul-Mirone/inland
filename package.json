@@ -30,7 +30,7 @@
       "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" eslint --cache --fix"
     ]
   },
-  "packageManager": "yarn@4.9.4",
+  "packageManager": "yarn@4.10.3",
   "dependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
