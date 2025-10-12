@@ -32,8 +32,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
 
   // Register Redis plugin
   await fastify.register(redis, {
-    host: 'localhost',
-    port: 6379,
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
   })
 
   // Register OAuth2 plugin for GitHub

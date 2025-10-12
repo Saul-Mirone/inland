@@ -16,7 +16,6 @@
     "lint:prettier": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
     "commitlint": "commitlint --edit",
-    "dev:env": "./scripts/dev-up.sh",
     "dev:fe": "yarn workspace @inland/frontend dev",
     "dev:be": "yarn workspace @inland/backend dev",
     "test": "vitest",
