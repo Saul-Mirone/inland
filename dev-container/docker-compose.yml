@@ -34,7 +34,7 @@ services:
 
   # Backend development server
   backend:
-    image: node:22.19.0-alpine
+    image: node:22.20.0-alpine
     working_dir: /app
     ports:
       - '3001:3001'
@@ -53,7 +53,7 @@ services:
 
   # Frontend development server
   frontend:
-    image: node:22.19.0-alpine
+    image: node:22.20.0-alpine
     working_dir: /app
     ports:
       - '3000:3000'
