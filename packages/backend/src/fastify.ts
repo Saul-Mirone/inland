@@ -4,7 +4,7 @@ import { fastifyAuthPlugin } from './plugins/auth'
 import { prismaPlugin } from './plugins/database'
 import { schemaValidationPlugin } from './plugins/schema-validation'
 import { articleRoutes } from './routes/articles'
-import { authEffectRoutes } from './routes/auth'
+import { authRoutes } from './routes/auth'
 import { siteRoutes } from './routes/sites'
 
 export const fastify = Fastify({
@@ -28,7 +28,7 @@ await fastify.register(import('@fastify/cors'), {
 })
 
 // Register auth routes
-await fastify.register(authEffectRoutes)
+await fastify.register(authRoutes)
 
 // Register site management routes
 await fastify.register(siteRoutes)
