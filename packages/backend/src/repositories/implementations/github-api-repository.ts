@@ -684,4 +684,7 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         workflowUrl: `https://github.com/${repoFullName}/actions`,
       }
     }),
+
+  enablePages: (accessToken: string, repoFullName: string) =>
+    enableGitHubPages(accessToken, repoFullName),
 })

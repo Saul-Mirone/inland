@@ -2,7 +2,7 @@ import { Effect } from 'effect'
 
 import { GitProviderRepository } from '../../repositories/git-provider-repository'
 import { SiteRepository } from '../../repositories/site-repository'
-import * as ArticleService from '../article'
+import { ArticleService } from '../article-service'
 import * as AuthService from '../auth-service'
 import {
   SiteCreationError,
@@ -53,7 +53,8 @@ export const createSite = (data: CreateSiteData) =>
 
       // Step 5: Import existing articles from GitHub repo
       try {
-        const importResult = yield* ArticleService.importArticlesFromGit(
+        const articleService = yield* ArticleService
+        const importResult = yield* articleService.importArticlesFromGit(
           site.id,
           data.userId
         )
@@ -146,47 +147,26 @@ export const importRepo = (data: ImportRepoData) =>
     // Step 5: Enable Pages if not already enabled and requested (default: true)
     let pagesUrl = pagesStatus.url
     if (!pagesStatus.enabled && data.enablePages !== false) {
-      const [owner, repoName] = data.gitRepoFullName.split('/')
-      const potentialPagesUrl = `https://${owner}.github.io/${repoName}`
-
-      // Try to enable GitHub Pages using GitProvider
-      const enablePagesEffect = Effect.gen(function* () {
-        // Make a direct API call to enable Pages
-        const response = yield* Effect.tryPromise({
-          try: () =>
-            fetch(
-              `https://api.github.com/repos/${data.gitRepoFullName}/pages`,
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  Accept: 'application/vnd.github.v3+json',
-                  'User-Agent': 'Inland-CMS/1.0',
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ build_type: 'workflow' }),
-              }
-            ),
-          catch: (error) => ({
-            message: error instanceof Error ? error.message : 'Unknown error',
-          }),
-        })
-
-        if (response.ok) {
-          pagesUrl = potentialPagesUrl
-          yield* Effect.logInfo(`Pages enabled: ${pagesUrl}`)
-        }
-      }).pipe(
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Effect.logInfo(
-              'Failed to enable Pages (may already be enabled or not supported), continuing anyway'
-            )
-            yield* Effect.logDebug('Pages enable error:', { error })
-            return Effect.succeed(undefined)
-          })
+      // Try to enable Pages using GitProvider
+      const enablePagesEffect = gitProvider
+        .enablePages(accessToken, data.gitRepoFullName)
+        .pipe(
+          Effect.tap((url) =>
+            Effect.gen(function* () {
+              pagesUrl = url
+              yield* Effect.logInfo(`Pages enabled: ${pagesUrl}`)
+            })
+          ),
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Effect.logInfo(
+                'Failed to enable Pages (may already be enabled or not supported), continuing anyway'
+              )
+              yield* Effect.logDebug('Pages enable error:', { error })
+              return Effect.succeed(undefined)
+            })
+          )
         )
-      )
 
       yield* enablePagesEffect
     }
@@ -202,18 +182,18 @@ export const importRepo = (data: ImportRepoData) =>
     })
 
     // Step 7: Import articles from the repository
-    const importResult = yield* ArticleService.importArticlesFromGit(
-      site.id,
-      data.userId
-    ).pipe(
-      Effect.catchAll((error) => {
-        // Don't fail import if article import fails
-        Effect.logError('Failed to import articles', { error }).pipe(
-          Effect.runSync
-        )
-        return Effect.succeed({ imported: 0, total: 0, articles: [] })
-      })
-    )
+    const articleService = yield* ArticleService
+    const importResult = yield* articleService
+      .importArticlesFromGit(site.id, data.userId)
+      .pipe(
+        Effect.catchAll((error) => {
+          // Don't fail import if article import fails
+          Effect.logError('Failed to import articles', { error }).pipe(
+            Effect.runSync
+          )
+          return Effect.succeed({ imported: 0, total: 0, articles: [] })
+        })
+      )
 
     yield* Effect.logInfo(
       `Imported ${importResult.imported}/${importResult.total} articles for site ${site.name}`

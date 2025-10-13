@@ -96,6 +96,9 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       filesSkipped: [],
       workflowUrl: 'https://github.com/testuser/test-repo/actions',
     }),
+
+  enablePages: (_accessToken: string, repoFullName: string) =>
+    Effect.succeed(`https://testuser.github.io/${repoFullName.split('/')[1]}`),
 })
 
 // Mock layer for testing

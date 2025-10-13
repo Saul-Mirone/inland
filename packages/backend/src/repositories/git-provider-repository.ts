@@ -143,6 +143,14 @@ export interface GitProviderRepositoryService {
     { filesCreated: string[]; filesSkipped: string[]; workflowUrl: string },
     GitProviderError
   >
+
+  /**
+   * Enable Pages for the repository
+   */
+  readonly enablePages: (
+    accessToken: string,
+    repoFullName: string
+  ) => Effect.Effect<string, GitProviderError>
 }
 
 // Effect Context for dependency injection

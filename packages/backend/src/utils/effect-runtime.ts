@@ -9,6 +9,7 @@ import type { AuthProviderRepositoryService } from '../repositories/auth-provide
 import type { GitProviderRepositoryService } from '../repositories/git-provider-repository'
 import type { SiteRepository } from '../repositories/site-repository'
 import type { UserRepositoryService } from '../repositories/user-repository'
+import type { ArticleServiceInterface } from '../services/article-service'
 import type { ConfigService } from '../services/config-service'
 import type { DatabaseService } from '../services/database-service'
 
@@ -19,6 +20,7 @@ import { PrismaSiteRepositoryLive } from '../repositories/implementations/prisma
 import { PrismaUserRepositoryLive } from '../repositories/implementations/prisma-user-repository'
 import { makeConfigService } from '../services/config-service'
 import { makeDatabaseService } from '../services/database-service'
+import { ArticleServiceLive } from '../services/implementations/article-service'
 
 export const createAppRuntime = (prismaClient: typeof prisma) => {
   const AppLayer = Layer.mergeAll(
@@ -28,7 +30,8 @@ export const createAppRuntime = (prismaClient: typeof prisma) => {
     PrismaSiteRepositoryLive,
     PrismaUserRepositoryLive,
     GitProviderLive,
-    AuthProviderLive
+    AuthProviderLive,
+    ArticleServiceLive
   )
 
   return ManagedRuntime.make(AppLayer)
@@ -42,7 +45,8 @@ export const runEffect = async <A, E>(
     | SiteRepository
     | UserRepositoryService
     | GitProviderRepositoryService
-    | AuthProviderRepositoryService,
+    | AuthProviderRepositoryService
+    | ArticleServiceInterface,
     never
   >,
   effect: Effect.Effect<A, E>,
