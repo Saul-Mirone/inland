@@ -202,7 +202,7 @@ export const importRepo = (data: ImportRepoData) =>
     return {
       site: {
         ...site,
-        gitUrl: `https://github.com/${data.gitRepoFullName}`,
+        gitUrl: repoInfo.htmlUrl,
         pagesUrl,
       },
       pagesConfigured: !!pagesUrl,

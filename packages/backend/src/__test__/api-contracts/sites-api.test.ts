@@ -384,7 +384,7 @@ describe('Sites API Contracts', () => {
 
       // Verify platform is preserved in response
       expect(result.site.platform).toBe('gitlab')
-      expect(result.site.gitUrl).toBe('https://github.com/testuser/gitlab-repo') // Mock still returns GitHub URL
+      expect(result.site.gitUrl).toBe('https://github.com/testuser/gitlab-repo') // Expected: Mock uses GitHub format regardless of platform
     })
   })
 

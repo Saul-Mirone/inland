@@ -69,6 +69,8 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       id: 12345,
       name: repoFullName.split('/')[1],
       full_name: repoFullName,
+      htmlUrl: `https://github.com/${repoFullName}`,
+      html_url: `https://github.com/${repoFullName}`, // GitHub API format
     }),
 
   checkPagesStatus: (_accessToken: string, _repoFullName: string) =>
