@@ -4,10 +4,10 @@
 export * from './article-types'
 
 // CRUD operations
-export * from './article-operations'
+export * from './operations'
 
 // Validation utilities
 export * from './article-validation'
 
 // Git integration
-export * from './article-git'
+export * from './git'

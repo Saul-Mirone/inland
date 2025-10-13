@@ -1,104 +1,18 @@
 import { Effect } from 'effect'
 
-import { GitProviderRepository } from '../../repositories/git-provider-repository'
-import { SiteRepository } from '../../repositories/site-repository'
-import { ArticleService } from '../article-service'
-import * as AuthService from '../auth-service'
-import {
-  SiteCreationError,
-  DuplicateSiteNameError,
-  type CreateSiteData,
-  type ImportRepoData,
-} from './site-types'
-
-export const createSite = (data: CreateSiteData) =>
-  Effect.gen(function* () {
-    const siteRepo = yield* SiteRepository
-    const gitProvider = yield* GitProviderRepository
-
-    try {
-      // Step 1: Get user's auth access token
-      const accessToken = yield* AuthService.getUserAuthToken(data.userId)
-
-      // Step 2: Get user's platform username for template data
-      const platformUser = yield* AuthService.fetchUser(accessToken)
-
-      // Step 3: Create Git repository with Pages (always use template)
-      const gitRepo = yield* gitProvider.createRepositoryWithPages(
-        accessToken,
-        {
-          name: data.name,
-          description: data.description,
-          templateOwner: data.templateOwner || 'Saul-Mirone',
-          templateRepo: data.templateRepo || 'inland-template-basic',
-        },
-        {
-          siteName: data.name,
-          siteDescription: data.description || `Blog site: ${data.name}`,
-          siteNameSlug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-          siteAuthor: data.author || platformUser.username,
-          platformUsername: platformUser.username,
-        }
-      )
-
-      // Step 4: Save site to database
-      const site = yield* siteRepo.create({
-        userId: data.userId,
-        name: data.name,
-        gitRepo: gitRepo.fullName,
-        platform: 'github',
-        deployStatus: 'deployed',
-        deployUrl: gitRepo.pagesUrl,
-      })
-
-      // Step 5: Import existing articles from GitHub repo
-      try {
-        const articleService = yield* ArticleService
-        const importResult = yield* articleService.importArticlesFromGit(
-          site.id,
-          data.userId
-        )
-
-        yield* Effect.logInfo(
-          `Imported ${importResult.imported}/${importResult.total} articles for site ${site.name}`
-        )
-      } catch (importError) {
-        // Don't fail site creation if import fails, just log the error
-        yield* Effect.logError('Failed to import articles from Git repo', {
-          importError,
-        })
-      }
-
-      return {
-        ...site,
-        gitUrl: gitRepo.htmlUrl,
-        pagesUrl: gitRepo.pagesUrl,
-      }
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes('Unique constraint')
-      ) {
-        return yield* new DuplicateSiteNameError({
-          name: data.name,
-          userId: data.userId,
-        })
-      }
-      return yield* new SiteCreationError({
-        reason: error instanceof Error ? error.message : 'Unknown error',
-      })
-    }
-  })
+import { GitProviderRepository } from '../../../repositories/git-provider-repository'
+import { SiteRepository } from '../../../repositories/site-repository'
+import { ArticleService } from '../../article-service'
+import * as AuthService from '../../auth-service'
+import { DuplicateSiteNameError, type ImportRepoData } from '../site-types'
 
 export const importRepo = (data: ImportRepoData) =>
   Effect.gen(function* () {
     const siteRepo = yield* SiteRepository
     const gitProvider = yield* GitProviderRepository
 
-    // Step 1: Get user's auth access token
     const accessToken = yield* AuthService.getUserAuthToken(data.userId)
 
-    // Step 2: Verify repo exists and user has access
     const repoInfo = yield* gitProvider.getRepositoryInfo(
       accessToken,
       data.gitRepoFullName
@@ -108,7 +22,6 @@ export const importRepo = (data: ImportRepoData) =>
       `Importing repository: ${data.gitRepoFullName} (branch: ${repoInfo.defaultBranch})`
     )
 
-    // Step 3: Check Pages status
     const pagesStatus = yield* gitProvider.checkPagesStatus(
       accessToken,
       data.gitRepoFullName
@@ -118,12 +31,10 @@ export const importRepo = (data: ImportRepoData) =>
       `Pages status: ${pagesStatus.enabled ? `enabled (${pagesStatus.url})` : 'disabled'}`
     )
 
-    // Step 4: Inject Inland workflow if requested (default: true)
     let workflowResult:
       | { filesCreated: string[]; filesSkipped: string[] }
       | undefined
     if (data.setupWorkflow !== false) {
-      // Get user's platform username for template data
       const platformUser = yield* AuthService.fetchUser(accessToken)
 
       workflowResult = yield* gitProvider.injectInlandWorkflow(
@@ -144,10 +55,8 @@ export const importRepo = (data: ImportRepoData) =>
       )
     }
 
-    // Step 5: Enable Pages if not already enabled and requested (default: true)
     let pagesUrl = pagesStatus.url
     if (!pagesStatus.enabled && data.enablePages !== false) {
-      // Try to enable Pages using GitProvider
       const enablePagesEffect = gitProvider
         .enablePages(accessToken, data.gitRepoFullName)
         .pipe(
@@ -171,7 +80,6 @@ export const importRepo = (data: ImportRepoData) =>
       yield* enablePagesEffect
     }
 
-    // Step 6: Create site record in database
     const site = yield* siteRepo.create({
       userId: data.userId,
       name: data.name,
@@ -181,13 +89,11 @@ export const importRepo = (data: ImportRepoData) =>
       deployUrl: pagesUrl,
     })
 
-    // Step 7: Import articles from the repository
     const articleService = yield* ArticleService
     const importResult = yield* articleService
       .importArticlesFromGit(site.id, data.userId)
       .pipe(
         Effect.catchAll((error) => {
-          // Don't fail import if article import fails
           Effect.logError('Failed to import articles', { error }).pipe(
             Effect.runSync
           )
