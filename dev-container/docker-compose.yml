@@ -3,9 +3,7 @@ name: inland-dev
 services:
   # PostgreSQL database
   postgres:
-    build:
-      context: .
-      dockerfile: Dockerfile.postgres
+    image: postgres:18-alpine
     ports:
       - '5432:5432'
     environment:
@@ -23,9 +21,7 @@ services:
 
   # Redis cache
   redis:
-    build:
-      context: .
-      dockerfile: Dockerfile.redis
+    image: redis:8-alpine
     ports:
       - '6379:6379'
     volumes:
@@ -35,37 +31,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-
-  # Backend development server
-  backend:
-    image: node:22.20.0-alpine
-    working_dir: /app
-    ports:
-      - '3001:3001'
-    volumes:
-      - ..:/app
-    command: sh -c "corepack enable && yarn install && yarn workspace @inland/backend prisma generate && yarn workspace @inland/backend dev"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=postgresql://inland:password@postgres:5432/inland_dev
-      - REDIS_URL=redis://redis:6379
-
-  # Frontend development server
-  frontend:
-    image: node:22.20.0-alpine
-    working_dir: /app
-    ports:
-      - '3000:3000'
-    volumes:
-      - ..:/app
-    command: sh -c "corepack enable && yarn install && yarn workspace @inland/frontend dev"
-    environment:
-      - NODE_ENV=development
 
 volumes:
   postgres_data:

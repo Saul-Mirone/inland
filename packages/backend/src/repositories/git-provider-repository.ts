@@ -119,6 +119,30 @@ export interface GitProviderRepositoryService {
     { defaultBranch: string; [key: string]: unknown },
     GitProviderError
   >
+
+  /**
+   * Check if Pages is enabled for the repository
+   */
+  readonly checkPagesStatus: (
+    accessToken: string,
+    repoFullName: string
+  ) => Effect.Effect<
+    { enabled: boolean; url?: string; source?: string },
+    GitProviderError
+  >
+
+  /**
+   * Inject Inland CMS workflow files into the repository
+   */
+  readonly injectInlandWorkflow: (
+    accessToken: string,
+    repoFullName: string,
+    templateData: TemplateData,
+    options?: { overrideExistingFiles?: boolean }
+  ) => Effect.Effect<
+    { filesCreated: string[]; filesSkipped: string[]; workflowUrl: string },
+    GitProviderError
+  >
 }
 
 // Effect Context for dependency injection

@@ -543,4 +543,145 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         ...(repoInfo as Record<string, unknown>),
       }
     }),
+
+  checkPagesStatus: (accessToken: string, repoFullName: string) =>
+    Effect.gen(function* () {
+      yield* Effect.logInfo(`Checking Pages status for ${repoFullName}`)
+
+      const pagesInfo = yield* makeGitHubApiRequest(
+        accessToken,
+        `/repos/${repoFullName}/pages`
+      ).pipe(
+        Effect.catchTag('GitProviderError', (error) => {
+          // 404 means Pages is not enabled
+          if (error.status === 404) {
+            return Effect.succeed(null)
+          }
+          return Effect.fail(error)
+        })
+      )
+
+      if (!pagesInfo) {
+        return { enabled: false }
+      }
+
+      const pagesData = pagesInfo as {
+        html_url?: string
+        build_type?: string
+        source?: { branch?: string }
+      }
+
+      return {
+        enabled: true,
+        url: pagesData.html_url,
+        source: pagesData.build_type || pagesData.source?.branch,
+      }
+    }),
+
+  injectInlandWorkflow: (
+    accessToken: string,
+    repoFullName: string,
+    templateData: TemplateData,
+    options?: { overrideExistingFiles?: boolean }
+  ) =>
+    Effect.gen(function* () {
+      yield* Effect.logInfo(`Injecting Inland workflow into ${repoFullName}`)
+
+      const overrideExisting = options?.overrideExistingFiles ?? false
+      const templateRepo = 'Saul-Mirone/inland-template-basic'
+      const filesCreated: string[] = []
+      const filesSkipped: string[] = []
+
+      // Files to inject from template
+      const filesToInject = [
+        '.github/workflows/deploy.yml',
+        'build/index.js',
+        'build/milkdown-compiler.js',
+        'build/template-engine.js',
+        'build/utils.js',
+        'templates/index.html',
+        'templates/article.html',
+        'templates/layout.html',
+        'assets/styles.css',
+        'assets/script.js',
+      ] as const
+
+      // Prepare placeholders for replacement
+      const placeholders = {
+        '{{SITE_NAME}}': templateData.siteName,
+        '{{SITE_DESCRIPTION}}': templateData.siteDescription,
+        '{{SITE_NAME_SLUG}}': templateData.siteNameSlug,
+        '{{SITE_AUTHOR}}': templateData.siteAuthor,
+        '{{GITHUB_USERNAME}}': templateData.platformUsername,
+      }
+
+      // Process each file
+      for (const filePath of filesToInject) {
+        const injectFileEffect = Effect.gen(function* () {
+          // Check if file already exists in user's repo
+          const existingFile = yield* getFileOrNull(
+            accessToken,
+            repoFullName,
+            filePath
+          )
+
+          if (existingFile && !overrideExisting) {
+            yield* Effect.logInfo(`Skipping existing file: ${filePath}`)
+            filesSkipped.push(filePath)
+            return { skipped: true }
+          }
+
+          // Fetch file from template repo
+          const templateFile = yield* getFileContent(
+            accessToken,
+            templateRepo,
+            filePath
+          )
+
+          // Decode and replace placeholders
+          let content = Buffer.from(templateFile.content, 'base64').toString(
+            'utf-8'
+          )
+
+          for (const [placeholder, value] of Object.entries(placeholders)) {
+            content = content.replace(new RegExp(placeholder, 'g'), value)
+          }
+
+          // Create or update file in user's repo
+          const sha = existingFile
+            ? (existingFile as { sha: string }).sha
+            : undefined
+
+          yield* updateFileContent(
+            accessToken,
+            repoFullName,
+            filePath,
+            content,
+            `Add Inland CMS workflow: ${filePath}`,
+            sha
+          )
+
+          filesCreated.push(filePath)
+          yield* Effect.logInfo(`Injected file: ${filePath}`)
+          return { skipped: false }
+        })
+
+        // Run effect and catch errors for individual files
+        yield* injectFileEffect.pipe(
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Effect.logError(`Failed to inject ${filePath}:`, { error })
+              // Continue with other files even if one fails
+              return { skipped: false, failed: true }
+            })
+          )
+        )
+      }
+
+      return {
+        filesCreated,
+        filesSkipped,
+        workflowUrl: `https://github.com/${repoFullName}/actions`,
+      }
+    }),
 })

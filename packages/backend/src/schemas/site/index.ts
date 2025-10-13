@@ -14,6 +14,18 @@ export const CreateSiteData = S.Struct({
   templateRepo: S.optional(S.String),
 })
 
+export const ImportRepoData = S.Struct({
+  name: S.String.pipe(S.minLength(1), S.maxLength(100)),
+  gitRepoFullName: S.String.pipe(
+    S.pattern(/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/)
+  ),
+  platform: S.optional(GitPlatform),
+  setupWorkflow: S.optional(S.Boolean),
+  enablePages: S.optional(S.Boolean),
+  overrideExistingFiles: S.optional(S.Boolean),
+  description: S.optional(S.String.pipe(S.maxLength(500))),
+})
+
 export const UpdateSiteData = S.Struct({
   name: S.optional(S.String.pipe(S.minLength(1), S.maxLength(100))),
   gitRepo: S.optional(S.String.pipe(S.minLength(1))),
@@ -42,6 +54,7 @@ export const TemplateData = S.Struct({
 // Export types
 export type SiteStatus = S.Schema.Type<typeof SiteStatus>
 export type CreateSiteData = S.Schema.Type<typeof CreateSiteData>
+export type ImportRepoData = S.Schema.Type<typeof ImportRepoData>
 export type UpdateSiteData = S.Schema.Type<typeof UpdateSiteData>
 export type SiteIdParam = S.Schema.Type<typeof SiteIdParam>
 export type SiteParam = S.Schema.Type<typeof SiteParam>

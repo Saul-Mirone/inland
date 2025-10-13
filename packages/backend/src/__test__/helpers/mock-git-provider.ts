@@ -70,6 +70,32 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       name: repoFullName.split('/')[1],
       full_name: repoFullName,
     }),
+
+  checkPagesStatus: (_accessToken: string, _repoFullName: string) =>
+    Effect.succeed({
+      enabled: true,
+      url: 'https://testuser.github.io/test-repo',
+      source: 'workflow',
+    }),
+
+  injectInlandWorkflow: (
+    _accessToken: string,
+    _repoFullName: string,
+    _templateData: TemplateData,
+    _options?: { overrideExistingFiles?: boolean }
+  ) =>
+    Effect.succeed({
+      filesCreated: [
+        '.github/workflows/deploy.yml',
+        'build/index.js',
+        'build/milkdown-compiler.js',
+        'templates/index.mustache',
+        'templates/article.mustache',
+        'templates/styles.css',
+      ],
+      filesSkipped: [],
+      workflowUrl: 'https://github.com/testuser/test-repo/actions',
+    }),
 })
 
 // Mock layer for testing

@@ -38,6 +38,17 @@ export interface CreateSiteData {
   readonly templateRepo?: string
 }
 
+export interface ImportRepoData {
+  readonly userId: string
+  readonly name: string
+  readonly gitRepoFullName: string
+  readonly platform?: string
+  readonly setupWorkflow?: boolean
+  readonly enablePages?: boolean
+  readonly overrideExistingFiles?: boolean
+  readonly description?: string
+}
+
 export interface UpdateSiteData {
   readonly name?: string
   readonly gitRepo?: string
