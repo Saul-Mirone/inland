@@ -33,6 +33,7 @@ jobs:
 
       - name: Run lint
         run: |
+          cp packages/backend/.env.example packages/backend/.env
           yarn dedupe
           yarn workspace @inland/backend db:generate
           yarn tsc
@@ -40,8 +41,8 @@ jobs:
           yarn lint:prettier
           yarn lint:eslint
 
-      # - name: Run tests
-      #   run: yarn test
+      - name: Run tests
+        run: yarn test
 
       # - name: Run build
       #   run: yarn build
