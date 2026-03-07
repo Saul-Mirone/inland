@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 
 import * as SiteService from '../../services/site'
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database'
+import { mockGitIntegration, mockSite } from '../helpers/mock-factories'
 import { TestRepositoryLayer } from '../helpers/test-layers'
 
 // Create test runtime
@@ -18,30 +19,24 @@ describe('SiteService', () => {
       // Mock data
       const mockSites = [
         {
-          id: 'site-1',
-          name: 'Test Site 1',
-          userId: 'user-1',
-          gitRepo: 'user/repo1',
-          platform: 'github',
-          deployStatus: 'deployed',
-          deployUrl: 'https://test1.com',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          ...mockSite({
+            id: 'site-1',
+            name: 'Test Site 1',
+            gitRepo: 'user/repo1',
+            deployUrl: 'https://test1.com',
+          }),
           _count: {
             articles: 5,
             media: 3,
           },
         },
         {
-          id: 'site-2',
-          name: 'Test Site 2',
-          userId: 'user-1',
-          gitRepo: 'user/repo2',
-          platform: 'github',
-          deployStatus: 'deployed',
-          deployUrl: 'https://test2.com',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          ...mockSite({
+            id: 'site-2',
+            name: 'Test Site 2',
+            gitRepo: 'user/repo2',
+            deployUrl: 'https://test2.com',
+          }),
           _count: {
             articles: 2,
             media: 1,
@@ -90,24 +85,15 @@ describe('SiteService', () => {
   describe('updateSite', () => {
     it('should update a site successfully', async () => {
       // Mock data
-      const mockSiteAccess = {
-        userId: 'user-1',
-      }
-
-      const mockUpdatedSite = {
+      const mockUpdatedSite = mockSite({
         id: 'site-1',
         name: 'Updated Site Name',
-        userId: 'user-1',
         gitRepo: 'user/updated-repo',
-        platform: 'github',
-        deployStatus: 'deployed',
         deployUrl: 'https://updated.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
-      mockPrisma.site.findUnique.mockResolvedValue(mockSiteAccess)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
       mockPrisma.site.update.mockResolvedValue(mockUpdatedSite)
 
       // Test data
@@ -149,13 +135,10 @@ describe('SiteService', () => {
     })
 
     it('should fail when user does not have access to site', async () => {
-      // Mock data
-      const mockSiteAccess = {
-        userId: 'other-user',
-      }
-
       // Setup mocks
-      mockPrisma.site.findUnique.mockResolvedValue(mockSiteAccess)
+      mockPrisma.site.findUnique.mockResolvedValue(
+        mockSite({ userId: 'other-user' })
+      )
 
       // Execute and verify
       const result = await testRuntime.runPromiseExit(
@@ -169,24 +152,15 @@ describe('SiteService', () => {
   describe('deleteSite', () => {
     it('should delete a site successfully', async () => {
       // Mock data
-      const mockSiteAccess = {
-        userId: 'user-1',
-      }
-
-      const mockDeletedSite = {
+      const mockDeletedSite = mockSite({
         id: 'site-1',
         name: 'Deleted Site',
-        userId: 'user-1',
         gitRepo: 'user/deleted-repo',
-        platform: 'github',
-        deployStatus: 'deployed',
         deployUrl: 'https://deleted.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
-      mockPrisma.site.findUnique.mockResolvedValue(mockSiteAccess)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
       mockPrisma.site.delete.mockResolvedValue(mockDeletedSite)
 
       // Execute
@@ -218,13 +192,10 @@ describe('SiteService', () => {
     })
 
     it('should fail when user does not have access to site', async () => {
-      // Mock data
-      const mockSiteAccess = {
-        userId: 'other-user',
-      }
-
       // Setup mocks
-      mockPrisma.site.findUnique.mockResolvedValue(mockSiteAccess)
+      mockPrisma.site.findUnique.mockResolvedValue(
+        mockSite({ userId: 'other-user' })
+      )
 
       // Execute and verify
       const result = await testRuntime.runPromiseExit(
@@ -299,29 +270,18 @@ describe('SiteService', () => {
   describe('importRepo', () => {
     it('should import an existing repository successfully', async () => {
       // Mock data
-      const mockCreatedSite = {
+      const mockCreatedSite = mockSite({
         id: 'site-1',
         name: 'imported-site',
-        userId: 'user-1',
         gitRepo: 'testuser/existing-repo',
-        platform: 'github',
-        deployStatus: 'deployed',
         deployUrl: 'https://testuser.github.io/existing-repo',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
       mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'github',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      )
 
       // Test data
       const importData = {
@@ -371,29 +331,19 @@ describe('SiteService', () => {
 
     it('should import repo with workflow disabled', async () => {
       // Mock data
-      const mockCreatedSite = {
+      const mockCreatedSite = mockSite({
         id: 'site-1',
         name: 'imported-site',
-        userId: 'user-1',
         gitRepo: 'testuser/existing-repo',
-        platform: 'github',
         deployStatus: 'pending',
         deployUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
       mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'github',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      )
 
       // Test data - disable workflow and pages
       const importData = {
@@ -418,29 +368,19 @@ describe('SiteService', () => {
 
     it('should handle pages enablement failure gracefully', async () => {
       // Mock data
-      const mockCreatedSite = {
+      const mockCreatedSite = mockSite({
         id: 'site-1',
         name: 'imported-site',
-        userId: 'user-1',
         gitRepo: 'testuser/existing-repo',
-        platform: 'github',
         deployStatus: 'pending',
         deployUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks - simulate pages already disabled
       mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'github',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      )
 
       // Test data
       const importData = {
@@ -482,29 +422,19 @@ describe('SiteService', () => {
 
     it('should import repo with custom platform', async () => {
       // Mock data
-      const mockCreatedSite = {
+      const mockCreatedSite = mockSite({
         id: 'site-1',
         name: 'imported-site',
-        userId: 'user-1',
         gitRepo: 'testuser/existing-repo',
         platform: 'gitlab',
-        deployStatus: 'deployed',
         deployUrl: 'https://testuser.gitlab.io/existing-repo',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
       mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'gitlab',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration({ platform: 'gitlab' })
+      )
 
       // Test data with custom platform
       const importData = {

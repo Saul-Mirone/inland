@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 
 import * as ArticleService from '../../services/article'
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database'
+import { mockArticle, mockSite } from '../helpers/mock-factories'
 import { TestRepositoryLayer } from '../helpers/test-layers'
 
 // Create test runtime
@@ -16,19 +17,15 @@ describe('ArticleService', () => {
   describe('createArticle', () => {
     it('should create an article successfully', async () => {
       // Mock data
-      const mockSite = {
-        userId: 'user-1',
-      }
-
       const mockArticleWithSite = {
-        id: 'article-1',
-        siteId: 'site-1',
-        title: 'Test Article',
-        slug: 'test-article',
-        content: 'This is a test article',
-        status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        ...mockArticle({
+          id: 'article-1',
+          siteId: 'site-1',
+          title: 'Test Article',
+          slug: 'test-article',
+          content: 'This is a test article',
+          status: 'draft',
+        }),
         site: {
           id: 'site-1',
           name: 'Test Site',
@@ -38,7 +35,7 @@ describe('ArticleService', () => {
       }
 
       // Setup mocks
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
       mockPrisma.article.create.mockResolvedValue(mockArticleWithSite)
 
       // Test data
@@ -106,13 +103,10 @@ describe('ArticleService', () => {
     })
 
     it('should fail when user does not have access to site', async () => {
-      // Mock data
-      const mockSite = {
-        userId: 'other-user',
-      }
-
       // Setup mocks
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+      mockPrisma.site.findUnique.mockResolvedValue(
+        mockSite({ userId: 'other-user' })
+      )
 
       // Test data
       const articleData = {
@@ -137,14 +131,14 @@ describe('ArticleService', () => {
     it('should find an article by id', async () => {
       // Mock data
       const mockArticleWithSite = {
-        id: 'article-1',
-        siteId: 'site-1',
-        title: 'Test Article',
-        slug: 'test-article',
-        content: 'This is a test article',
-        status: 'published',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        ...mockArticle({
+          id: 'article-1',
+          siteId: 'site-1',
+          title: 'Test Article',
+          slug: 'test-article',
+          content: 'This is a test article',
+          status: 'published',
+        }),
         site: {
           id: 'site-1',
           name: 'Test Site',
@@ -196,28 +190,22 @@ describe('ArticleService', () => {
       it('should return articles array directly (not wrapped in object)', async () => {
         // Mock data
         const mockArticles = [
-          {
+          mockArticle({
             id: 'article-1',
             title: 'Test Article 1',
             slug: 'test-article-1',
             status: 'published',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          {
+          }),
+          mockArticle({
             id: 'article-2',
             title: 'Test Article 2',
             slug: 'test-article-2',
             status: 'draft',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          }),
         ]
 
-        const mockSite = { userId: 'user-1' }
-
         // Setup mocks
-        mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+        mockPrisma.site.findUnique.mockResolvedValue(mockSite())
         mockPrisma.article.findMany.mockResolvedValue(mockArticles)
 
         // Execute
@@ -242,14 +230,14 @@ describe('ArticleService', () => {
         // Mock data
         const mockArticles = [
           {
-            id: 'article-1',
-            siteId: 'site-1',
-            title: 'User Article 1',
-            slug: 'user-article-1',
-            content: 'Content 1',
-            status: 'published',
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            ...mockArticle({
+              id: 'article-1',
+              siteId: 'site-1',
+              title: 'User Article 1',
+              slug: 'user-article-1',
+              content: 'Content 1',
+              status: 'published',
+            }),
             site: {
               id: 'site-1',
               name: 'Test Site',

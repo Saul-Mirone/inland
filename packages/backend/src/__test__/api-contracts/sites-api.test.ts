@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 
 import * as SiteService from '../../services/site'
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database'
+import { mockGitIntegration, mockSite } from '../helpers/mock-factories'
 import { TestRepositoryLayer } from '../helpers/test-layers'
 
 /**
@@ -23,27 +24,21 @@ describe('Sites API Contracts', () => {
     it('should return sites array with _count for frontend usage', async () => {
       const mockSites = [
         {
-          id: 'site-1',
-          name: 'Site 1',
-          userId: 'user-1',
-          gitRepo: 'user/repo1',
-          platform: 'github',
-          deployStatus: 'deployed',
-          deployUrl: 'https://site1.com',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          ...mockSite({
+            id: 'site-1',
+            name: 'Site 1',
+            gitRepo: 'user/repo1',
+            deployUrl: 'https://site1.com',
+          }),
           _count: { articles: 5, media: 3 },
         },
         {
-          id: 'site-2',
-          name: 'Site 2',
-          userId: 'user-1',
-          gitRepo: 'user/repo2',
-          platform: 'github',
-          deployStatus: 'deployed',
-          deployUrl: 'https://site2.com',
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          ...mockSite({
+            id: 'site-2',
+            name: 'Site 2',
+            gitRepo: 'user/repo2',
+            deployUrl: 'https://site2.com',
+          }),
           _count: { articles: 2, media: 1 },
         },
       ]
@@ -87,16 +82,13 @@ describe('Sites API Contracts', () => {
 
   describe('GET /sites/{siteId}', () => {
     it('should return site object with detailed information', async () => {
-      const mockSite = {
-        id: 'site-1',
-        name: 'Test Site',
-        userId: 'user-1',
-        gitRepo: 'user/repo',
-        platform: 'github',
-        deployStatus: 'deployed',
-        deployUrl: 'https://test.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      const site = {
+        ...mockSite({
+          id: 'site-1',
+          name: 'Test Site',
+          gitRepo: 'user/repo',
+          deployUrl: 'https://test.com',
+        }),
         user: {
           id: 'user-1',
           username: 'testuser',
@@ -119,7 +111,7 @@ describe('Sites API Contracts', () => {
         ],
       }
 
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+      mockPrisma.site.findUnique.mockResolvedValue(site)
 
       const result = await testRuntime.runPromise(
         SiteService.findSiteById('site-1')
@@ -127,7 +119,7 @@ describe('Sites API Contracts', () => {
 
       // Should return site object with nested data
       expect(Array.isArray(result)).toBe(false)
-      expect(result).toEqual(mockSite)
+      expect(result).toEqual(site)
       expect(result.id).toBe('site-1')
       expect(result.user).toBeDefined()
       expect(result.articles).toBeDefined()
@@ -139,25 +131,20 @@ describe('Sites API Contracts', () => {
 
   describe('POST /sites', () => {
     it('should return created site object with GitHub URLs', async () => {
-      const mockCreatedSite = {
+      const createdSite = mockSite({
         id: 'site-1',
         name: 'New Site',
-        userId: 'user-1',
         gitRepo: 'user/new-site',
-        platform: 'github',
-        deployStatus: 'deployed',
         deployUrl: 'https://user.github.io/new-site',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Mock all the GitHub operations that createSite does
-      mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
+      mockPrisma.site.create.mockResolvedValue(createdSite)
 
       // Note: createSite is complex and involves GitHub API calls
       // This test focuses on the final response shape
       const expectedResponse = {
-        ...mockCreatedSite,
+        ...createdSite,
         githubUrl: 'https://github.com/user/new-site',
         pagesUrl: 'https://user.github.io/new-site',
       }
@@ -172,29 +159,18 @@ describe('Sites API Contracts', () => {
 
   describe('POST /sites/import', () => {
     it('should return import result with detailed information', async () => {
-      const mockCreatedSite = {
+      const createdSite = mockSite({
         id: 'site-1',
         name: 'imported-site',
-        userId: 'user-1',
         gitRepo: 'testuser/existing-repo',
-        platform: 'github',
-        deployStatus: 'deployed',
         deployUrl: 'https://testuser.github.io/existing-repo',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
-      mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'github',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.site.create.mockResolvedValue(createdSite)
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      )
 
       // Test data
       const importData = {
@@ -249,29 +225,19 @@ describe('Sites API Contracts', () => {
     })
 
     it('should return consistent structure with minimal required fields', async () => {
-      const mockCreatedSite = {
+      const createdSite = mockSite({
         id: 'site-minimal',
         name: 'minimal-site',
-        userId: 'user-1',
         gitRepo: 'testuser/minimal-repo',
-        platform: 'github',
         deployStatus: 'pending',
         deployUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
-      mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'github',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.site.create.mockResolvedValue(createdSite)
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      )
 
       // Minimal import data
       const importData = {
@@ -300,29 +266,18 @@ describe('Sites API Contracts', () => {
     })
 
     it('should return proper structure when workflow injection is disabled', async () => {
-      const mockCreatedSite = {
+      const createdSite = mockSite({
         id: 'site-no-workflow',
         name: 'no-workflow-site',
-        userId: 'user-1',
         gitRepo: 'testuser/no-workflow-repo',
-        platform: 'github',
-        deployStatus: 'deployed',
         deployUrl: 'https://testuser.github.io/no-workflow-repo',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
-      mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'github',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.site.create.mockResolvedValue(createdSite)
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      )
 
       // Import with workflow disabled
       const importData = {
@@ -345,29 +300,19 @@ describe('Sites API Contracts', () => {
     })
 
     it('should handle different platforms in response', async () => {
-      const mockCreatedSite = {
+      const createdSite = mockSite({
         id: 'site-gitlab',
         name: 'gitlab-site',
-        userId: 'user-1',
         gitRepo: 'testuser/gitlab-repo',
         platform: 'gitlab',
-        deployStatus: 'deployed',
         deployUrl: 'https://testuser.gitlab.io/gitlab-repo',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
+      })
 
       // Setup mocks
-      mockPrisma.site.create.mockResolvedValue(mockCreatedSite)
-      // Mock the auth token lookup
-      mockPrisma.gitIntegration.findFirst.mockResolvedValue({
-        id: 'git-integration-1',
-        userId: 'user-1',
-        platform: 'gitlab',
-        accessToken: 'mock-access-token',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      mockPrisma.site.create.mockResolvedValue(createdSite)
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration({ platform: 'gitlab' })
+      )
 
       // Import from GitLab
       const importData = {

@@ -2,7 +2,7 @@ import type { Effect } from 'effect'
 
 import { Context } from 'effect'
 
-import type { Article } from '../../generated/prisma'
+import type { Article } from '../../generated/prisma/client'
 import type { DatabaseService } from '../services/database-service'
 
 // Domain types for Article operations

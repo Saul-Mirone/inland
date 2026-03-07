@@ -1,7 +1,7 @@
-import type { PrismaClient } from '@prisma/client'
-
 import { Layer } from 'effect'
-import { mockDeep, mockReset, type DeepMockProxy } from 'vitest-mock-extended'
+import { type DeepMockProxy, mockDeep, mockReset } from 'vitest-mock-extended'
+
+import type { PrismaClient } from '../../../generated/prisma/client'
 
 import { DatabaseService } from '../../services/database-service'
 
@@ -17,7 +17,7 @@ export const resetMockPrisma = () => {
 export const TestDatabaseServiceLayer = Layer.succeed(
   DatabaseService,
   DatabaseService.of({
-    prisma: mockPrisma as PrismaClient,
+    prisma: mockPrisma as unknown as PrismaClient,
   })
 )
 

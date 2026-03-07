@@ -2,7 +2,7 @@ import type { Effect } from 'effect'
 
 import { Context } from 'effect'
 
-import type { Site } from '../../generated/prisma'
+import type { Site } from '../../generated/prisma/client'
 import type { DatabaseService } from '../services/database-service'
 
 // Domain types for Site operations

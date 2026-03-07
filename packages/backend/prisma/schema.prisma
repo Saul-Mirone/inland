@@ -2,13 +2,12 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // User model
@@ -72,7 +71,7 @@ model Article {
   siteId    String   @map("site_id")
   title     String
   slug      String
-  content   String   @db.Text
+  content   String
   status    String   @default("draft")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

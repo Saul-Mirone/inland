@@ -1,15 +1,15 @@
 import { Effect, Context, Layer } from 'effect'
 
-import type { prisma } from '../database/client'
+import type { PrismaClient } from '../../generated/prisma/client'
 
 export class DatabaseService extends Context.Tag('DatabaseService')<
   DatabaseService,
   {
-    readonly prisma: typeof prisma
+    readonly prisma: PrismaClient
   }
 >() {}
 
-export const makeDatabaseService = (prismaClient: typeof prisma) =>
+export const makeDatabaseService = (prismaClient: PrismaClient) =>
   Layer.succeed(DatabaseService, { prisma: prismaClient })
 
 export const getPrisma = DatabaseService.pipe(

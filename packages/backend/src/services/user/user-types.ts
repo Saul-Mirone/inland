@@ -1,6 +1,6 @@
 import { Data } from 'effect'
 
-import type { User, GitIntegration } from '../../../generated/prisma'
+import type { User, GitIntegration } from '../../../generated/prisma/client'
 
 export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
   readonly userId: string

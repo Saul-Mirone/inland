@@ -2,7 +2,7 @@ import type { Effect } from 'effect'
 
 import { Context } from 'effect'
 
-import type { User, GitIntegration } from '../../generated/prisma'
+import type { User, GitIntegration } from '../../generated/prisma/client'
 import type { DatabaseService } from '../services/database-service'
 
 export interface CreateUserData {

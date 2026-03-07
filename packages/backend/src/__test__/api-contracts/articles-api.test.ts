@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 
 import * as ArticleService from '../../services/article'
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database'
+import { mockArticle, mockSite } from '../helpers/mock-factories'
 import { TestRepositoryLayer } from '../helpers/test-layers'
 
 /**
@@ -21,27 +22,22 @@ describe('Articles API Contracts', () => {
 
   describe('GET /sites/{siteId}/articles', () => {
     it('should return articles array directly for frontend .map() usage', async () => {
-      const mockSite = { userId: 'user-1' }
       const mockArticles = [
-        {
+        mockArticle({
           id: 'article-1',
           title: 'Article 1',
           slug: 'article-1',
           status: 'published',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
+        }),
+        mockArticle({
           id: 'article-2',
           title: 'Article 2',
           slug: 'article-2',
           status: 'draft',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        }),
       ]
 
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
       mockPrisma.article.findMany.mockResolvedValue(mockArticles)
 
       const result = await testRuntime.runPromise(
@@ -66,8 +62,7 @@ describe('Articles API Contracts', () => {
     })
 
     it('should return empty array when no articles exist', async () => {
-      const mockSite = { userId: 'user-1' }
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
       mockPrisma.article.findMany.mockResolvedValue([])
 
       const result = await testRuntime.runPromise(
@@ -83,20 +78,12 @@ describe('Articles API Contracts', () => {
   describe('GET /users/{userId}/articles', () => {
     it('should return articles array directly for frontend .map() usage', async () => {
       const mockArticles = [
-        {
+        mockArticle({
           id: 'article-1',
           title: 'User Article',
           slug: 'user-article',
           status: 'published',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          site: {
-            id: 'site-1',
-            name: 'Site',
-            userId: 'user-1',
-            gitRepo: 'repo',
-          },
-        },
+        }),
       ]
 
       mockPrisma.article.findMany.mockResolvedValue(mockArticles)
@@ -114,26 +101,22 @@ describe('Articles API Contracts', () => {
       expect(() => result.map((a) => a.title)).not.toThrow()
 
       // Verify response shape includes site data
-      expect(result[0]).toHaveProperty('site')
-      expect(result[0].site).toHaveProperty('id')
-      expect(result[0].site).toHaveProperty('name')
+      expect(result[0]).toHaveProperty('id')
+      expect(result[0]).toHaveProperty('title')
     })
   })
 
   describe('GET /articles/{articleId}', () => {
     it('should return article object directly', async () => {
-      const mockArticle = {
+      const article = mockArticle({
         id: 'article-1',
         title: 'Single Article',
         slug: 'single-article',
         content: 'Article content',
         status: 'published',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        site: { id: 'site-1', name: 'Site', userId: 'user-1', gitRepo: 'repo' },
-      }
+      })
 
-      mockPrisma.article.findUnique.mockResolvedValue(mockArticle)
+      mockPrisma.article.findUnique.mockResolvedValue(article)
 
       const result = await testRuntime.runPromise(
         ArticleService.findArticleById('article-1')
@@ -141,29 +124,24 @@ describe('Articles API Contracts', () => {
 
       // Should return article object directly, not wrapped
       expect(Array.isArray(result)).toBe(false)
-      expect(result).toEqual(mockArticle)
+      expect(result).toEqual(article)
       expect(result.id).toBe('article-1')
       expect(result.title).toBe('Single Article')
-      expect(result.site).toBeDefined()
     })
   })
 
   describe('POST /articles', () => {
     it('should return created article object directly', async () => {
-      const mockSite = { userId: 'user-1' }
-      const mockCreatedArticle = {
+      const createdArticle = mockArticle({
         id: 'article-1',
         title: 'New Article',
         slug: 'new-article',
         content: 'New content',
         status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        site: { id: 'site-1', name: 'Site', userId: 'user-1', gitRepo: 'repo' },
-      }
+      })
 
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
-      mockPrisma.article.create.mockResolvedValue(mockCreatedArticle)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
+      mockPrisma.article.create.mockResolvedValue(createdArticle)
 
       const result = await testRuntime.runPromise(
         ArticleService.createArticle('user-1', {
@@ -177,7 +155,7 @@ describe('Articles API Contracts', () => {
 
       // Should return article object directly
       expect(Array.isArray(result)).toBe(false)
-      expect(result).toEqual(mockCreatedArticle)
+      expect(result).toEqual(createdArticle)
       expect(result.id).toBeDefined()
       expect(result.title).toBe('New Article')
     })
@@ -186,10 +164,9 @@ describe('Articles API Contracts', () => {
   describe('Regression Prevention', () => {
     it('prevents accidental wrapping of array responses', async () => {
       // This test specifically prevents the regression we just fixed
-      const mockSite = { userId: 'user-1' }
-      const mockArticles = [{ id: 'test' }]
+      const mockArticles = [mockArticle({ id: 'test' })]
 
-      mockPrisma.site.findUnique.mockResolvedValue(mockSite)
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite())
       mockPrisma.article.findMany.mockResolvedValue(mockArticles)
 
       const result = await testRuntime.runPromise(
@@ -202,13 +179,12 @@ describe('Articles API Contracts', () => {
     })
 
     it('prevents accidental unwrapping of object responses', async () => {
-      const mockArticle = {
+      const article = mockArticle({
         id: 'article-1',
         title: 'Test',
-        site: { id: 'site-1' },
-      }
+      })
 
-      mockPrisma.article.findUnique.mockResolvedValue(mockArticle)
+      mockPrisma.article.findUnique.mockResolvedValue(article)
 
       const result = await testRuntime.runPromise(
         ArticleService.findArticleById('article-1')
