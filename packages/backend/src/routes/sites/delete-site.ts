@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as SiteService from '../../services/site'
+import { SiteService } from '../../services/site'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const deleteSiteRoute = async (fastify: FastifyInstance) => {
@@ -26,7 +26,8 @@ export const deleteSiteRoute = async (fastify: FastifyInstance) => {
       const { id } = request.validatedParams!
 
       const deleteSite = Effect.gen(function* () {
-        const site = yield* SiteService.deleteSite(id, userPayload.userId)
+        const siteService = yield* SiteService
+        const site = yield* siteService.deleteSite(id, userPayload.userId)
         return { message: 'Site deleted successfully', site }
       })
 

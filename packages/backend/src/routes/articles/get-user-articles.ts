@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
-import * as ArticleService from '../../services/article'
+import { ArticleService } from '../../services/article'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
@@ -15,7 +15,8 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!
 
       const getUserArticles = Effect.gen(function* () {
-        const articles = yield* ArticleService.findUserArticles(
+        const articleService = yield* ArticleService
+        const articles = yield* articleService.findUserArticles(
           userPayload.userId
         )
         return { articles }

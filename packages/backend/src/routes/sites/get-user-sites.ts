@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
-import * as SiteService from '../../services/site'
+import { SiteService } from '../../services/site'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const getUserSitesRoute = async (fastify: FastifyInstance) => {
@@ -15,7 +15,8 @@ export const getUserSitesRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!
 
       const getUserSites = Effect.gen(function* () {
-        const sites = yield* SiteService.findUserSites(userPayload.userId)
+        const siteService = yield* SiteService
+        const sites = yield* siteService.findUserSites(userPayload.userId)
         return { sites }
       })
 

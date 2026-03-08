@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as SiteService from '../../services/site'
+import { SiteService } from '../../services/site'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const importRepoRoute = async (fastify: FastifyInstance) => {
@@ -34,9 +34,11 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
       } = request.validatedBody!
 
       const importRepoEffect = Effect.gen(function* () {
-        const validName = yield* SiteService.validateSiteName(name)
+        const siteService = yield* SiteService
 
-        const result = yield* SiteService.importRepo({
+        const validName = yield* siteService.validateSiteName(name)
+
+        const result = yield* siteService.importRepo({
           userId: userPayload.userId,
           name: validName,
           gitRepoFullName,

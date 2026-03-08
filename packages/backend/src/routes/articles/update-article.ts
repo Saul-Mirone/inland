@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as ArticleService from '../../services/article'
+import { ArticleService } from '../../services/article'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const updateArticleRoute = async (fastify: FastifyInstance) => {
@@ -34,6 +34,8 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
       const updateData = request.validatedBody!
 
       const updateArticle = Effect.gen(function* () {
+        const articleService = yield* ArticleService
+
         const validatedData: {
           title?: string
           slug?: string
@@ -42,13 +44,13 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
         } = {}
 
         if (updateData.title) {
-          validatedData.title = yield* ArticleService.validateTitle(
+          validatedData.title = yield* articleService.validateTitle(
             updateData.title
           )
         }
 
         if (updateData.slug) {
-          validatedData.slug = yield* ArticleService.validateSlug(
+          validatedData.slug = yield* articleService.validateSlug(
             updateData.slug
           )
         }
@@ -61,7 +63,7 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
           validatedData.status = updateData.status
         }
 
-        const article = yield* ArticleService.updateArticle(
+        const article = yield* articleService.updateArticle(
           id,
           userPayload.userId,
           validatedData

@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as SiteService from '../../services/site'
+import { SiteService } from '../../services/site'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
@@ -25,9 +25,11 @@ export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!
       const { id } = request.validatedParams!
 
-      const getSite = SiteService.findSiteById(id, userPayload.userId).pipe(
-        Effect.map((site) => ({ site }))
-      )
+      const getSite = Effect.gen(function* () {
+        const siteService = yield* SiteService
+        const site = yield* siteService.findSiteById(id, userPayload.userId)
+        return { site }
+      })
 
       return runRouteEffect(fastify, reply, {
         effect: getSite,

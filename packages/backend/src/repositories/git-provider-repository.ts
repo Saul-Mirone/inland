@@ -154,7 +154,7 @@ export interface GitProviderRepositoryService {
 }
 
 // Effect Context for dependency injection
-export const GitProviderRepository =
-  Context.GenericTag<GitProviderRepositoryService>(
-    '@services/GitProviderRepository'
-  )
+export class GitProviderRepository extends Context.Tag('GitProviderRepository')<
+  GitProviderRepository,
+  GitProviderRepositoryService
+>() {}

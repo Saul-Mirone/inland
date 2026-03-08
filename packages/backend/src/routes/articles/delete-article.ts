@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as ArticleService from '../../services/article'
+import { ArticleService } from '../../services/article'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const deleteArticleRoute = async (fastify: FastifyInstance) => {
@@ -29,7 +29,8 @@ export const deleteArticleRoute = async (fastify: FastifyInstance) => {
       const { id } = request.validatedParams!
 
       const deleteArticle = Effect.gen(function* () {
-        const article = yield* ArticleService.deleteArticle(
+        const articleService = yield* ArticleService
+        const article = yield* articleService.deleteArticle(
           id,
           userPayload.userId
         )

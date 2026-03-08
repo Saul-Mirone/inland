@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as ArticleService from '../../services/article'
+import { ArticleService } from '../../services/article'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const createArticleRoute = async (fastify: FastifyInstance) => {
@@ -26,13 +26,15 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
       const { siteId, title, slug, content, status } = request.validatedBody!
 
       const createArticle = Effect.gen(function* () {
-        const validTitle = yield* ArticleService.validateTitle(title)
+        const articleService = yield* ArticleService
+
+        const validTitle = yield* articleService.validateTitle(title)
 
         const validSlug = slug
-          ? yield* ArticleService.validateSlug(slug)
-          : yield* ArticleService.generateSlugFromTitle(validTitle)
+          ? yield* articleService.validateSlug(slug)
+          : yield* articleService.generateSlugFromTitle(validTitle)
 
-        const article = yield* ArticleService.createArticle(
+        const article = yield* articleService.createArticle(
           userPayload.userId,
           {
             siteId,

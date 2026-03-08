@@ -3,7 +3,7 @@ import { Effect } from 'effect'
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
 import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository'
-import { ArticleService } from '../../article-service'
+import { ArticleService } from '../../article/article-service'
 import * as AuthService from '../../auth-service'
 import {
   SiteCreationError,

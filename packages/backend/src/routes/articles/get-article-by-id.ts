@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as ArticleService from '../../services/article'
+import { ArticleService } from '../../services/article'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const getArticleByIdRoute = async (fastify: FastifyInstance) => {
@@ -28,10 +28,14 @@ export const getArticleByIdRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!
       const { id } = request.validatedParams!
 
-      const getArticle = ArticleService.findArticleById(
-        id,
-        userPayload.userId
-      ).pipe(Effect.map((article) => ({ article })))
+      const getArticle = Effect.gen(function* () {
+        const articleService = yield* ArticleService
+        const article = yield* articleService.findArticleById(
+          id,
+          userPayload.userId
+        )
+        return { article }
+      })
 
       return runRouteEffect(fastify, reply, {
         effect: getArticle,

@@ -52,5 +52,7 @@ export interface UserRepositoryService {
   ) => Effect.Effect<void, RepositoryError, DatabaseService>
 }
 
-export const UserRepository =
-  Context.GenericTag<UserRepositoryService>('UserRepository')
+export class UserRepository extends Context.Tag('UserRepository')<
+  UserRepository,
+  UserRepositoryService
+>() {}

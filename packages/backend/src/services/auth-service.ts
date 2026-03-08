@@ -4,7 +4,7 @@ import type { JWTPayload } from '../types/auth'
 
 import { AuthProviderRepository } from '../repositories/auth-provider-repository'
 import { UserRepository } from '../repositories/user-repository'
-import * as UserService from './user'
+import { UserService } from './user'
 
 export class AuthTokenError extends Data.TaggedError('AuthTokenError')<{
   readonly message: string
@@ -70,6 +70,7 @@ export const getUserAuthToken = (userId: string) =>
 
 export const processOAuth = (accessToken: string) =>
   Effect.gen(function* () {
+    const userService = yield* UserService
     const platformUser = yield* fetchUser(accessToken)
 
     let email = platformUser.email
@@ -77,13 +78,13 @@ export const processOAuth = (accessToken: string) =>
       email = yield* fetchUserEmail(accessToken)
     }
 
-    const user = yield* UserService.upsertUser({
+    const user = yield* userService.upsertUser({
       username: platformUser.username,
       email,
       avatarUrl: platformUser.avatarUrl,
     })
 
-    yield* UserService.upsertGitIntegration({
+    yield* userService.upsertGitIntegration({
       userId: user.id,
       platform: 'github',
       platformUsername: platformUser.username,

@@ -9,3 +9,6 @@ export * from './site-validation'
 
 // Git integration
 export * from './git'
+
+// DI tag and interface
+export { SiteService, type SiteServiceInterface } from './site-service'

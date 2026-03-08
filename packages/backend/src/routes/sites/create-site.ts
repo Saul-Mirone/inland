@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as SiteService from '../../services/site'
+import { SiteService } from '../../services/site'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const createSiteRoute = async (fastify: FastifyInstance) => {
@@ -26,9 +26,11 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
       const { name, description, author } = request.validatedBody!
 
       const createSite = Effect.gen(function* () {
-        const validName = yield* SiteService.validateSiteName(name)
+        const siteService = yield* SiteService
 
-        const site = yield* SiteService.createSite({
+        const validName = yield* siteService.validateSiteName(name)
+
+        const site = yield* siteService.createSite({
           userId: userPayload.userId,
           name: validName,
           description,

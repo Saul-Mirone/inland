@@ -7,7 +7,7 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as SiteService from '../../services/site'
+import { SiteService } from '../../services/site'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const updateSiteRoute = async (fastify: FastifyInstance) => {
@@ -31,6 +31,8 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
       const updateData = request.validatedBody!
 
       const updateSite = Effect.gen(function* () {
+        const siteService = yield* SiteService
+
         const validatedData: {
           name?: string
           gitRepo?: string
@@ -39,13 +41,13 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
         } = {}
 
         if (updateData.name) {
-          validatedData.name = yield* SiteService.validateSiteName(
+          validatedData.name = yield* siteService.validateSiteName(
             updateData.name
           )
         }
 
         if (updateData.gitRepo) {
-          validatedData.gitRepo = yield* SiteService.validateGitRepo(
+          validatedData.gitRepo = yield* siteService.validateGitRepo(
             updateData.gitRepo
           )
         }
@@ -58,7 +60,7 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
           validatedData.deployStatus = updateData.deployStatus
         }
 
-        const site = yield* SiteService.updateSite(
+        const site = yield* siteService.updateSite(
           id,
           userPayload.userId,
           validatedData

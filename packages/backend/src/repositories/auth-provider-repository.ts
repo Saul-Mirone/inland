@@ -47,7 +47,6 @@ export interface AuthProviderRepositoryService {
 }
 
 // Effect Context for dependency injection
-export const AuthProviderRepository =
-  Context.GenericTag<AuthProviderRepositoryService>(
-    '@services/AuthProviderRepository'
-  )
+export class AuthProviderRepository extends Context.Tag(
+  'AuthProviderRepository'
+)<AuthProviderRepository, AuthProviderRepositoryService>() {}
