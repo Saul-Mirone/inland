@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const createSiteRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -37,48 +38,27 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
         return { site }
       })
 
-      return fastify.runtime.runPromise(
-        createSite.pipe(
-          Effect.catchTags({
-            AuthTokenError: () =>
-              Effect.sync(() =>
-                reply.code(401).send({
-                  error:
-                    'Your connection has expired. Please reconnect your account.',
-                })
-              ),
-            DuplicateSiteNameError: () =>
-              Effect.sync(() =>
-                reply.code(409).send({
-                  error: 'A site with this name already exists',
-                })
-              ),
-            SiteCreationError: () =>
-              Effect.sync(() =>
-                reply.code(500).send({
-                  error: 'Failed to create site',
-                })
-              ),
-            SiteValidationError: (error) =>
-              Effect.sync(() =>
-                reply.code(400).send({
-                  error: error.message,
-                })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: createSite,
+        errors: {
+          AuthTokenError: () => ({
+            status: 401,
+            error:
+              'Your connection has expired. Please reconnect your account.',
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply.code(500).send({ error: 'Failed to create site' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.code(201).send(result)
-              }),
-          })
-        )
-      )
+          DuplicateSiteNameError: () => ({
+            status: 409,
+            error: 'A site with this name already exists',
+          }),
+          SiteCreationError: () => ({
+            status: 500,
+            error: 'Failed to create site',
+          }),
+          SiteValidationError: (e) => ({ status: 400, error: e.message }),
+        },
+        fallbackMessage: 'Failed to create site',
+        successCode: 201,
+      })
     }
   )
 }

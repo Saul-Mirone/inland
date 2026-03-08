@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as ArticleService from '../../services/article'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const updateArticleRoute = async (fastify: FastifyInstance) => {
   fastify.put(
@@ -69,46 +70,25 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
         return { article }
       })
 
-      return fastify.runtime.runPromise(
-        updateArticle.pipe(
-          Effect.catchTags({
-            ArticleNotFoundError: () =>
-              Effect.sync(() =>
-                reply.code(404).send({ error: 'Article not found' })
-              ),
-            ArticleAccessDeniedError: () =>
-              Effect.sync(() =>
-                reply.code(403).send({ error: 'Access denied' })
-              ),
-            DuplicateSlugError: () =>
-              Effect.sync(() =>
-                reply.code(409).send({
-                  error:
-                    'An article with this slug already exists in this site',
-                })
-              ),
-            ArticleValidationError: (error) =>
-              Effect.sync(() =>
-                reply.code(400).send({
-                  error: error.message,
-                })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: updateArticle,
+        errors: {
+          ArticleNotFoundError: () => ({
+            status: 404,
+            error: 'Article not found',
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply
-                  .code(500)
-                  .send({ error: 'Failed to update article' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.send(result)
-              }),
-          })
-        )
-      )
+          ArticleAccessDeniedError: () => ({
+            status: 403,
+            error: 'Access denied',
+          }),
+          DuplicateSlugError: () => ({
+            status: 409,
+            error: 'An article with this slug already exists in this site',
+          }),
+          ArticleValidationError: (e) => ({ status: 400, error: e.message }),
+        },
+        fallbackMessage: 'Failed to update article',
+      })
     }
   )
 }

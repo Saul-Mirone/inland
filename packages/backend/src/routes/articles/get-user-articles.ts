@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import * as ArticleService from '../../services/article'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -20,23 +21,10 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
         return { articles }
       })
 
-      return fastify.runtime.runPromise(
-        getUserArticles.pipe(
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply
-                  .code(500)
-                  .send({ error: 'Failed to fetch articles' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.send(result)
-              }),
-          })
-        )
-      )
+      return runRouteEffect(fastify, reply, {
+        effect: getUserArticles,
+        fallbackMessage: 'Failed to fetch articles',
+      })
     }
   )
 }

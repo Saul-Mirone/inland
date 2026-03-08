@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -37,31 +38,17 @@ export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
         return { site }
       })
 
-      return fastify.runtime.runPromise(
-        getSite.pipe(
-          Effect.catchTags({
-            SiteNotFoundError: () =>
-              Effect.sync(() =>
-                reply.code(404).send({ error: 'Site not found' })
-              ),
-            SiteAccessDeniedError: () =>
-              Effect.sync(() =>
-                reply.code(403).send({ error: 'Access denied' })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: getSite,
+        errors: {
+          SiteNotFoundError: () => ({ status: 404, error: 'Site not found' }),
+          SiteAccessDeniedError: () => ({
+            status: 403,
+            error: 'Access denied',
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply.code(500).send({ error: 'Failed to fetch site' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.send(result)
-              }),
-          })
-        )
-      )
+        },
+        fallbackMessage: 'Failed to fetch site',
+      })
     }
   )
 }

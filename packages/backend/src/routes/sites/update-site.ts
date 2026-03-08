@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const updateSiteRoute = async (fastify: FastifyInstance) => {
   fastify.put(
@@ -66,43 +67,22 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
         return { site }
       })
 
-      return fastify.runtime.runPromise(
-        updateSite.pipe(
-          Effect.catchTags({
-            SiteNotFoundError: () =>
-              Effect.sync(() =>
-                reply.code(404).send({ error: 'Site not found' })
-              ),
-            SiteAccessDeniedError: () =>
-              Effect.sync(() =>
-                reply.code(403).send({ error: 'Access denied' })
-              ),
-            DuplicateSiteNameError: () =>
-              Effect.sync(() =>
-                reply.code(409).send({
-                  error: 'A site with this name already exists',
-                })
-              ),
-            SiteValidationError: (error) =>
-              Effect.sync(() =>
-                reply.code(400).send({
-                  error: error.message,
-                })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: updateSite,
+        errors: {
+          SiteNotFoundError: () => ({ status: 404, error: 'Site not found' }),
+          SiteAccessDeniedError: () => ({
+            status: 403,
+            error: 'Access denied',
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply.code(500).send({ error: 'Failed to update site' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.send(result)
-              }),
-          })
-        )
-      )
+          DuplicateSiteNameError: () => ({
+            status: 409,
+            error: 'A site with this name already exists',
+          }),
+          SiteValidationError: (e) => ({ status: 400, error: e.message }),
+        },
+        fallbackMessage: 'Failed to update site',
+      })
     }
   )
 }

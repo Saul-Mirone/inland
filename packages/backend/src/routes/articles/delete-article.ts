@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as ArticleService from '../../services/article'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const deleteArticleRoute = async (fastify: FastifyInstance) => {
   fastify.delete(
@@ -35,33 +36,20 @@ export const deleteArticleRoute = async (fastify: FastifyInstance) => {
         return { message: 'Article deleted successfully', article }
       })
 
-      return fastify.runtime.runPromise(
-        deleteArticle.pipe(
-          Effect.catchTags({
-            ArticleNotFoundError: () =>
-              Effect.sync(() =>
-                reply.code(404).send({ error: 'Article not found' })
-              ),
-            ArticleAccessDeniedError: () =>
-              Effect.sync(() =>
-                reply.code(403).send({ error: 'Access denied' })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: deleteArticle,
+        errors: {
+          ArticleNotFoundError: () => ({
+            status: 404,
+            error: 'Article not found',
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply
-                  .code(500)
-                  .send({ error: 'Failed to delete article' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.send(result)
-              }),
-          })
-        )
-      )
+          ArticleAccessDeniedError: () => ({
+            status: 403,
+            error: 'Access denied',
+          }),
+        },
+        fallbackMessage: 'Failed to delete article',
+      })
     }
   )
 }

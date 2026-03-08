@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const importRepoRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -49,48 +50,27 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
         return result
       })
 
-      return fastify.runtime.runPromise(
-        importRepoEffect.pipe(
-          Effect.tap((result) =>
-            Effect.sync(() => reply.code(201).send(result))
-          ),
-          Effect.catchTags({
-            DuplicateSiteNameError: () =>
-              Effect.sync(() =>
-                reply.code(409).send({
-                  error: 'A site with this name already exists',
-                })
-              ),
-            SiteValidationError: (error) =>
-              Effect.sync(() =>
-                reply.code(400).send({
-                  error: error.message,
-                })
-              ),
-            AuthTokenError: () =>
-              Effect.sync(() =>
-                reply.code(401).send({
-                  error:
-                    'Your connection has expired. Please reconnect your account.',
-                })
-              ),
-            GitProviderError: (error) =>
-              Effect.sync(() =>
-                reply.code(404).send({
-                  error: `Repository not found or access denied: ${error.message}`,
-                })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: importRepoEffect,
+        errors: {
+          DuplicateSiteNameError: () => ({
+            status: 409,
+            error: 'A site with this name already exists',
           }),
-          Effect.catchAll((error) =>
-            Effect.sync(() => {
-              fastify.log.error(error)
-              return reply
-                .code(500)
-                .send({ error: 'Failed to import repository' })
-            })
-          )
-        )
-      )
+          SiteValidationError: (e) => ({ status: 400, error: e.message }),
+          AuthTokenError: () => ({
+            status: 401,
+            error:
+              'Your connection has expired. Please reconnect your account.',
+          }),
+          GitProviderError: (e) => ({
+            status: 404,
+            error: `Repository not found or access denied: ${e.message}`,
+          }),
+        },
+        fallbackMessage: 'Failed to import repository',
+        successCode: 201,
+      })
     }
   )
 }

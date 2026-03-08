@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as ArticleService from '../../services/article'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const createArticleRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -45,50 +46,26 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
         return { article }
       })
 
-      return fastify.runtime.runPromise(
-        createArticle.pipe(
-          Effect.catchTags({
-            DuplicateSlugError: () =>
-              Effect.sync(() =>
-                reply.code(409).send({
-                  error:
-                    'An article with this slug already exists in this site',
-                })
-              ),
-            SiteAccessError: () =>
-              Effect.sync(() =>
-                reply.code(403).send({
-                  error: 'You do not have access to this site',
-                })
-              ),
-            ArticleCreationError: (error) =>
-              Effect.sync(() =>
-                reply.code(500).send({
-                  error: `Failed to create article: ${error.reason}`,
-                })
-              ),
-            ArticleValidationError: (error) =>
-              Effect.sync(() =>
-                reply.code(400).send({
-                  error: error.message,
-                })
-              ),
+      return runRouteEffect(fastify, reply, {
+        effect: createArticle,
+        errors: {
+          DuplicateSlugError: () => ({
+            status: 409,
+            error: 'An article with this slug already exists in this site',
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply
-                  .code(500)
-                  .send({ error: 'Failed to create article' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.code(201).send(result)
-              }),
-          })
-        )
-      )
+          SiteAccessError: () => ({
+            status: 403,
+            error: 'You do not have access to this site',
+          }),
+          ArticleCreationError: (e) => ({
+            status: 500,
+            error: `Failed to create article: ${e.reason}`,
+          }),
+          ArticleValidationError: (e) => ({ status: 400, error: e.message }),
+        },
+        fallbackMessage: 'Failed to create article',
+        successCode: 201,
+      })
     }
   )
 }

@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import * as SiteService from '../../services/site'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const getUserSitesRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -18,21 +19,10 @@ export const getUserSitesRoute = async (fastify: FastifyInstance) => {
         return { sites }
       })
 
-      return fastify.runtime.runPromise(
-        getUserSites.pipe(
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.sync(() => {
-                fastify.log.error(error)
-                return reply.code(500).send({ error: 'Failed to fetch sites' })
-              }),
-            onSuccess: (result) =>
-              Effect.sync(() => {
-                return reply.send(result)
-              }),
-          })
-        )
-      )
+      return runRouteEffect(fastify, reply, {
+        effect: getUserSites,
+        fallbackMessage: 'Failed to fetch sites',
+      })
     }
   )
 }
