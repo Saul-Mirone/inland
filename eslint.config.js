@@ -54,7 +54,7 @@ export default defineConfig(
       '@typescript-eslint/await-thenable': 'error',
       'import-x/no-extraneous-dependencies': [
         'error',
-        { includeInternal: true },
+        { includeInternal: true, whitelist: ['@inland/frontend'] },
       ],
     },
   }
