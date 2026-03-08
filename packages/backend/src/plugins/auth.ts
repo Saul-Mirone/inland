@@ -9,12 +9,16 @@ import fastifyPlugin from 'fastify-plugin'
 
 import type { JWTPayload } from '../types/auth'
 
+import { resolveConfig } from '../services/config-service'
+
 const authPlugin = async (fastify: FastifyInstance) => {
+  const config = resolveConfig()
+
   await fastify.register(cookie)
 
   // Register JWT plugin
   await fastify.register(jwt, {
-    secret: process.env.JWT_SECRET || 'fallback-secret-for-development',
+    secret: config.jwtSecret,
     sign: {
       expiresIn: '7d',
     },
@@ -22,7 +26,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
 
   // Register session plugin with Redis store
   await fastify.register(session, {
-    secret: process.env.SESSION_SECRET || 'fallback-session-secret',
+    secret: config.sessionSecret,
     cookie: {
       secure: false, // Set to true in production with HTTPS
       maxAge: 1000 * 60 * 60 * 24, // 24 hours
@@ -32,7 +36,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
 
   // Register Redis plugin
   await fastify.register(redis, {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: config.redisUrl,
   })
 
   // Register OAuth2 plugin for GitHub
@@ -40,8 +44,8 @@ const authPlugin = async (fastify: FastifyInstance) => {
     name: 'github',
     credentials: {
       client: {
-        id: process.env.GITHUB_CLIENT_ID || '',
-        secret: process.env.GITHUB_CLIENT_SECRET || '',
+        id: config.githubClientId,
+        secret: config.githubClientSecret,
       },
       auth: {
         authorizeHost: 'https://github.com',
@@ -51,9 +55,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
       },
     },
     startRedirectPath: '/auth/github',
-    callbackUri:
-      process.env.AUTH_CALLBACK_URL ||
-      'http://localhost:3001/auth/github/callback',
+    callbackUri: config.authCallbackUrl,
     scope: ['user:email', 'public_repo', 'workflow'],
   })
 

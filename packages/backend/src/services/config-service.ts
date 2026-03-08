@@ -1,4 +1,4 @@
-import { Effect, Context, Layer, Config } from 'effect'
+import { Context, Layer } from 'effect'
 
 export interface AppConfig {
   readonly jwtSecret: string
@@ -16,48 +16,19 @@ export class ConfigService extends Context.Tag('ConfigService')<
   AppConfig
 >() {}
 
-const jwtSecret = Config.string('JWT_SECRET').pipe(
-  Config.withDefault('fallback-secret-for-development')
-)
+export function resolveConfig(): AppConfig {
+  return {
+    jwtSecret: process.env.JWT_SECRET || 'fallback-secret-for-development',
+    sessionSecret: process.env.SESSION_SECRET || 'fallback-session-secret',
+    githubClientId: process.env.GITHUB_CLIENT_ID || '',
+    githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+    authCallbackUrl:
+      process.env.AUTH_CALLBACK_URL ||
+      'http://localhost:3001/auth/github/callback',
+    appUrl: process.env.APP_URL || 'http://localhost:3000',
+    apiUrl: process.env.API_URL || 'http://localhost:3001',
+    redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+  }
+}
 
-const sessionSecret = Config.string('SESSION_SECRET').pipe(
-  Config.withDefault('fallback-session-secret')
-)
-
-const githubClientId = Config.string('GITHUB_CLIENT_ID').pipe(
-  Config.withDefault('')
-)
-
-const githubClientSecret = Config.string('GITHUB_CLIENT_SECRET').pipe(
-  Config.withDefault('')
-)
-
-const authCallbackUrl = Config.string('AUTH_CALLBACK_URL').pipe(
-  Config.withDefault('http://localhost:3001/auth/github/callback')
-)
-
-const appUrl = Config.string('APP_URL').pipe(
-  Config.withDefault('http://localhost:3000')
-)
-
-const apiUrl = Config.string('API_URL').pipe(
-  Config.withDefault('http://localhost:3001')
-)
-
-const redisUrl = Config.string('REDIS_URL').pipe(
-  Config.withDefault('redis://localhost:6379')
-)
-
-export const makeConfigService = Layer.effect(
-  ConfigService,
-  Effect.all({
-    jwtSecret,
-    sessionSecret,
-    githubClientId,
-    githubClientSecret,
-    authCallbackUrl,
-    appUrl,
-    apiUrl,
-    redisUrl,
-  })
-)
+export const makeConfigService = Layer.succeed(ConfigService, resolveConfig())

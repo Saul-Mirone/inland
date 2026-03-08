@@ -15,9 +15,4 @@ const prisma = new PrismaClient({
       : ['warn', 'error'],
 })
 
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect()
-})
-
 export { prisma }
