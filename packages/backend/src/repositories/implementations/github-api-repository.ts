@@ -24,13 +24,6 @@ interface GitHubRepoResponse {
   readonly default_branch: string
 }
 
-interface GitHubFileResponse {
-  readonly sha: string
-  readonly name: string
-  readonly path: string
-  readonly content: string
-}
-
 interface GitHubTreeResponse {
   readonly tree: Array<{
     readonly path: string
@@ -43,6 +36,37 @@ interface GitHubFileContentResponse {
   readonly content: string
   readonly sha: string
 }
+
+// Runtime validation helpers
+const assertFields = (
+  response: unknown,
+  fields: readonly string[],
+  context: string
+): Effect.Effect<Record<string, unknown>, GitProviderError> => {
+  if (typeof response !== 'object' || response === null) {
+    return Effect.fail(
+      new GitProviderError({
+        message: `Expected object from ${context}, got ${typeof response}`,
+      })
+    )
+  }
+  const obj = response as Record<string, unknown>
+  const missing = fields.filter((f) => !(f in obj))
+  if (missing.length > 0) {
+    return Effect.fail(
+      new GitProviderError({
+        message: `Missing fields [${missing.join(', ')}] in response from ${context}`,
+      })
+    )
+  }
+  return Effect.succeed(obj)
+}
+
+const isGitProviderError = (error: unknown): error is GitProviderError =>
+  typeof error === 'object' &&
+  error !== null &&
+  '_tag' in error &&
+  (error as { _tag: string })._tag === 'GitProviderError'
 
 // Utility functions (pure, module-level)
 const shouldProcessFile = (filePath: string): boolean => {
@@ -111,7 +135,7 @@ const makeGitHubApiRequest = (
   accessToken: string,
   endpoint: string,
   options: RequestInit = {}
-) =>
+): Effect.Effect<unknown, GitProviderError> =>
   Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
       try: () =>
@@ -181,6 +205,11 @@ const createRepoFromTemplate = (
         }),
       }
     )
+    yield* assertFields(
+      response,
+      ['id', 'name', 'full_name', 'html_url', 'clone_url', 'default_branch'],
+      'POST /repos/.../generate'
+    )
     return response as GitHubRepoResponse
   })
 
@@ -194,6 +223,7 @@ const getRepoFiles = (
       accessToken,
       `/repos/${repoFullName}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`
     )
+    yield* assertFields(response, ['tree'], 'GET /repos/.../git/trees/...')
     const tree = response as GitHubTreeResponse
     return tree.tree.filter((item) => item.type === 'blob')
   })
@@ -207,6 +237,11 @@ const getFileContent = (
     const response = yield* makeGitHubApiRequest(
       accessToken,
       `/repos/${repoFullName}/contents/${filePath}`
+    )
+    yield* assertFields(
+      response,
+      ['content', 'sha'],
+      `GET /repos/.../contents/${filePath}`
     )
     return response as GitHubFileContentResponse
   })
@@ -269,7 +304,7 @@ const getFileOrNull = (
 ) =>
   getFileContent(accessToken, repoFullName, filePath).pipe(
     Effect.catchAll((error) => {
-      if ((error as GitProviderError).status === 404) {
+      if (error.status === 404) {
         return Effect.succeed(null)
       }
       return Effect.fail(error)
@@ -336,12 +371,11 @@ const replaceTemplatePlaceholders = (
         Schedule.exponential(1000).pipe(
           Schedule.intersect(Schedule.recurs(9)),
           Schedule.whileInput((error: unknown) => {
+            if (!isGitProviderError(error)) return false
             const isEmptyRepo =
-              (error as GitProviderError).status === 409 ||
-              (error as GitProviderError).status === 422 ||
-              (error as GitProviderError).message?.includes(
-                'Git Repository is empty'
-              )
+              error.status === 409 ||
+              error.status === 422 ||
+              error.message?.includes('Git Repository is empty')
             if (isEmptyRepo) {
               Effect.logInfo(`Repository not ready, retrying...`).pipe(
                 Effect.runSync
@@ -461,12 +495,11 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         return { deleted: false, reason: 'File not found' }
       }
 
-      const fileData = currentFile as GitHubFileResponse
       yield* deleteFile(
         accessToken,
         repoFullName,
         filePath,
-        fileData.sha,
+        currentFile.sha,
         `Delete article: ${articleSlug}`
       )
 
@@ -533,9 +566,7 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         filePath
       )
 
-      const sha = existingFile
-        ? (existingFile as { sha: string }).sha
-        : undefined
+      const sha = existingFile ? existingFile.sha : undefined
       const message = `${sha ? 'Update' : 'Add'} article: ${articleSlug}`
 
       const response = yield* updateFileContent(
@@ -546,11 +577,21 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         message,
         sha
       )
+      const validated = yield* assertFields(
+        response,
+        ['commit'],
+        `PUT /repos/.../contents/${filePath}`
+      )
+      const commit = yield* assertFields(
+        validated.commit,
+        ['sha'],
+        `PUT /repos/.../contents/${filePath} → commit`
+      )
 
       return {
         published: true,
         filePath,
-        commitSha: (response as { commit: { sha: string } }).commit.sha,
+        commitSha: commit.sha as string,
         wasUpdate: sha !== undefined,
       }
     }),
@@ -561,11 +602,15 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         accessToken,
         `/repos/${repoFullName}`
       )
+      const validated = yield* assertFields(
+        repoInfo,
+        ['default_branch'],
+        `GET /repos/${repoFullName}`
+      )
 
       return {
-        defaultBranch:
-          (repoInfo as { default_branch?: string }).default_branch || 'main',
-        ...(repoInfo as Record<string, unknown>),
+        defaultBranch: (validated.default_branch as string) || 'main',
+        ...validated,
       }
     }),
 
@@ -590,16 +635,18 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
         return { enabled: false }
       }
 
-      const pagesData = pagesInfo as {
-        html_url?: string
-        build_type?: string
-        source?: { branch?: string }
-      }
+      const pagesData = yield* assertFields(
+        pagesInfo,
+        [],
+        `GET /repos/${repoFullName}/pages`
+      )
 
       return {
         enabled: true,
-        url: pagesData.html_url,
-        source: pagesData.build_type || pagesData.source?.branch,
+        url: pagesData.html_url as string | undefined,
+        source:
+          (pagesData.build_type as string | undefined) ||
+          (pagesData.source as { branch?: string } | undefined)?.branch,
       }
     }),
 
@@ -673,9 +720,7 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
           }
 
           // Create or update file in user's repo
-          const sha = existingFile
-            ? (existingFile as { sha: string }).sha
-            : undefined
+          const sha = existingFile ? existingFile.sha : undefined
 
           yield* updateFileContent(
             accessToken,

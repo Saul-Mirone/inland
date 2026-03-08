@@ -108,18 +108,26 @@ describe('Articles API Contracts', () => {
 
   describe('GET /articles/{articleId}', () => {
     it('should return article object directly', async () => {
-      const article = mockArticle({
-        id: 'article-1',
-        title: 'Single Article',
-        slug: 'single-article',
-        content: 'Article content',
-        status: 'published',
-      })
+      const article = {
+        ...mockArticle({
+          id: 'article-1',
+          title: 'Single Article',
+          slug: 'single-article',
+          content: 'Article content',
+          status: 'published',
+        }),
+        site: {
+          id: 'site-1',
+          name: 'Test Site',
+          userId: 'user-1',
+          gitRepo: 'user/repo',
+        },
+      }
 
       mockPrisma.article.findUnique.mockResolvedValue(article)
 
       const result = await testRuntime.runPromise(
-        ArticleService.findArticleById('article-1')
+        ArticleService.findArticleById('article-1', 'user-1')
       )
 
       // Should return article object directly, not wrapped
@@ -179,15 +187,23 @@ describe('Articles API Contracts', () => {
     })
 
     it('prevents accidental unwrapping of object responses', async () => {
-      const article = mockArticle({
-        id: 'article-1',
-        title: 'Test',
-      })
+      const article = {
+        ...mockArticle({
+          id: 'article-1',
+          title: 'Test',
+        }),
+        site: {
+          id: 'site-1',
+          name: 'Test Site',
+          userId: 'user-1',
+          gitRepo: 'user/repo',
+        },
+      }
 
       mockPrisma.article.findUnique.mockResolvedValue(article)
 
       const result = await testRuntime.runPromise(
-        ArticleService.findArticleById('article-1')
+        ArticleService.findArticleById('article-1', 'user-1')
       )
 
       // Should be the object directly, not an array or wrapped

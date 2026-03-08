@@ -114,7 +114,7 @@ describe('Sites API Contracts', () => {
       mockPrisma.site.findUnique.mockResolvedValue(site)
 
       const result = await testRuntime.runPromise(
-        SiteService.findSiteById('site-1')
+        SiteService.findSiteById('site-1', 'user-1')
       )
 
       // Should return site object with nested data

@@ -25,18 +25,9 @@ export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!
       const { id } = request.validatedParams!
 
-      const getSite = Effect.gen(function* () {
-        const site = yield* SiteService.findSiteById(id)
-
-        if (site.userId !== userPayload.userId) {
-          return yield* new SiteService.SiteAccessDeniedError({
-            siteId: id,
-            userId: userPayload.userId,
-          })
-        }
-
-        return { site }
-      })
+      const getSite = SiteService.findSiteById(id, userPayload.userId).pipe(
+        Effect.map((site) => ({ site }))
+      )
 
       return runRouteEffect(fastify, reply, {
         effect: getSite,

@@ -28,18 +28,10 @@ export const getArticleByIdRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!
       const { id } = request.validatedParams!
 
-      const getArticle = Effect.gen(function* () {
-        const article = yield* ArticleService.findArticleById(id)
-
-        if (article.site.userId !== userPayload.userId) {
-          return yield* new ArticleService.ArticleAccessDeniedError({
-            articleId: id,
-            userId: userPayload.userId,
-          })
-        }
-
-        return { article }
-      })
+      const getArticle = ArticleService.findArticleById(
+        id,
+        userPayload.userId
+      ).pipe(Effect.map((article) => ({ article })))
 
       return runRouteEffect(fastify, reply, {
         effect: getArticle,

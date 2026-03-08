@@ -152,7 +152,7 @@ describe('ArticleService', () => {
 
       // Execute
       const result = await testRuntime.runPromise(
-        ArticleService.findArticleById('article-1')
+        ArticleService.findArticleById('article-1', 'user-1')
       )
 
       // Verify
@@ -178,7 +178,7 @@ describe('ArticleService', () => {
 
       // Execute and verify
       const result = await testRuntime.runPromiseExit(
-        ArticleService.findArticleById('nonexistent-article')
+        ArticleService.findArticleById('nonexistent-article', 'user-1')
       )
 
       expect(Exit.isFailure(result)).toBe(true)
