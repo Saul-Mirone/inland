@@ -159,10 +159,12 @@ const updateSite = (id: string, data: SiteUpdateData) =>
         prisma.site.update({
           where: { id },
           data: {
-            ...(data.name && { name: data.name }),
-            ...(data.gitRepo && { gitRepo: data.gitRepo }),
-            ...(data.platform && { platform: data.platform }),
-            ...(data.deployStatus && { deployStatus: data.deployStatus }),
+            ...(data.name !== undefined && { name: data.name }),
+            ...(data.gitRepo !== undefined && { gitRepo: data.gitRepo }),
+            ...(data.platform !== undefined && { platform: data.platform }),
+            ...(data.deployStatus !== undefined && {
+              deployStatus: data.deployStatus,
+            }),
           },
         }),
       catch: (error) =>

@@ -140,10 +140,10 @@ const updateArticle = (id: string, data: ArticleUpdateData) =>
         prisma.article.update({
           where: { id },
           data: {
-            ...(data.title && { title: data.title }),
-            ...(data.slug && { slug: data.slug }),
+            ...(data.title !== undefined && { title: data.title }),
+            ...(data.slug !== undefined && { slug: data.slug }),
             ...(data.content !== undefined && { content: data.content }),
-            ...(data.status && { status: data.status }),
+            ...(data.status !== undefined && { status: data.status }),
           },
           include: {
             site: {

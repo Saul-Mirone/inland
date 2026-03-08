@@ -2,7 +2,7 @@ import { Schema as S } from 'effect'
 
 // OAuth callback query parameters
 export const GitHubCallbackQuery = S.Struct({
-  code: S.String.pipe(S.minLength(1)),
+  code: S.optional(S.String),
   state: S.optional(S.String),
   error: S.optional(S.String),
   error_description: S.optional(S.String),

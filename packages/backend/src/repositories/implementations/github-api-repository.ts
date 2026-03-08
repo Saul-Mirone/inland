@@ -113,27 +113,50 @@ const makeGitHubApiRequest = (
   options: RequestInit = {}
 ) =>
   Effect.gen(function* () {
-    const response = yield* Effect.promise(() =>
-      fetch(`https://api.github.com${endpoint}`, {
-        ...options,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'Inland-CMS/1.0',
-          ...options.headers,
-        },
-      })
-    )
+    const response = yield* Effect.tryPromise({
+      try: () =>
+        fetch(`https://api.github.com${endpoint}`, {
+          ...options,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Inland-CMS/1.0',
+            ...options.headers,
+          },
+        }),
+      catch: (error) =>
+        new GitProviderError({
+          message: error instanceof Error ? error.message : 'Network error',
+        }),
+    })
 
     if (!response.ok) {
-      const errorText = yield* Effect.promise(() => response.text())
+      const errorText = yield* Effect.tryPromise({
+        try: () => response.text(),
+        catch: (error) =>
+          new GitProviderError({
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Failed to read error response',
+          }),
+      })
       return yield* new GitProviderError({
         message: `GitHub API error: ${errorText}`,
         status: response.status,
       })
     }
 
-    return yield* Effect.promise(() => response.json())
+    return yield* Effect.tryPromise({
+      try: () => response.json(),
+      catch: (error) =>
+        new GitProviderError({
+          message:
+            error instanceof Error
+              ? error.message
+              : 'Failed to parse response JSON',
+        }),
+    })
   })
 
 // Atomic GitHub operations
@@ -471,7 +494,7 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
 
       // Process files sequentially to avoid rate limiting
       for (const file of markdownFiles) {
-        try {
+        yield* Effect.gen(function* () {
           const fileData = yield* getFileContent(
             accessToken,
             repoFullName,
@@ -485,9 +508,11 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
           if (article) {
             articles.push(article)
           }
-        } catch (error) {
-          yield* Effect.logError(`Failed to fetch ${file.path}:`, { error })
-        }
+        }).pipe(
+          Effect.catchAll((error) =>
+            Effect.logError(`Failed to fetch ${file.path}:`, { error })
+          )
+        )
       }
 
       return articles
