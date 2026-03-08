@@ -1,13 +1,11 @@
-import { defineConfig } from 'eslint/config'
-import { readFileSync } from 'node:fs'
-import tseslint from 'typescript-eslint'
 import tsParser from '@typescript-eslint/parser'
-import perfectionist from 'eslint-plugin-perfectionist'
 import pluginImportX from 'eslint-plugin-import-x'
+import { defineConfig } from 'eslint/config'
+import tseslint from 'typescript-eslint'
 
-const ignoreList = readFileSync('.prettierignore', 'utf-8')
-  .split('\n')
-  .filter((line) => line.trim() && !line.startsWith('#'))
+import oxfmtrc from './.oxfmtrc.json' with { type: 'json' }
+
+const ignoreList = oxfmtrc.ignorePatterns
 
 const typeScriptExtensions = ['.ts', '.tsx', '.cts', '.mts']
 
@@ -39,11 +37,9 @@ export default defineConfig(
     files: [...typeScriptExtensions].map((ext) => `**/*${ext}`),
     plugins: {
       '@typescript-eslint': tseslint.plugin,
-      perfectionist,
       'import-x': pluginImportX,
     },
     rules: {
-      'perfectionist/sort-imports': 'error',
       '@typescript-eslint/no-floating-promises': [
         'error',
         {

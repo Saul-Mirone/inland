@@ -1,8 +1,8 @@
 {
   "name": "@inland/backend",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "version": "0.0.0",
   "scripts": {
     "build": "tsx scripts/build.ts",
     "dev": "nodemon",

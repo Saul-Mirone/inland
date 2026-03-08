@@ -1,9 +1,0 @@
-**/storybook-static
-**/lib
-**/dist
-**/.storybook
-**/tests/data/*.md
-**/templates/*.md
-yarn.lock
-**/node_modules
-**/generated

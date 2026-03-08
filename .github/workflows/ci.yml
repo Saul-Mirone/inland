@@ -38,7 +38,7 @@ jobs:
           yarn workspace @inland/backend db:generate
           yarn tsc
           yarn lint:ox
-          yarn lint:prettier
+          yarn lint:fmt
           yarn lint:eslint
 
       - name: Run tests

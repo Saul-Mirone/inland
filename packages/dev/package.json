@@ -1,8 +1,8 @@
 {
   "name": "@inland/dev",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "version": "0.0.0",
   "exports": {
     "./generate": "./src/generate.ts",
     "./logger": "./src/logger.ts"
@@ -12,6 +12,6 @@
     "chalk": "^5.4.1",
     "jsonc-parser": "^3.3.1",
     "lodash-es": "^4.17.21",
-    "prettier": "^3.6.2"
+    "oxfmt": "^0.36.0"
   }
 }
