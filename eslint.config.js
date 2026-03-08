@@ -12,52 +12,50 @@ const ignoreList = readFileSync('.prettierignore', 'utf-8')
 const typeScriptExtensions = ['.ts', '.tsx', '.cts', '.mts']
 
 export default defineConfig(
-  tseslint.config(
-    {
-      ignores: ignoreList,
-    },
-    {
-      settings: {
-        react: {
-          version: 'detect',
-        },
-        'import-x/parsers': {
-          '@typescript-eslint/parser': typeScriptExtensions,
-        },
-        'import-x/resolver': {
-          typescript: true,
-        },
+  {
+    ignores: ignoreList,
+  },
+  {
+    settings: {
+      react: {
+        version: 'detect',
       },
-      languageOptions: {
-        parser: tsParser,
-        ecmaVersion: 'latest',
-        parserOptions: {
-          project: './tsconfig.eslint.json',
-        },
+      'import-x/parsers': {
+        '@typescript-eslint/parser': typeScriptExtensions,
+      },
+      'import-x/resolver': {
+        typescript: true,
       },
     },
-    {
-      files: [...typeScriptExtensions].map((ext) => `**/*${ext}`),
-      plugins: {
-        '@typescript-eslint': tseslint.plugin,
-        perfectionist,
-        'import-x': pluginImportX,
+    languageOptions: {
+      parser: tsParser,
+      ecmaVersion: 'latest',
+      parserOptions: {
+        project: './tsconfig.eslint.json',
       },
-      rules: {
-        'perfectionist/sort-imports': 'error',
-        '@typescript-eslint/no-floating-promises': [
-          'error',
-          {
-            ignoreVoid: false,
-            ignoreIIFE: false,
-          },
-        ],
-        '@typescript-eslint/await-thenable': 'error',
-        'import-x/no-extraneous-dependencies': [
-          'error',
-          { includeInternal: true },
-        ],
-      },
-    }
-  )
+    },
+  },
+  {
+    files: [...typeScriptExtensions].map((ext) => `**/*${ext}`),
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      perfectionist,
+      'import-x': pluginImportX,
+    },
+    rules: {
+      'perfectionist/sort-imports': 'error',
+      '@typescript-eslint/no-floating-promises': [
+        'error',
+        {
+          ignoreVoid: false,
+          ignoreIIFE: false,
+        },
+      ],
+      '@typescript-eslint/await-thenable': 'error',
+      'import-x/no-extraneous-dependencies': [
+        'error',
+        { includeInternal: true },
+      ],
+    },
+  }
 )
