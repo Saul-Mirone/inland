@@ -4,6 +4,7 @@ import {
   ArticleRepository,
   type ArticleUpdateData,
 } from '../../../repositories/article-repository'
+import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import {
   ArticleNotFoundError,
   ArticleCreationError,
@@ -30,27 +31,34 @@ export const updateArticle = (
       return yield* new ArticleAccessDeniedError({ articleId, userId })
     }
 
-    try {
-      const repoData: ArticleUpdateData = {
-        ...(data.title && { title: data.title }),
-        ...(data.slug && { slug: data.slug }),
-        ...(data.content !== undefined && { content: data.content }),
-        ...(data.status && { status: data.status }),
-      }
-      const article = yield* articleRepo.update(articleId, repoData)
-      return { article }
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes('Unique constraint')
-      ) {
-        return yield* new DuplicateSlugError({
-          slug: data.slug || '',
-          siteId: existingArticle.siteId,
-        })
-      }
-      return yield* new ArticleCreationError({
-        reason: error instanceof Error ? error.message : 'Update failed',
-      })
+    const repoData: ArticleUpdateData = {
+      ...(data.title && { title: data.title }),
+      ...(data.slug && { slug: data.slug }),
+      ...(data.content !== undefined && { content: data.content }),
+      ...(data.status && { status: data.status }),
     }
+    const article = yield* articleRepo.update(articleId, repoData).pipe(
+      Effect.catchTag(
+        'RepositoryError',
+        (
+          error
+        ): Effect.Effect<never, DuplicateSlugError | ArticleCreationError> =>
+          isUniqueConstraintError(error)
+            ? Effect.fail(
+                new DuplicateSlugError({
+                  slug: data.slug || '',
+                  siteId: existingArticle.siteId,
+                })
+              )
+            : Effect.fail(
+                new ArticleCreationError({
+                  reason:
+                    error.cause instanceof Error
+                      ? error.cause.message
+                      : 'Update failed',
+                })
+              )
+      )
+    )
+    return { article }
   })

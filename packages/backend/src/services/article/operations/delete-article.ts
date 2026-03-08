@@ -28,22 +28,27 @@ export const deleteArticle = (articleId: string, userId: string) =>
     const hasGitRepo = Boolean(existingArticle.site.gitRepo)
 
     if (hasGitRepo && existingArticle.status === 'published') {
-      try {
-        const gitDeleteResult = yield* ArticleGit.deleteArticleFromGit(
-          existingArticle.id,
-          userId
+      const gitResult = yield* ArticleGit.deleteArticleFromGit(
+        existingArticle.id,
+        userId
+      ).pipe(
+        Effect.catchAll((error) =>
+          Effect.gen(function* () {
+            yield* Effect.logError(
+              'Failed to delete article from Git repository',
+              { error, articleId, userId }
+            )
+            return {
+              deleted: false,
+              reason:
+                error instanceof Error ? error.message : 'Unknown Git error',
+            }
+          })
         )
-        gitDeleted = gitDeleteResult.deleted
-        if (!gitDeleteResult.deleted && gitDeleteResult.reason) {
-          gitError = gitDeleteResult.reason
-        }
-      } catch (error) {
-        gitError = error instanceof Error ? error.message : 'Unknown Git error'
-        yield* Effect.logError('Failed to delete article from Git repository', {
-          error,
-          articleId,
-          userId,
-        })
+      )
+      gitDeleted = gitResult.deleted
+      if (!gitResult.deleted && gitResult.reason) {
+        gitError = gitResult.reason
       }
     }
 

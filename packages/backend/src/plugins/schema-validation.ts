@@ -55,10 +55,7 @@ export interface SchemaValidationConfig {
 
 // Pre-handler factory for route-level validation using Effect-TS with type inference
 export const withSchemaValidation = (config: SchemaValidationConfig) => {
-  return async (
-    request: FastifyRequest,
-    reply: FastifyReply
-  ): Promise<void> => {
+  return async (request: FastifyRequest): Promise<void> => {
     const validateAllFields = Effect.gen(function* () {
       // Validate body
       if (config.body) {
@@ -109,20 +106,13 @@ export const withSchemaValidation = (config: SchemaValidationConfig) => {
       }
     })
 
-    // Run the validation Effect and handle errors
+    // Run the validation Effect - let SchemaValidationError throw
+    // so the global error handler can catch it and stop request processing
     await Effect.runPromise(
       validateAllFields.pipe(
         Effect.catchAll((validationError: SchemaValidationError) =>
           Effect.sync(() => {
-            const errorResponse = {
-              success: false,
-              error: 'Validation Error',
-              field: validationError.field,
-              message: `Invalid ${validationError.field} data`,
-              details: validationError.details,
-            }
-
-            return reply.code(400).send(errorResponse)
+            throw validationError
           })
         )
       )

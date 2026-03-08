@@ -12,6 +12,7 @@ import type {
   GitProviderError,
   GitProviderRepositoryService,
 } from '../repositories/git-provider-repository'
+import type { RepositoryError } from '../repositories/repository-error'
 import type { SiteRepository } from '../repositories/site-repository'
 import type { UserRepositoryService } from '../repositories/user-repository'
 import type {
@@ -36,7 +37,8 @@ export interface ArticleServiceInterface {
     | GitRepositoryError
     | AuthTokenError
     | AuthProviderAPIError
-    | GitProviderError,
+    | GitProviderError
+    | RepositoryError,
     | DatabaseService
     | GitProviderRepositoryService
     | ArticleRepository

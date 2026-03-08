@@ -52,7 +52,7 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
 
     const importedArticles = []
     for (const articleData of articles) {
-      try {
+      const result = yield* Effect.gen(function* () {
         const existingArticle = yield* articleRepo.findBySiteIdAndSlug(
           site.id,
           articleData.slug
@@ -62,7 +62,7 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
           yield* Effect.logInfo(
             `Skipping existing article: ${articleData.slug}`
           )
-          continue
+          return null
         }
 
         const repoData: ArticleCreateData = {
@@ -74,13 +74,21 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
         }
         const article = yield* articleRepo.create(repoData)
 
-        importedArticles.push(article)
         yield* Effect.logInfo(`Imported article: ${articleData.title}`)
-      } catch (error) {
-        yield* Effect.logError(
-          `Failed to import article ${articleData.title}:`,
-          { error }
+        return article
+      }).pipe(
+        Effect.catchAll(() =>
+          Effect.gen(function* () {
+            yield* Effect.logError(
+              `Failed to import article ${articleData.title}`
+            )
+            return null
+          })
         )
+      )
+
+      if (result) {
+        importedArticles.push(result)
       }
     }
 

@@ -40,12 +40,6 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
       return fastify.runtime.runPromise(
         createSite.pipe(
           Effect.catchTags({
-            SiteAccessError: () =>
-              Effect.sync(() =>
-                reply.code(403).send({
-                  error: 'Access denied to site',
-                })
-              ),
             AuthTokenError: () =>
               Effect.sync(() =>
                 reply.code(401).send({

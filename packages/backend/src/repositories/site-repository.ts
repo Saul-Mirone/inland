@@ -4,6 +4,7 @@ import { Context } from 'effect'
 
 import type { Site } from '../../generated/prisma/client'
 import type { DatabaseService } from '../services/database-service'
+import type { RepositoryError } from './repository-error'
 
 // Domain types for Site operations
 export interface SiteCreateData {
@@ -61,36 +62,42 @@ export interface SiteUpdateData {
 export interface SiteRepositoryService {
   readonly findById: (
     id: string
-  ) => Effect.Effect<Site | null, never, DatabaseService>
+  ) => Effect.Effect<Site | null, RepositoryError, DatabaseService>
   readonly findByIdWithUserId: (
     id: string
-  ) => Effect.Effect<{ userId: string } | null, never, DatabaseService>
+  ) => Effect.Effect<
+    { userId: string } | null,
+    RepositoryError,
+    DatabaseService
+  >
   readonly findByIdWithDetails: (id: string) => Effect.Effect<
     {
       readonly id: string
       readonly gitRepo: string | null
       readonly userId: string
     } | null,
-    never,
+    RepositoryError,
     DatabaseService
   >
   readonly findByUserId: (
     userId: string
-  ) => Effect.Effect<Site[], never, DatabaseService>
+  ) => Effect.Effect<Site[], RepositoryError, DatabaseService>
   readonly findByUserIdWithCounts: (
     userId: string
-  ) => Effect.Effect<SiteWithCounts[], never, DatabaseService>
+  ) => Effect.Effect<SiteWithCounts[], RepositoryError, DatabaseService>
   readonly findByIdWithFullDetails: (
     id: string
-  ) => Effect.Effect<SiteWithDetails | null, never, DatabaseService>
+  ) => Effect.Effect<SiteWithDetails | null, RepositoryError, DatabaseService>
   readonly update: (
     id: string,
     data: SiteUpdateData
-  ) => Effect.Effect<Site, never, DatabaseService>
-  readonly delete: (id: string) => Effect.Effect<Site, never, DatabaseService>
+  ) => Effect.Effect<Site, RepositoryError, DatabaseService>
+  readonly delete: (
+    id: string
+  ) => Effect.Effect<Site, RepositoryError, DatabaseService>
   readonly create: (
     data: SiteCreateData
-  ) => Effect.Effect<Site, never, DatabaseService>
+  ) => Effect.Effect<Site, RepositoryError, DatabaseService>
 }
 
 // Context tag for dependency injection

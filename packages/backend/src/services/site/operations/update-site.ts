@@ -1,5 +1,6 @@
 import { Effect } from 'effect'
 
+import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository'
 import {
   SiteNotFoundError,
@@ -27,21 +28,28 @@ export const updateSite = (
       return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
-    try {
-      const updatedSite = yield* siteRepo.update(siteId, data)
-      return updatedSite
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes('Unique constraint')
-      ) {
-        return yield* new DuplicateSiteNameError({
-          name: data.name || '',
-          userId,
-        })
-      }
-      return yield* new SiteCreationError({
-        reason: error instanceof Error ? error.message : 'Update failed',
-      })
-    }
+    const updatedSite = yield* siteRepo.update(siteId, data).pipe(
+      Effect.catchTag(
+        'RepositoryError',
+        (
+          error
+        ): Effect.Effect<never, DuplicateSiteNameError | SiteCreationError> =>
+          isUniqueConstraintError(error)
+            ? Effect.fail(
+                new DuplicateSiteNameError({
+                  name: data.name || '',
+                  userId,
+                })
+              )
+            : Effect.fail(
+                new SiteCreationError({
+                  reason:
+                    error.cause instanceof Error
+                      ? error.cause.message
+                      : 'Update failed',
+                })
+              )
+      )
+    )
+    return updatedSite
   })

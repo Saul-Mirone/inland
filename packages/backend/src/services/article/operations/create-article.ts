@@ -4,6 +4,7 @@ import {
   ArticleRepository,
   type ArticleCreateData,
 } from '../../../repositories/article-repository'
+import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository'
 import {
   ArticleCreationError,
@@ -33,28 +34,35 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
       })
     }
 
-    try {
-      const repoData: ArticleCreateData = {
-        siteId: data.siteId,
-        title: data.title,
-        slug: data.slug,
-        content: data.content,
-        status: data.status || 'draft',
-      }
-      const article = yield* articleRepo.create(repoData)
-      return article
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes('Unique constraint')
-      ) {
-        return yield* new DuplicateSlugError({
-          slug: data.slug,
-          siteId: data.siteId,
-        })
-      }
-      return yield* new ArticleCreationError({
-        reason: error instanceof Error ? error.message : 'Unknown error',
-      })
+    const repoData: ArticleCreateData = {
+      siteId: data.siteId,
+      title: data.title,
+      slug: data.slug,
+      content: data.content,
+      status: data.status || 'draft',
     }
+    const article = yield* articleRepo.create(repoData).pipe(
+      Effect.catchTag(
+        'RepositoryError',
+        (
+          error
+        ): Effect.Effect<never, DuplicateSlugError | ArticleCreationError> =>
+          isUniqueConstraintError(error)
+            ? Effect.fail(
+                new DuplicateSlugError({
+                  slug: data.slug,
+                  siteId: data.siteId,
+                })
+              )
+            : Effect.fail(
+                new ArticleCreationError({
+                  reason:
+                    error.cause instanceof Error
+                      ? error.cause.message
+                      : 'Unknown error',
+                })
+              )
+      )
+    )
+    return article
   })
