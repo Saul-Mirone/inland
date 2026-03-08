@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance, FastifyRequest } from 'fastify'
 
 import { Effect, Schema as S } from 'effect'
 import fp from 'fastify-plugin'
