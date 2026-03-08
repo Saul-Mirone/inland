@@ -124,8 +124,7 @@ const parseMarkdownContent = (
         | 'draft'
         | 'published',
     }
-  } catch (error) {
-    console.error(`Failed to parse markdown content for ${filePath}:`, error)
+  } catch {
     return null
   }
 }
@@ -372,17 +371,11 @@ const replaceTemplatePlaceholders = (
           Schedule.intersect(Schedule.recurs(9)),
           Schedule.whileInput((error: unknown) => {
             if (!isGitProviderError(error)) return false
-            const isEmptyRepo =
+            return (
               error.status === 409 ||
               error.status === 422 ||
               error.message?.includes('Git Repository is empty')
-            if (isEmptyRepo) {
-              Effect.logInfo(`Repository not ready, retrying...`).pipe(
-                Effect.runSync
-              )
-              return true
-            }
-            return false
+            )
           })
         )
       )
@@ -412,7 +405,9 @@ const replaceTemplatePlaceholders = (
   })
 
 // GitHub implementation factory (minimal, only returns interface)
-export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
+export const makeGitHubApiRepository = (config?: {
+  templateRepo?: string
+}): GitProviderRepositoryService => ({
   createRepositoryWithPages: (
     accessToken: string,
     data: CreateRepoData,
@@ -660,7 +655,8 @@ export const makeGitHubApiRepository = (): GitProviderRepositoryService => ({
       yield* Effect.logInfo(`Injecting Inland workflow into ${repoFullName}`)
 
       const overrideExisting = options?.overrideExistingFiles ?? false
-      const templateRepo = 'Saul-Mirone/inland-template-basic'
+      const templateRepo =
+        config?.templateRepo || 'Saul-Mirone/inland-template-basic'
       const filesCreated: string[] = []
       const filesSkipped: string[] = []
 

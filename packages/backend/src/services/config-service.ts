@@ -9,6 +9,7 @@ export interface AppConfig {
   readonly appUrl: string
   readonly apiUrl: string
   readonly redisUrl: string
+  readonly templateRepo: string
 }
 
 export class ConfigService extends Context.Tag('ConfigService')<
@@ -28,6 +29,8 @@ export function resolveConfig(): AppConfig {
     appUrl: process.env.APP_URL || 'http://localhost:3000',
     apiUrl: process.env.API_URL || 'http://localhost:3001',
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+    templateRepo:
+      process.env.TEMPLATE_REPO || 'Saul-Mirone/inland-template-basic',
   }
 }
 

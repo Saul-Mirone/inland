@@ -26,7 +26,7 @@ await fastify.register(schemaValidationPlugin)
 
 // Register CORS plugin
 await fastify.register(import('@fastify/cors'), {
-  origin: true,
+  origin: process.env.APP_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 })

@@ -142,12 +142,7 @@ describe('UserService', () => {
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: 'user-1' },
         include: {
-          gitIntegrations: {
-            select: {
-              platform: true,
-              platformUsername: true,
-            },
-          },
+          gitIntegrations: true,
         },
       })
     })

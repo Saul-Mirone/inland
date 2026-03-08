@@ -93,12 +93,15 @@ export const importRepo = (data: ImportRepoData) =>
     const importResult = yield* articleService
       .importArticlesFromGit(site.id, data.userId)
       .pipe(
-        Effect.catchAll((error) => {
+        Effect.catchAll((error) =>
           Effect.logError('Failed to import articles', { error }).pipe(
-            Effect.runSync
+            Effect.map(() => ({
+              imported: 0,
+              total: 0,
+              articles: [] as never[],
+            }))
           )
-          return Effect.succeed({ imported: 0, total: 0, articles: [] })
-        })
+        )
       )
 
     yield* Effect.logInfo(

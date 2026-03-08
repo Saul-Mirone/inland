@@ -7,7 +7,6 @@ import {
   type UserRepositoryService,
   type CreateUserData,
   type CreateGitIntegrationData,
-  type UserWithIntegrations,
 } from '../user-repository'
 
 // Individual atomic operations
@@ -47,23 +46,17 @@ const findUserByUsername = (username: string) =>
 const findUserById = (userId: string) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService
-    const user = yield* Effect.tryPromise({
+    return yield* Effect.tryPromise({
       try: () =>
         prisma.user.findUnique({
           where: { id: userId },
           include: {
-            gitIntegrations: {
-              select: {
-                platform: true,
-                platformUsername: true,
-              },
-            },
+            gitIntegrations: true,
           },
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'user.findById', cause: error }),
     })
-    return user as UserWithIntegrations | null
   })
 
 const upsertUser = (data: CreateUserData) =>
