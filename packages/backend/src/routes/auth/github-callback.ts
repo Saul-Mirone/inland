@@ -9,11 +9,8 @@ import {
 import * as Schemas from '../../schemas'
 import * as AuthService from '../../services/auth-service'
 import { ConfigService } from '../../services/config-service'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const githubCallbackRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   const getAppUrl = Effect.gen(function* () {
     const config = yield* ConfigService
     return config.appUrl
@@ -81,7 +78,7 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
         return reply.redirect(successUrl)
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         handleOAuthCallback.pipe(
           Effect.catchTags({
             GitHubTokenError: () =>

@@ -8,11 +8,8 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as ArticleService from '../../services/article'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.get(
     '/sites/:siteId/articles',
     {
@@ -38,7 +35,7 @@ export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
         return { articles }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         getSiteArticles.pipe(
           Effect.catchTag('SiteAccessError', () =>
             Effect.sync(() =>

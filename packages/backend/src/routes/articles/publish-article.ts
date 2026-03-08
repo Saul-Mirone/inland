@@ -8,11 +8,8 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as ArticleService from '../../services/article'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const publishArticleRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.post(
     '/articles/:id/publish',
     {
@@ -41,7 +38,7 @@ export const publishArticleRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         publishArticle.pipe(
           Effect.catchTags({
             ArticleNotFoundError: () =>

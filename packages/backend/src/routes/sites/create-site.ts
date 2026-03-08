@@ -8,11 +8,8 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const createSiteRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.post(
     '/sites',
     {
@@ -40,7 +37,7 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
         return { site }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         createSite.pipe(
           Effect.catchTags({
             SiteAccessError: () =>

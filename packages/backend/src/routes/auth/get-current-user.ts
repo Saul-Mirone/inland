@@ -3,11 +3,8 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import * as UserService from '../../services/user'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.get(
     '/auth/me',
     {
@@ -34,7 +31,7 @@ export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         getUserInfo.pipe(
           Effect.catchTag('UserNotFoundError', () =>
             Effect.sync(() => reply.code(404).send({ error: 'User not found' }))

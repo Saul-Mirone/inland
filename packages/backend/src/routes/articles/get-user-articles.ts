@@ -3,11 +3,8 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import * as ArticleService from '../../services/article'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.get(
     '/articles',
     {
@@ -23,7 +20,7 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
         return { articles }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         getUserArticles.pipe(
           Effect.matchEffect({
             onFailure: (error) =>

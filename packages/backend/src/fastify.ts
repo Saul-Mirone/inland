@@ -2,6 +2,7 @@ import Fastify from 'fastify'
 
 import { fastifyAuthPlugin } from './plugins/auth'
 import { prismaPlugin } from './plugins/database'
+import { runtimePlugin } from './plugins/effect-runtime'
 import { schemaValidationPlugin } from './plugins/schema-validation'
 import { articleRoutes } from './routes/articles'
 import { authRoutes } from './routes/auth'
@@ -13,6 +14,9 @@ export const fastify = Fastify({
 
 // Register database plugin
 await fastify.register(prismaPlugin)
+
+// Register Effect runtime plugin (depends on database)
+await fastify.register(runtimePlugin)
 
 // Register authentication plugin
 await fastify.register(fastifyAuthPlugin)

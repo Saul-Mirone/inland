@@ -8,11 +8,8 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const deleteSiteRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.delete(
     '/sites/:id',
     {
@@ -32,7 +29,7 @@ export const deleteSiteRoute = async (fastify: FastifyInstance) => {
         return { message: 'Site deleted successfully', site }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         deleteSite.pipe(
           Effect.catchTags({
             SiteNotFoundError: () =>

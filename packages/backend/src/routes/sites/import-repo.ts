@@ -8,11 +8,8 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import * as SiteService from '../../services/site'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const importRepoRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.post(
     '/sites/import',
     {
@@ -52,7 +49,7 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
         return result
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         importRepoEffect.pipe(
           Effect.tap((result) =>
             Effect.sync(() => reply.code(201).send(result))

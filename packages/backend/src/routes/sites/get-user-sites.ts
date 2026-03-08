@@ -3,11 +3,8 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import * as SiteService from '../../services/site'
-import { createAppRuntime } from '../../utils/effect-runtime'
 
 export const getUserSitesRoute = async (fastify: FastifyInstance) => {
-  const runtime = createAppRuntime(fastify.prisma)
-
   fastify.get(
     '/sites',
     {
@@ -21,7 +18,7 @@ export const getUserSitesRoute = async (fastify: FastifyInstance) => {
         return { sites }
       })
 
-      return runtime.runPromise(
+      return fastify.runtime.runPromise(
         getUserSites.pipe(
           Effect.matchEffect({
             onFailure: (error) =>
