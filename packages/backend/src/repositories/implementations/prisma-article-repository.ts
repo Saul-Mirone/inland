@@ -7,6 +7,11 @@ import {
   type ArticleCreateData,
   type ArticleUpdateData,
 } from '../article-repository'
+import {
+  DEFAULT_LIMIT,
+  DEFAULT_PAGE,
+  type PaginationOptions,
+} from '../pagination'
 import { RepositoryError } from '../repository-error'
 
 // Individual atomic operations
@@ -78,58 +83,91 @@ const findArticleBySiteIdAndSlug = (siteId: string, slug: string) =>
     })
   })
 
-const findArticlesBySiteId = (siteId: string) =>
+const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService
-    return yield* Effect.tryPromise({
+    const page = pagination?.page ?? DEFAULT_PAGE
+    const limit = pagination?.limit ?? DEFAULT_LIMIT
+    const skip = (page - 1) * limit
+
+    const [items, total] = yield* Effect.tryPromise({
       try: () =>
-        prisma.article.findMany({
-          where: { siteId },
-          orderBy: { updatedAt: 'desc' },
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-          },
-        }),
+        prisma.$transaction([
+          prisma.article.findMany({
+            where: { siteId },
+            orderBy: { updatedAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+            skip,
+            take: limit,
+          }),
+          prisma.article.count({ where: { siteId } }),
+        ]),
       catch: (error) =>
         new RepositoryError({
           operation: 'article.findBySiteId',
           cause: error,
         }),
     })
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   })
 
-const findArticlesByUserId = (userId: string) =>
+const findArticlesByUserId = (userId: string, pagination?: PaginationOptions) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService
-    return yield* Effect.tryPromise({
+    const page = pagination?.page ?? DEFAULT_PAGE
+    const limit = pagination?.limit ?? DEFAULT_LIMIT
+    const skip = (page - 1) * limit
+    const where = { site: { userId } }
+
+    const [items, total] = yield* Effect.tryPromise({
       try: () =>
-        prisma.article.findMany({
-          where: {
-            site: { userId },
-          },
-          include: {
-            site: {
-              select: {
-                id: true,
-                name: true,
-                userId: true,
-                gitRepo: true,
+        prisma.$transaction([
+          prisma.article.findMany({
+            where,
+            include: {
+              site: {
+                select: {
+                  id: true,
+                  name: true,
+                  userId: true,
+                  gitRepo: true,
+                },
               },
             },
-          },
-          orderBy: { updatedAt: 'desc' },
-        }),
+            orderBy: { updatedAt: 'desc' },
+            skip,
+            take: limit,
+          }),
+          prisma.article.count({ where }),
+        ]),
       catch: (error) =>
         new RepositoryError({
           operation: 'article.findByUserId',
           cause: error,
         }),
     })
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   })
 
 const updateArticle = (id: string, data: ArticleUpdateData) =>

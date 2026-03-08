@@ -4,6 +4,7 @@ import { Context } from 'effect'
 
 import type { Article } from '../../generated/prisma/client'
 import type { DatabaseService } from '../services/database-service'
+import type { PaginatedResult, PaginationOptions } from './pagination'
 import type { RepositoryError } from './repository-error'
 
 // Domain types for Article operations
@@ -53,11 +54,21 @@ export interface ArticleRepositoryService {
     slug: string
   ) => Effect.Effect<Article | null, RepositoryError, DatabaseService>
   readonly findBySiteId: (
-    siteId: string
-  ) => Effect.Effect<ArticleListItem[], RepositoryError, DatabaseService>
+    siteId: string,
+    pagination?: PaginationOptions
+  ) => Effect.Effect<
+    PaginatedResult<ArticleListItem>,
+    RepositoryError,
+    DatabaseService
+  >
   readonly findByUserId: (
-    userId: string
-  ) => Effect.Effect<ArticleWithSite[], RepositoryError, DatabaseService>
+    userId: string,
+    pagination?: PaginationOptions
+  ) => Effect.Effect<
+    PaginatedResult<ArticleWithSite>,
+    RepositoryError,
+    DatabaseService
+  >
   readonly update: (
     id: string,
     data: ArticleUpdateData

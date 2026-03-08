@@ -1,6 +1,11 @@
 import { Effect, Layer } from 'effect'
 
 import { DatabaseService } from '../../services/database-service'
+import {
+  DEFAULT_LIMIT,
+  DEFAULT_PAGE,
+  type PaginationOptions,
+} from '../pagination'
 import { RepositoryError } from '../repository-error'
 import {
   SiteRepository,
@@ -78,29 +83,49 @@ const findSitesByUserId = (userId: string) =>
     })
   })
 
-const findSitesByUserIdWithCounts = (userId: string) =>
+const findSitesByUserIdWithCounts = (
+  userId: string,
+  pagination?: PaginationOptions
+) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService
-    return yield* Effect.tryPromise({
+    const page = pagination?.page ?? DEFAULT_PAGE
+    const limit = pagination?.limit ?? DEFAULT_LIMIT
+    const skip = (page - 1) * limit
+
+    const [items, total] = yield* Effect.tryPromise({
       try: () =>
-        prisma.site.findMany({
-          where: { userId },
-          include: {
-            _count: {
-              select: {
-                articles: true,
-                media: true,
+        prisma.$transaction([
+          prisma.site.findMany({
+            where: { userId },
+            include: {
+              _count: {
+                select: {
+                  articles: true,
+                  media: true,
+                },
               },
             },
-          },
-          orderBy: { updatedAt: 'desc' },
-        }),
+            orderBy: { updatedAt: 'desc' },
+            skip,
+            take: limit,
+          }),
+          prisma.site.count({ where: { userId } }),
+        ]),
       catch: (error) =>
         new RepositoryError({
           operation: 'site.findByUserIdWithCounts',
           cause: error,
         }),
     })
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   })
 
 const findSiteByIdWithFullDetails = (id: string) =>

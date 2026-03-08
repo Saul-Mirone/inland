@@ -4,6 +4,7 @@ import { Context } from 'effect'
 
 import type { Site } from '../../generated/prisma/client'
 import type { DatabaseService } from '../services/database-service'
+import type { PaginatedResult, PaginationOptions } from './pagination'
 import type { RepositoryError } from './repository-error'
 
 // Domain types for Site operations
@@ -83,8 +84,13 @@ export interface SiteRepositoryService {
     userId: string
   ) => Effect.Effect<Site[], RepositoryError, DatabaseService>
   readonly findByUserIdWithCounts: (
-    userId: string
-  ) => Effect.Effect<SiteWithCounts[], RepositoryError, DatabaseService>
+    userId: string,
+    pagination?: PaginationOptions
+  ) => Effect.Effect<
+    PaginatedResult<SiteWithCounts>,
+    RepositoryError,
+    DatabaseService
+  >
   readonly findByIdWithFullDetails: (
     id: string
   ) => Effect.Effect<SiteWithDetails | null, RepositoryError, DatabaseService>

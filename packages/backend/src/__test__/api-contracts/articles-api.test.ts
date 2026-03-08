@@ -21,7 +21,7 @@ describe('Articles API Contracts', () => {
   })
 
   describe('GET /sites/{siteId}/articles', () => {
-    it('should return articles array directly for frontend .map() usage', async () => {
+    it('should return paginated result with items array for frontend usage', async () => {
       const mockArticles = [
         mockArticle({
           id: 'article-1',
@@ -38,45 +38,52 @@ describe('Articles API Contracts', () => {
       ]
 
       mockPrisma.site.findUnique.mockResolvedValue(mockSite())
-      mockPrisma.article.findMany.mockResolvedValue(mockArticles)
+      mockPrisma.$transaction.mockResolvedValue([mockArticles, 2])
 
       const result = await testRuntime.runPromise(
         ArticleService.findSiteArticles('site-1', 'user-1')
       )
 
-      // Critical: Must be an array for frontend usage
-      expect(Array.isArray(result)).toBe(true)
-      expect(result.map).toBeDefined()
-      expect(result.length).toBe(2)
+      // Critical: Must return paginated result
+      expect(result).toHaveProperty('items')
+      expect(result).toHaveProperty('total')
+      expect(result).toHaveProperty('page')
+      expect(result).toHaveProperty('limit')
+      expect(result).toHaveProperty('totalPages')
+      expect(Array.isArray(result.items)).toBe(true)
+      expect(result.items.length).toBe(2)
 
-      // Should work with frontend array methods
-      expect(() => result.map((a) => a.title)).not.toThrow()
-      expect(() => result.filter((a) => a.status === 'published')).not.toThrow()
-      expect(() => result.find((a) => a.id === 'article-1')).not.toThrow()
+      // Should work with frontend array methods on items
+      expect(() => result.items.map((a) => a.title)).not.toThrow()
+      expect(() =>
+        result.items.filter((a) => a.status === 'published')
+      ).not.toThrow()
+      expect(() => result.items.find((a) => a.id === 'article-1')).not.toThrow()
 
       // Verify response shape
-      expect(result[0]).toHaveProperty('id')
-      expect(result[0]).toHaveProperty('title')
-      expect(result[0]).toHaveProperty('slug')
-      expect(result[0]).toHaveProperty('status')
+      expect(result.items[0]).toHaveProperty('id')
+      expect(result.items[0]).toHaveProperty('title')
+      expect(result.items[0]).toHaveProperty('slug')
+      expect(result.items[0]).toHaveProperty('status')
     })
 
-    it('should return empty array when no articles exist', async () => {
+    it('should return empty items when no articles exist', async () => {
       mockPrisma.site.findUnique.mockResolvedValue(mockSite())
-      mockPrisma.article.findMany.mockResolvedValue([])
+      mockPrisma.$transaction.mockResolvedValue([[], 0])
 
       const result = await testRuntime.runPromise(
         ArticleService.findSiteArticles('site-1', 'user-1')
       )
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result.length).toBe(0)
-      expect(() => result.map((a) => a.id)).not.toThrow()
+      expect(Array.isArray(result.items)).toBe(true)
+      expect(result.items.length).toBe(0)
+      expect(result.total).toBe(0)
+      expect(() => result.items.map((a) => a.id)).not.toThrow()
     })
   })
 
   describe('GET /users/{userId}/articles', () => {
-    it('should return articles array directly for frontend .map() usage', async () => {
+    it('should return paginated result with items array for frontend usage', async () => {
       const mockArticles = [
         mockArticle({
           id: 'article-1',
@@ -86,23 +93,25 @@ describe('Articles API Contracts', () => {
         }),
       ]
 
-      mockPrisma.article.findMany.mockResolvedValue(mockArticles)
+      mockPrisma.$transaction.mockResolvedValue([mockArticles, 1])
 
       const result = await testRuntime.runPromise(
         ArticleService.findUserArticles('user-1')
       )
 
-      // Critical: Must be an array for frontend usage
-      expect(Array.isArray(result)).toBe(true)
-      expect(result.map).toBeDefined()
-      expect(result.length).toBe(1)
+      // Critical: Must return paginated result
+      expect(result).toHaveProperty('items')
+      expect(result).toHaveProperty('total')
+      expect(result).toHaveProperty('page')
+      expect(Array.isArray(result.items)).toBe(true)
+      expect(result.items.length).toBe(1)
 
-      // Should work with frontend array methods
-      expect(() => result.map((a) => a.title)).not.toThrow()
+      // Should work with frontend array methods on items
+      expect(() => result.items.map((a) => a.title)).not.toThrow()
 
       // Verify response shape includes site data
-      expect(result[0]).toHaveProperty('id')
-      expect(result[0]).toHaveProperty('title')
+      expect(result.items[0]).toHaveProperty('id')
+      expect(result.items[0]).toHaveProperty('title')
     })
   })
 
@@ -170,20 +179,20 @@ describe('Articles API Contracts', () => {
   })
 
   describe('Regression Prevention', () => {
-    it('prevents accidental wrapping of array responses', async () => {
-      // This test specifically prevents the regression we just fixed
+    it('returns paginated result with items array for list endpoints', async () => {
       const mockArticles = [mockArticle({ id: 'test' })]
 
       mockPrisma.site.findUnique.mockResolvedValue(mockSite())
-      mockPrisma.article.findMany.mockResolvedValue(mockArticles)
+      mockPrisma.$transaction.mockResolvedValue([mockArticles, 1])
 
       const result = await testRuntime.runPromise(
         ArticleService.findSiteArticles('site-1', 'user-1')
       )
 
-      // Should NOT be wrapped like { articles: [...] }
-      expect(result).not.toHaveProperty('articles')
-      expect(result[0]).toHaveProperty('id', 'test')
+      // Should be a paginated result with items
+      expect(result).toHaveProperty('items')
+      expect(result).toHaveProperty('total')
+      expect(result.items[0]).toHaveProperty('id', 'test')
     })
 
     it('prevents accidental unwrapping of object responses', async () => {

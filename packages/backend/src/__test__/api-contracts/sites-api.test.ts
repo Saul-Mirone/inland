@@ -21,7 +21,7 @@ describe('Sites API Contracts', () => {
   })
 
   describe('GET /users/{userId}/sites', () => {
-    it('should return sites array with _count for frontend usage', async () => {
+    it('should return paginated result with items containing _count for frontend usage', async () => {
       const mockSites = [
         {
           ...mockSite({
@@ -43,40 +43,47 @@ describe('Sites API Contracts', () => {
         },
       ]
 
-      mockPrisma.site.findMany.mockResolvedValue(mockSites)
+      mockPrisma.$transaction.mockResolvedValue([mockSites, 2])
 
       const result = await testRuntime.runPromise(
         SiteService.findUserSites('user-1')
       )
 
-      // Critical: Must be an array with _count for frontend
-      expect(Array.isArray(result)).toBe(true)
-      expect(result.map).toBeDefined()
-      expect(result.length).toBe(2)
+      // Critical: Must return paginated result
+      expect(result).toHaveProperty('items')
+      expect(result).toHaveProperty('total')
+      expect(result).toHaveProperty('page')
+      expect(result).toHaveProperty('limit')
+      expect(result).toHaveProperty('totalPages')
+      expect(Array.isArray(result.items)).toBe(true)
+      expect(result.items.length).toBe(2)
 
-      // Should work with frontend array methods
-      expect(() => result.map((s) => s.name)).not.toThrow()
-      expect(() => result.filter((s) => s._count.articles > 0)).not.toThrow()
-      expect(() => result.find((s) => s.id === 'site-1')).not.toThrow()
+      // Should work with frontend array methods on items
+      expect(() => result.items.map((s) => s.name)).not.toThrow()
+      expect(() =>
+        result.items.filter((s) => s._count.articles > 0)
+      ).not.toThrow()
+      expect(() => result.items.find((s) => s.id === 'site-1')).not.toThrow()
 
       // Verify _count structure is preserved
-      expect(result[0]._count).toBeDefined()
-      expect(result[0]._count.articles).toBe(5)
-      expect(result[0]._count.media).toBe(3)
-      expect(result[1]._count.articles).toBe(2)
-      expect(result[1]._count.media).toBe(1)
+      expect(result.items[0]._count).toBeDefined()
+      expect(result.items[0]._count.articles).toBe(5)
+      expect(result.items[0]._count.media).toBe(3)
+      expect(result.items[1]._count.articles).toBe(2)
+      expect(result.items[1]._count.media).toBe(1)
     })
 
-    it('should return empty array when user has no sites', async () => {
-      mockPrisma.site.findMany.mockResolvedValue([])
+    it('should return empty items when user has no sites', async () => {
+      mockPrisma.$transaction.mockResolvedValue([[], 0])
 
       const result = await testRuntime.runPromise(
         SiteService.findUserSites('user-1')
       )
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result.length).toBe(0)
-      expect(() => result.map((s) => s.id)).not.toThrow()
+      expect(Array.isArray(result.items)).toBe(true)
+      expect(result.items.length).toBe(0)
+      expect(result.total).toBe(0)
+      expect(() => result.items.map((s) => s.id)).not.toThrow()
     })
   })
 

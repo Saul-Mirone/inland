@@ -18,23 +18,38 @@ export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
         fastify.authenticate,
         withSchemaValidation({
           params: Schemas.SiteIdParam,
+          querystring: Schemas.PaginationParams,
         }),
       ],
     },
     async (
-      request: TypedFastifyRequest<unknown, Schemas.SiteIdParam>,
+      request: TypedFastifyRequest<
+        unknown,
+        Schemas.SiteIdParam,
+        Schemas.PaginationParams
+      >,
       reply
     ) => {
       const userPayload = request.jwtPayload!
       const { siteId } = request.validatedParams!
+      const { page, limit } = request.validatedQuery!
 
       const getSiteArticles = Effect.gen(function* () {
         const articleService = yield* ArticleService
-        const articles = yield* articleService.findSiteArticles(
+        const result = yield* articleService.findSiteArticles(
           siteId,
-          userPayload.userId
+          userPayload.userId,
+          { page, limit }
         )
-        return { articles }
+        return {
+          articles: result.items,
+          pagination: {
+            page: result.page,
+            limit: result.limit,
+            total: result.total,
+            totalPages: result.totalPages,
+          },
+        }
       })
 
       return runRouteEffect(fastify, reply, {

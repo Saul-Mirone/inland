@@ -187,7 +187,7 @@ describe('ArticleService', () => {
 
   describe('API Contract Tests', () => {
     describe('findSiteArticles', () => {
-      it('should return articles array directly (not wrapped in object)', async () => {
+      it('should return paginated result with items array', async () => {
         // Mock data
         const mockArticles = [
           mockArticle({
@@ -206,27 +206,32 @@ describe('ArticleService', () => {
 
         // Setup mocks
         mockPrisma.site.findUnique.mockResolvedValue(mockSite())
-        mockPrisma.article.findMany.mockResolvedValue(mockArticles)
+        mockPrisma.$transaction.mockResolvedValue([mockArticles, 2])
 
         // Execute
         const result = await testRuntime.runPromise(
           ArticleService.findSiteArticles('site-1', 'user-1')
         )
 
-        // Verify API contract: should return array directly, not wrapped
-        expect(Array.isArray(result)).toBe(true)
-        expect(result).toEqual(mockArticles)
-        expect(result.map).toBeDefined() // Should be able to call .map()
-        expect(result.length).toBe(2)
+        // Verify paginated result structure
+        expect(result).toHaveProperty('items')
+        expect(result).toHaveProperty('total')
+        expect(result).toHaveProperty('page')
+        expect(result).toHaveProperty('limit')
+        expect(result).toHaveProperty('totalPages')
+        expect(Array.isArray(result.items)).toBe(true)
+        expect(result.items).toEqual(mockArticles)
+        expect(result.items.length).toBe(2)
+        expect(result.total).toBe(2)
 
-        // Verify it can be used like an array (preventing regression)
-        const titles = result.map((article) => article.title)
+        // Verify items can be used like an array
+        const titles = result.items.map((article) => article.title)
         expect(titles).toEqual(['Test Article 1', 'Test Article 2'])
       })
     })
 
     describe('findUserArticles', () => {
-      it('should return articles array directly (not wrapped in object)', async () => {
+      it('should return paginated result with items array', async () => {
         // Mock data
         const mockArticles = [
           {
@@ -248,21 +253,25 @@ describe('ArticleService', () => {
         ]
 
         // Setup mocks
-        mockPrisma.article.findMany.mockResolvedValue(mockArticles)
+        mockPrisma.$transaction.mockResolvedValue([mockArticles, 1])
 
         // Execute
         const result = await testRuntime.runPromise(
           ArticleService.findUserArticles('user-1')
         )
 
-        // Verify API contract: should return array directly, not wrapped
-        expect(Array.isArray(result)).toBe(true)
-        expect(result).toEqual(mockArticles)
-        expect(result.map).toBeDefined() // Should be able to call .map()
-        expect(result.length).toBe(1)
+        // Verify paginated result structure
+        expect(result).toHaveProperty('items')
+        expect(result).toHaveProperty('total')
+        expect(result).toHaveProperty('page')
+        expect(result).toHaveProperty('limit')
+        expect(result).toHaveProperty('totalPages')
+        expect(Array.isArray(result.items)).toBe(true)
+        expect(result.items).toEqual(mockArticles)
+        expect(result.items.length).toBe(1)
 
-        // Verify it can be used like an array (preventing regression)
-        const articleIds = result.map((article) => article.id)
+        // Verify items can be used like an array
+        const articleIds = result.items.map((article) => article.id)
         expect(articleIds).toEqual(['article-1'])
       })
     })

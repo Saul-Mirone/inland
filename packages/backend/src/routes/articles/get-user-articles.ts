@@ -2,6 +2,11 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
+import {
+  withSchemaValidation,
+  type TypedFastifyRequest,
+} from '../../plugins/schema-validation'
+import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
 import { runRouteEffect } from '../../utils/route-effect'
 
@@ -9,17 +14,35 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
   fastify.get(
     '/articles',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [
+        fastify.authenticate,
+        withSchemaValidation({
+          querystring: Schemas.PaginationParams,
+        }),
+      ],
     },
-    async (request, reply) => {
+    async (
+      request: TypedFastifyRequest<unknown, unknown, Schemas.PaginationParams>,
+      reply
+    ) => {
       const userPayload = request.jwtPayload!
+      const { page, limit } = request.validatedQuery!
 
       const getUserArticles = Effect.gen(function* () {
         const articleService = yield* ArticleService
-        const articles = yield* articleService.findUserArticles(
-          userPayload.userId
+        const result = yield* articleService.findUserArticles(
+          userPayload.userId,
+          { page, limit }
         )
-        return { articles }
+        return {
+          articles: result.items,
+          pagination: {
+            page: result.page,
+            limit: result.limit,
+            total: result.total,
+            totalPages: result.totalPages,
+          },
+        }
       })
 
       return runRouteEffect(fastify, reply, {

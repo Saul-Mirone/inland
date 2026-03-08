@@ -1,10 +1,16 @@
 import { Effect } from 'effect'
 
+import type { PaginationOptions } from '../../../repositories/pagination'
+
 import { ArticleRepository } from '../../../repositories/article-repository'
 import { SiteRepository } from '../../../repositories/site-repository'
 import { SiteAccessError } from '../article-types'
 
-export const findSiteArticles = (siteId: string, userId: string) =>
+export const findSiteArticles = (
+  siteId: string,
+  userId: string,
+  pagination?: PaginationOptions
+) =>
   Effect.gen(function* () {
     const siteRepo = yield* SiteRepository
     const articleRepo = yield* ArticleRepository
@@ -19,6 +25,5 @@ export const findSiteArticles = (siteId: string, userId: string) =>
       return yield* new SiteAccessError({ siteId, userId })
     }
 
-    const articles = yield* articleRepo.findBySiteId(siteId)
-    return articles
+    return yield* articleRepo.findBySiteId(siteId, pagination)
   })

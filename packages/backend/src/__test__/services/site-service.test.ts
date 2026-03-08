@@ -15,7 +15,7 @@ describe('SiteService', () => {
   })
 
   describe('findUserSites', () => {
-    it('should find sites for a user', async () => {
+    it('should find sites for a user with pagination', async () => {
       // Mock data
       const mockSites = [
         {
@@ -45,32 +45,23 @@ describe('SiteService', () => {
       ]
 
       // Setup mocks
-      mockPrisma.site.findMany.mockResolvedValue(mockSites)
+      mockPrisma.$transaction.mockResolvedValue([mockSites, 2])
 
       // Execute
       const result = await testRuntime.runPromise(
         SiteService.findUserSites('user-1')
       )
 
-      // Verify
-      expect(result).toEqual(mockSites)
-      expect(mockPrisma.site.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-        include: {
-          _count: {
-            select: {
-              articles: true,
-              media: true,
-            },
-          },
-        },
-        orderBy: { updatedAt: 'desc' },
-      })
+      // Verify paginated result
+      expect(result.items).toEqual(mockSites)
+      expect(result.total).toBe(2)
+      expect(result.page).toBe(1)
+      expect(result.totalPages).toBe(1)
     })
 
-    it('should return empty array when user has no sites', async () => {
+    it('should return empty items when user has no sites', async () => {
       // Setup mocks
-      mockPrisma.site.findMany.mockResolvedValue([])
+      mockPrisma.$transaction.mockResolvedValue([[], 0])
 
       // Execute
       const result = await testRuntime.runPromise(
@@ -78,7 +69,8 @@ describe('SiteService', () => {
       )
 
       // Verify
-      expect(result).toEqual([])
+      expect(result.items).toEqual([])
+      expect(result.total).toBe(0)
     })
   })
 
