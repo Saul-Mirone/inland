@@ -33,6 +33,7 @@ node_modules
 !.vscode/settings.template.json
 !.vscode/launch.template.json
 !.vscode/extensions.json
+.playwright-mcp
 
 # System Files
 .DS_Store
