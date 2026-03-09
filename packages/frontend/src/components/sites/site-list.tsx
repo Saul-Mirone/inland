@@ -1,59 +1,21 @@
-import { useEffect, useState } from 'react'
+import { Effect } from 'effect'
+import { useEffect } from 'react'
 
-import { getAuthToken } from '../../utils/auth'
-
-interface Site {
-  id: string
-  name: string
-  gitRepo: string
-  platform: string
-  deployStatus: string
-  createdAt: string
-  _count: {
-    articles: number
-    media: number
-  }
-}
+import { SitesController } from '@/controller/sites'
+import { sitesModel } from '@/model/sites-model'
+import { runEffect } from '@/utils/effect-runtime'
+import { useObservable } from '@/utils/use-observable'
 
 export const SiteList = () => {
-  const [sites, setSites] = useState<Site[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const sites = useObservable(sitesModel.sites$)
+  const loading = useObservable(sitesModel.loading$)
+  const error = useObservable(sitesModel.error$)
 
   useEffect(() => {
-    const fetchSites = async () => {
-      const token = getAuthToken()
-      if (!token) {
-        setError('No token found')
-        setLoading(false)
-        return
-      }
-
-      try {
-        const response = await fetch('http://localhost:3001/sites', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch sites')
-        }
-
-        const data = await response.json()
-        setSites(data.sites)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSites().catch(console.error)
+    runEffect(Effect.flatMap(SitesController, (ctrl) => ctrl.fetchSites()))
   }, [])
 
-  const deleteSite = async (siteId: string) => {
+  const handleDelete = (siteId: string) => {
     if (
       !confirm(
         'Are you sure you want to delete this site? This action cannot be undone.'
@@ -61,36 +23,9 @@ export const SiteList = () => {
     ) {
       return
     }
-
-    setDeletingId(siteId)
-    const token = getAuthToken()
-
-    if (!token) {
-      setError('No authentication token found')
-      setDeletingId(null)
-      return
-    }
-
-    try {
-      const response = await fetch(`http://localhost:3001/sites/${siteId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete site')
-      }
-
-      // Remove the site from the list
-      setSites((prevSites) => prevSites.filter((site) => site.id !== siteId))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setDeletingId(null)
-    }
+    runEffect(
+      Effect.flatMap(SitesController, (ctrl) => ctrl.deleteSite(siteId))
+    )
   }
 
   if (loading) return <div>Loading sites...</div>
@@ -112,12 +47,7 @@ export const SiteList = () => {
               <p>Articles: {site._count.articles}</p>
               <p>Media files: {site._count.media}</p>
               <p>Created: {new Date(site.createdAt).toLocaleDateString()}</p>
-              <button
-                onClick={() => deleteSite(site.id)}
-                disabled={deletingId === site.id}
-              >
-                {deletingId === site.id ? 'Deleting...' : 'Delete Site'}
-              </button>
+              <button onClick={() => handleDelete(site.id)}>Delete Site</button>
             </div>
           ))}
         </div>

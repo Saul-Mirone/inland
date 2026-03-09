@@ -5,16 +5,7 @@ import { ImportSite } from './import-site'
 import { SiteList } from './site-list'
 
 export const SiteManager = () => {
-  const [refreshKey, setRefreshKey] = useState(0)
   const [showImport, setShowImport] = useState(false)
-
-  const handleSiteCreated = () => {
-    setRefreshKey((prev) => prev + 1)
-  }
-
-  const handleSiteImported = () => {
-    setRefreshKey((prev) => prev + 1)
-  }
 
   return (
     <div>
@@ -48,15 +39,11 @@ export const SiteManager = () => {
         </button>
       </div>
 
-      {showImport ? (
-        <ImportSite onSiteImported={handleSiteImported} />
-      ) : (
-        <CreateSite onSiteCreated={handleSiteCreated} />
-      )}
+      {showImport ? <ImportSite /> : <CreateSite />}
 
       <hr style={{ margin: '2rem 0' }} />
 
-      <SiteList key={refreshKey} />
+      <SiteList />
     </div>
   )
 }

@@ -1,12 +1,10 @@
+import { Effect } from 'effect'
 import { useState } from 'react'
 
-import { getAuthToken } from '../../utils/auth'
+import { SitesController } from '@/controller/sites'
+import { runEffect } from '@/utils/effect-runtime'
 
-interface CreateSiteProps {
-  onSiteCreated: () => void
-}
-
-export const CreateSite = ({ onSiteCreated }: CreateSiteProps) => {
+export const CreateSite = () => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [author, setAuthor] = useState('')
@@ -15,7 +13,7 @@ export const CreateSite = ({ onSiteCreated }: CreateSiteProps) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!name.trim()) {
@@ -26,60 +24,25 @@ export const CreateSite = ({ onSiteCreated }: CreateSiteProps) => {
     setLoading(true)
     setError(null)
 
-    const token = getAuthToken()
-    if (!token) {
-      setError('No authentication token found')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const response = await fetch('http://localhost:3001/sites', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    runEffect(
+      Effect.flatMap(SitesController, (ctrl) =>
+        ctrl.createSite({
           name: name.trim(),
           description: description.trim() || undefined,
           author: author.trim() || undefined,
           templateOwner,
           templateRepo,
-        }),
-      })
+        })
+      )
+    )
 
-      if (!response.ok) {
-        const errorData = await response.json()
-
-        // Handle GitHub token expiration
-        if (
-          response.status === 401 &&
-          errorData.error.includes('GitHub connection has expired')
-        ) {
-          setError(errorData.error + ' You will be redirected to reconnect.')
-          // Redirect to GitHub auth after a short delay
-          setTimeout(() => {
-            window.location.href = 'http://localhost:3001/auth/github'
-          }, 3000)
-          return
-        }
-
-        throw new Error(errorData.error || 'Failed to create site')
-      }
-
-      setName('')
-      setDescription('')
-      setAuthor('')
-      // Reset to default template
-      setTemplateOwner('Saul-Mirone')
-      setTemplateRepo('inland-template-basic')
-      onSiteCreated()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
+    // Reset form
+    setName('')
+    setDescription('')
+    setAuthor('')
+    setTemplateOwner('Saul-Mirone')
+    setTemplateRepo('inland-template-basic')
+    setLoading(false)
   }
 
   return (

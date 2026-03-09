@@ -1,12 +1,10 @@
+import { Effect } from 'effect'
 import { useState } from 'react'
 
-import { getAuthToken } from '../../utils/auth'
+import { SitesController } from '@/controller/sites'
+import { runEffect } from '@/utils/effect-runtime'
 
-interface ImportSiteProps {
-  onSiteImported: () => void
-}
-
-export const ImportSite = ({ onSiteImported }: ImportSiteProps) => {
+export const ImportSite = () => {
   const [name, setName] = useState('')
   const [gitRepoFullName, setGitRepoFullName] = useState('')
   const [description, setDescription] = useState('')
@@ -17,7 +15,7 @@ export const ImportSite = ({ onSiteImported }: ImportSiteProps) => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!name.trim()) {
@@ -30,7 +28,6 @@ export const ImportSite = ({ onSiteImported }: ImportSiteProps) => {
       return
     }
 
-    // Validate repository format
     if (!/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(gitRepoFullName.trim())) {
       setError('Invalid repository format. Use: owner/repo-name')
       return
@@ -40,69 +37,29 @@ export const ImportSite = ({ onSiteImported }: ImportSiteProps) => {
     setError(null)
     setSuccess(null)
 
-    const token = getAuthToken()
-    if (!token) {
-      setError('No authentication token found')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const response = await fetch('http://localhost:3001/sites/import', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+    runEffect(
+      Effect.flatMap(SitesController, (ctrl) =>
+        ctrl.importSite({
           name: name.trim(),
           gitRepoFullName: gitRepoFullName.trim(),
           description: description.trim() || undefined,
           setupWorkflow,
           enablePages,
           overrideExistingFiles,
-        }),
-      })
+        })
+      )
+    )
 
-      if (!response.ok) {
-        const errorData = await response.json()
+    setSuccess('Import started successfully!')
 
-        // Handle auth token expiration
-        if (
-          response.status === 401 &&
-          errorData.error.includes('connection has expired')
-        ) {
-          setError(errorData.error + ' You will be redirected to reconnect.')
-          setTimeout(() => {
-            window.location.href = 'http://localhost:3001/auth/github'
-          }, 3000)
-          return
-        }
-
-        throw new Error(errorData.error || 'Failed to import repository')
-      }
-
-      const result = await response.json()
-
-      // Display success message with details
-      const successMsg = `Successfully imported repository! ${result.articlesImported || 0} articles imported.`
-      setSuccess(successMsg)
-
-      // Clear form
-      setName('')
-      setGitRepoFullName('')
-      setDescription('')
-      setSetupWorkflow(true)
-      setEnablePages(true)
-      setOverrideExistingFiles(false)
-
-      // Notify parent component
-      onSiteImported()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
+    // Clear form
+    setName('')
+    setGitRepoFullName('')
+    setDescription('')
+    setSetupWorkflow(true)
+    setEnablePages(true)
+    setOverrideExistingFiles(false)
+    setLoading(false)
   }
 
   return (
