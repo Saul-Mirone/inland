@@ -28,7 +28,7 @@ export function resolveConfig(): AppConfig {
       'http://localhost:3001/auth/github/callback',
     appUrl: process.env.APP_URL || 'http://localhost:3000',
     apiUrl: process.env.API_URL || 'http://localhost:3001',
-    redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
+    redisUrl: process.env.REDIS_URL || 'redis://localhost:6381',
     templateRepo:
       process.env.TEMPLATE_REPO || 'Saul-Mirone/inland-template-basic',
   }
