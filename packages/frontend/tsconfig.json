@@ -2,14 +2,15 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "lib": ["DOM", "ESNext"],
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "lib",
     "tsBuildInfoFile": "./lib/tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
+    "noEmit": true,
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "./vite.config.ts"],
   "references": []
 }

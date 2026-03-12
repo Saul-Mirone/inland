@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export const AuthCallback = () => {
+export function AuthCallback() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const token = urlParams.get('token')
