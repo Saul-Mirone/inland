@@ -1,3 +1,5 @@
+import type { Redis } from 'ioredis'
+
 import { Layer, ManagedRuntime } from 'effect'
 
 import type { prisma } from '../database/client'
@@ -10,19 +12,35 @@ import { PrismaUserRepositoryLive } from '../repositories/implementations/prisma
 import { ArticleServiceLive } from '../services/article/article-service-live'
 import { makeConfigService } from '../services/config-service'
 import { makeDatabaseService } from '../services/database-service'
+import { makeRedisService } from '../services/redis-service'
+import { SessionServiceLive } from '../services/session/session-service-live'
 import { SiteServiceLive } from '../services/site/site-service-live'
 import { UserServiceLive } from '../services/user/user-service-live'
 
-export const createAppRuntime = (prismaClient: typeof prisma) => {
+export const createAppRuntime = (
+  prismaClient: typeof prisma,
+  redisClient: Redis
+) => {
+  const DatabaseLayer = makeDatabaseService(prismaClient)
+  const RedisLayer = makeRedisService(redisClient)
+  const ConfigLayer = makeConfigService
+
+  // SessionServiceLive depends on RedisService + ConfigService
+  const SessionLayer = SessionServiceLive.pipe(
+    Layer.provide(Layer.merge(RedisLayer, ConfigLayer))
+  )
+
   const AppLayer = Layer.mergeAll(
-    makeDatabaseService(prismaClient),
-    makeConfigService,
+    DatabaseLayer,
+    RedisLayer,
+    ConfigLayer,
     PrismaArticleRepositoryLive,
     PrismaSiteRepositoryLive,
     PrismaUserRepositoryLive,
     GitProviderLive,
     AuthProviderLive,
     ArticleServiceLive,
+    SessionLayer,
     SiteServiceLive,
     UserServiceLive
   )

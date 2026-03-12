@@ -1,9 +1,7 @@
 import { Context, Effect, Layer } from 'effect'
 
+import { apiFetch } from './api'
 import { ApiError } from './api-error'
-import { getAuthToken } from './auth'
-
-const BASE_URL = 'http://localhost:3001'
 
 export interface ApiClientService {
   readonly get: <T>(path: string) => Effect.Effect<T, ApiError>
@@ -24,17 +22,13 @@ const request = <T>(
 ): Effect.Effect<T, ApiError> =>
   Effect.tryPromise({
     try: async () => {
-      const token = getAuthToken()
       const headers: Record<string, string> = {}
 
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
       if (body !== undefined) {
         headers['Content-Type'] = 'application/json'
       }
 
-      const response = await fetch(`${BASE_URL}${path}`, {
+      const response = await apiFetch(path, {
         method,
         headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -46,10 +40,10 @@ const request = <T>(
           (errorData as Record<string, string>).error ||
           `Request failed with status ${response.status}`
 
-        // Detect GitHub token expiration
+        // Unauthorized requests should drop back to the login screen.
         let redirectUrl: string | undefined
-        if (response.status === 401 && message.includes('expired')) {
-          redirectUrl = `${BASE_URL}/auth/github`
+        if (response.status === 401) {
+          redirectUrl = '/'
         }
 
         throw new ApiError({ status: response.status, message, redirectUrl })

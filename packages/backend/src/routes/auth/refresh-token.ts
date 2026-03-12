@@ -2,37 +2,52 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
-import { UserRepository } from '../../repositories/user-repository'
+import * as AuthService from '../../services/auth-service'
+import { UserService } from '../../services/user'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const refreshTokenRoute = async (fastify: FastifyInstance) => {
   fastify.post(
     '/auth/refresh',
     {
-      preHandler: [fastify.authenticate],
+      preHandler: [fastify.authenticateRefresh],
     },
     async (request, reply) => {
       const userId = request.jwtPayload!.userId
+      const refreshToken = request.refreshToken
 
-      const effect = Effect.gen(function* () {
-        const userRepo = yield* UserRepository
-        const user = yield* userRepo.findById(userId)
+      const refreshSession = Effect.gen(function* () {
+        const userService = yield* UserService
+        const user = yield* userService.findUserById(userId)
+        const sessionPayload = AuthService.generateJWTPayload(user)
 
-        if (!user) {
-          return reply.code(401).send({ error: 'User not found' })
-        }
-
-        const newToken = fastify.jwt.sign({
-          userId: user.id,
-          username: user.username,
-          email: user.email,
+        yield* Effect.tryPromise({
+          try: async () => {
+            await fastify.clearRefreshSession(reply, refreshToken)
+            await fastify.createRefreshSession(reply, sessionPayload)
+            await fastify.setAuthCookie(reply, sessionPayload)
+          },
+          catch: () =>
+            new AuthService.TokenGenerationError({
+              reason: 'Failed to refresh session cookies',
+            }),
         })
 
-        return { token: newToken }
+        return { message: 'Session refreshed' }
       })
 
       return runRouteEffect(fastify, reply, {
-        effect,
+        effect: refreshSession,
+        errors: {
+          UserNotFoundError: () => ({
+            status: 401,
+            error: 'User not found',
+          }),
+          TokenGenerationError: () => ({
+            status: 500,
+            error: 'Failed to refresh session',
+          }),
+        },
         fallbackMessage: 'Failed to refresh token',
       })
     }
