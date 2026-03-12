@@ -1,25 +1,30 @@
-import { useEffect, useState } from 'react'
-
 import { ArticleManager } from '@/components/articles/article-manager'
 import { LoginButton } from '@/components/auth/login-button'
 import { UserInfo } from '@/components/auth/user-info'
 import { SiteManager } from '@/components/sites/site-manager'
-import { isAuthenticated, logout } from '@/utils/auth'
+import { authState$, logout } from '@/utils/auth'
+import { useObservable } from '@/utils/use-observable'
 
 export function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const authState = useObservable(authState$)
 
-  useEffect(() => {
-    setIsLoggedIn(isAuthenticated())
-  }, [])
+  if (authState.status === 'loading') {
+    return <div>Checking session...</div>
+  }
 
   return (
     <div>
       <h1>Inland CMS</h1>
-      {isLoggedIn ? (
+      {authState.status === 'authenticated' ? (
         <div>
           <p>Welcome! You are logged in.</p>
-          <button onClick={logout}>Logout</button>
+          <button
+            onClick={() => {
+              void logout()
+            }}
+          >
+            Logout
+          </button>
           <UserInfo />
           <SiteManager />
           <ArticleManager />

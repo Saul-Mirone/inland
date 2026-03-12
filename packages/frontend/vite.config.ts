@@ -9,5 +9,35 @@ export default defineConfig({
   server: {
     port: 3000,
     host: true,
+    proxy: {
+      '/auth/github': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth/me': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth/logout': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/auth/refresh': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/sites': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/articles': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
 })

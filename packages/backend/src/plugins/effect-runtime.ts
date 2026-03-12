@@ -13,7 +13,7 @@ declare module 'fastify' {
 }
 
 async function effectRuntimePlugin(fastify: FastifyInstance) {
-  const runtime = createAppRuntime(fastify.prisma)
+  const runtime = createAppRuntime(fastify.prisma, fastify.redis)
   fastify.decorate('runtime', runtime)
 
   fastify.addHook('onClose', async () => {
@@ -24,5 +24,5 @@ async function effectRuntimePlugin(fastify: FastifyInstance) {
 
 export const runtimePlugin = fastifyPlugin(effectRuntimePlugin, {
   name: 'effect-runtime',
-  dependencies: ['database'],
+  dependencies: ['database', 'redis'],
 })

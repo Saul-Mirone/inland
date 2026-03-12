@@ -70,11 +70,20 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
         const { user } = yield* AuthService.processOAuth(token.access_token)
         const config = yield* ConfigService
 
-        const jwtPayload = AuthService.generateJWTPayload(user)
+        const sessionPayload = AuthService.generateJWTPayload(user)
 
-        const jwtToken = fastify.jwt.sign(jwtPayload)
+        yield* Effect.tryPromise({
+          try: async () => {
+            await fastify.createRefreshSession(reply, sessionPayload)
+            await fastify.setAuthCookie(reply, sessionPayload)
+          },
+          catch: () =>
+            new AuthService.TokenGenerationError({
+              reason: 'Failed to set session cookies',
+            }),
+        })
 
-        const successUrl = `${config.appUrl}/auth/callback?token=${jwtToken}`
+        const successUrl = `${config.appUrl}/auth/callback`
         return reply.redirect(successUrl)
       })
 

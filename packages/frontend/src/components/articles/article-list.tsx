@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { getAuthToken } from '../../utils/auth'
+import { apiFetch } from '@/utils/api'
 
 interface Article {
   id: string
@@ -31,23 +31,15 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
 
   useEffect(() => {
     const fetchArticles = async () => {
-      const token = getAuthToken()
-      if (!token) {
-        setError('No token found')
-        setLoading(false)
-        return
-      }
-
       try {
-        const url = siteId
-          ? `http://localhost:3001/sites/${siteId}/articles`
-          : 'http://localhost:3001/articles'
+        const response = await apiFetch(
+          siteId ? `/sites/${siteId}/articles` : '/articles'
+        )
 
-        const response = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+        if (response.status === 401) {
+          window.location.assign('/')
+          return
+        }
 
         if (!response.ok) {
           throw new Error('Failed to fetch articles')
@@ -75,24 +67,16 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
     }
 
     setDeletingId(articleId)
-    const token = getAuthToken()
-
-    if (!token) {
-      setError('No authentication token found')
-      setDeletingId(null)
-      return
-    }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/articles/${articleId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await apiFetch(`/articles/${articleId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.status === 401) {
+        window.location.assign('/')
+        return
+      }
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -127,24 +111,16 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
 
   const publishArticle = async (articleId: string) => {
     setPublishingId(articleId)
-    const token = getAuthToken()
-
-    if (!token) {
-      setError('No authentication token found')
-      setPublishingId(null)
-      return
-    }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/articles/${articleId}/publish`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await apiFetch(`/articles/${articleId}/publish`, {
+        method: 'POST',
+      })
+
+      if (response.status === 401) {
+        window.location.assign('/')
+        return
+      }
 
       if (!response.ok) {
         const errorData = await response.json()

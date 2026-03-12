@@ -1,7 +1,5 @@
-const handleLogin = () => {
-  window.location.href = 'http://localhost:3001/auth/github'
-}
+import { beginLogin } from '@/utils/auth'
 
 export const LoginButton = () => {
-  return <button onClick={handleLogin}>Login with GitHub</button>
+  return <button onClick={beginLogin}>Login with GitHub</button>
 }
