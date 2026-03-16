@@ -9,10 +9,10 @@ export const AppRouter = () => (
   <Routes>
     <Route element={<AuthBouncer />}>
       <Route index element={<Home />} />
-      <Route path="auth">
-        <Route path="error" element={<AuthError />} />
-        <Route path="callback" element={<AuthCallback />} />
-      </Route>
+    </Route>
+    <Route path="auth">
+      <Route path="error" element={<AuthError />} />
+      <Route path="callback" element={<AuthCallback />} />
     </Route>
   </Routes>
 )

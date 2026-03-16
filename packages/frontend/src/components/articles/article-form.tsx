@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { getAuthToken } from '../../utils/auth'
+import { apiFetch } from '@/utils/api'
 
 interface Site {
   id: string
@@ -62,19 +62,13 @@ export const ArticleForm = ({
 
   useEffect(() => {
     const fetchSites = async () => {
-      const token = getAuthToken()
-      if (!token) {
-        setError('No authentication token found')
-        setLoading(false)
-        return
-      }
-
       try {
-        const response = await fetch('http://localhost:3001/sites', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+        const response = await apiFetch('/sites')
+
+        if (response.status === 401) {
+          window.location.assign('/')
+          return
+        }
 
         if (!response.ok) {
           throw new Error('Failed to fetch sites')
@@ -103,28 +97,23 @@ export const ArticleForm = ({
     setIsSubmitting(true)
     setError(null)
 
-    const token = getAuthToken()
-    if (!token) {
-      setError('No authentication token found')
-      setIsSubmitting(false)
-      return
-    }
-
     try {
       const isEditing = !!editingArticle
-      const url = isEditing
-        ? `http://localhost:3001/articles/${editingArticle.id}`
-        : 'http://localhost:3001/articles'
-      const method = isEditing ? 'PUT' : 'POST'
+      const response = await apiFetch(
+        isEditing ? `/articles/${editingArticle.id}` : '/articles',
+        {
+          method: isEditing ? 'PUT' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        }
+      )
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      })
+      if (response.status === 401) {
+        window.location.assign('/')
+        return
+      }
 
       if (!response.ok) {
         const errorData = await response.json()

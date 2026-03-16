@@ -1,3 +1,3 @@
 export function AuthError() {
-  return <div>Authentication failed. Please try again.</div>
+  return <div>Authentication failed or the session could not be restored.</div>
 }

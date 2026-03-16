@@ -1,17 +1,25 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router'
+
+import { bootstrapAuth } from '@/utils/auth'
 
 export function AuthCallback() {
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const token = urlParams.get('token')
+  const navigate = useNavigate()
 
-    if (token) {
-      localStorage.setItem('authToken', token)
-      window.location.href = '/'
-    } else {
-      console.error('No token received')
+  useEffect(() => {
+    const finishLogin = async () => {
+      const authState = await bootstrapAuth(true)
+
+      if (authState.status === 'authenticated') {
+        await navigate('/', { replace: true })
+        return
+      }
+
+      await navigate('/auth/error', { replace: true })
     }
-  }, [])
+
+    finishLogin().catch(console.error)
+  }, [navigate])
 
   return <div>Processing authentication...</div>
 }
