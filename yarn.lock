@@ -1306,6 +1306,7 @@ __metadata:
     tw-animate-css: "npm:^1.4.0"
     vite: "npm:^8.0.0"
     vite-tsconfig-paths: "npm:^6.1.1"
+    vitest: "npm:^4.0.0"
   languageName: unknown
   linkType: soft
 
