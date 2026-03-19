@@ -1,31 +1,31 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { ArticleRepository } from '../../../repositories/article-repository'
+import { ArticleRepository } from '../../../repositories/article-repository';
 import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
-} from '../article-types'
-import * as ArticleGit from '../git'
+} from '../article-types';
+import * as ArticleGit from '../git';
 
 export const deleteArticle = (articleId: string, userId: string) =>
   Effect.gen(function* () {
-    const articleRepo = yield* ArticleRepository
+    const articleRepo = yield* ArticleRepository;
 
-    const existingArticle = yield* articleRepo.findById(articleId)
+    const existingArticle = yield* articleRepo.findById(articleId);
 
     if (!existingArticle) {
-      return yield* new ArticleNotFoundError({ articleId })
+      return yield* new ArticleNotFoundError({ articleId });
     }
 
     if (existingArticle.site.userId !== userId) {
-      return yield* new ArticleAccessDeniedError({ articleId, userId })
+      return yield* new ArticleAccessDeniedError({ articleId, userId });
     }
 
-    const article = yield* articleRepo.delete(articleId)
+    const article = yield* articleRepo.delete(articleId);
 
-    let gitDeleted = false
-    let gitError: string | null = null
-    const hasGitRepo = Boolean(existingArticle.site.gitRepo)
+    let gitDeleted = false;
+    let gitError: string | null = null;
+    const hasGitRepo = Boolean(existingArticle.site.gitRepo);
 
     if (hasGitRepo && existingArticle.status === 'published') {
       const gitResult = yield* ArticleGit.deleteArticleFromGit(
@@ -37,18 +37,18 @@ export const deleteArticle = (articleId: string, userId: string) =>
             yield* Effect.logError(
               'Failed to delete article from Git repository',
               { error, articleId, userId }
-            )
+            );
             return {
               deleted: false,
               reason:
                 error instanceof Error ? error.message : 'Unknown Git error',
-            }
+            };
           })
         )
-      )
-      gitDeleted = gitResult.deleted
+      );
+      gitDeleted = gitResult.deleted;
       if (!gitResult.deleted && gitResult.reason) {
-        gitError = gitResult.reason
+        gitError = gitResult.reason;
       }
     }
 
@@ -66,5 +66,5 @@ export const deleteArticle = (articleId: string, userId: string) =>
       gitDeleted,
       gitError,
       hasGitRepo,
-    }
-  })
+    };
+  });

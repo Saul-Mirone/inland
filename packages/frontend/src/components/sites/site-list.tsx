@@ -1,20 +1,20 @@
-import { Effect } from 'effect'
-import { useEffect } from 'react'
+import { Effect } from 'effect';
+import { useEffect } from 'react';
 
-import { Button } from '@/components/ui/button'
-import { sitesModel } from '@/model/sites-model'
-import { SiteService } from '@/services/site'
-import { runEffect } from '@/utils/effect-runtime'
-import { useObservable } from '@/utils/use-observable'
+import { Button } from '@/components/ui/button';
+import { sitesModel } from '@/model/sites-model';
+import { SiteService } from '@/services/site';
+import { runEffect } from '@/utils/effect-runtime';
+import { useObservable } from '@/utils/use-observable';
 
 export const SiteList = () => {
-  const sites = useObservable(sitesModel.sites$)
-  const loading = useObservable(sitesModel.loading$)
-  const error = useObservable(sitesModel.error$)
+  const sites = useObservable(sitesModel.sites$);
+  const loading = useObservable(sitesModel.loading$);
+  const error = useObservable(sitesModel.error$);
 
   useEffect(() => {
-    void runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()))
-  }, [])
+    void runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()));
+  }, []);
 
   const handleDelete = (siteId: string) => {
     if (
@@ -22,17 +22,21 @@ export const SiteList = () => {
         'Are you sure you want to delete this site? This action cannot be undone.'
       )
     ) {
-      return
+      return;
     }
-    void runEffect(Effect.flatMap(SiteService, (svc) => svc.deleteSite(siteId)))
-  }
+    void runEffect(
+      Effect.flatMap(SiteService, (svc) => svc.deleteSite(siteId))
+    );
+  };
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading sites...</div>
+    return (
+      <div className="text-sm text-muted-foreground">Loading sites...</div>
+    );
   }
 
   if (error) {
-    return <div className="text-sm text-destructive">Error: {error}</div>
+    return <div className="text-sm text-destructive">Error: {error}</div>;
   }
 
   return (
@@ -82,5 +86,5 @@ export const SiteList = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};

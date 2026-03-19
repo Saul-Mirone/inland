@@ -1,26 +1,26 @@
-import { Context, Layer } from 'effect'
-import { BehaviorSubject } from 'rxjs'
+import { Context, Layer } from 'effect';
+import { BehaviorSubject } from 'rxjs';
 
 export interface AuthUser {
-  id: string
-  username: string
-  email: string | null
-  avatarUrl: string | null
-  createdAt: string
+  id: string;
+  username: string;
+  email: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
   gitIntegrations: Array<{
-    platform: string
-    platformUsername: string
-  }>
+    platform: string;
+    platformUsername: string;
+  }>;
 }
 
 export interface AuthState {
-  status: 'loading' | 'anonymous' | 'authenticated'
-  user: AuthUser | null
-  error: string | null
+  status: 'loading' | 'anonymous' | 'authenticated';
+  user: AuthUser | null;
+  error: string | null;
 }
 
 export interface AuthModelService {
-  readonly authState$: BehaviorSubject<AuthState>
+  readonly authState$: BehaviorSubject<AuthState>;
 }
 
 const instance: AuthModelService = {
@@ -29,13 +29,13 @@ const instance: AuthModelService = {
     user: null,
     error: null,
   }),
-}
+};
 
 export class AuthModel extends Context.Tag('AuthModel')<
   AuthModel,
   AuthModelService
 >() {}
 
-export const AuthModelLive = Layer.succeed(AuthModel, instance)
+export const AuthModelLive = Layer.succeed(AuthModel, instance);
 
-export const authModel = instance
+export const authModel = instance;

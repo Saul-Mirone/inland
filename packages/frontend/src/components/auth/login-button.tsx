@@ -1,8 +1,8 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { Button } from '@/components/ui/button'
-import { AuthService } from '@/services/auth'
-import { runEffect } from '@/utils/effect-runtime'
+import { Button } from '@/components/ui/button';
+import { AuthService } from '@/services/auth';
+import { runEffect } from '@/utils/effect-runtime';
 
 export const LoginButton = () => {
   return (
@@ -13,5 +13,5 @@ export const LoginButton = () => {
     >
       Login with GitHub
     </Button>
-  )
-}
+  );
+};

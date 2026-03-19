@@ -1,24 +1,24 @@
-import { Context, Data, type Effect } from 'effect'
+import { Context, Data, type Effect } from 'effect';
 
 // Generic platform user information
 export interface PlatformUser {
-  readonly id: string | number
-  readonly username: string
-  readonly email: string | null
-  readonly avatarUrl: string
+  readonly id: string | number;
+  readonly username: string;
+  readonly email: string | null;
+  readonly avatarUrl: string;
 }
 
 // Generic auth provider errors
 export class AuthProviderAPIError extends Data.TaggedError(
   'AuthProviderAPIError'
 )<{
-  readonly message: string
-  readonly status?: number
+  readonly message: string;
+  readonly status?: number;
 }> {}
 
 export interface TokenValidationResult {
-  readonly isValid: boolean
-  readonly reason?: string
+  readonly isValid: boolean;
+  readonly reason?: string;
 }
 
 // Generic auth provider interface (platform-agnostic)
@@ -28,7 +28,7 @@ export interface AuthProviderRepositoryService {
    */
   readonly fetchUser: (
     accessToken: string
-  ) => Effect.Effect<PlatformUser, AuthProviderAPIError>
+  ) => Effect.Effect<PlatformUser, AuthProviderAPIError>;
 
   /**
    * Fetch user email from the platform
@@ -36,14 +36,14 @@ export interface AuthProviderRepositoryService {
    */
   readonly fetchUserEmail: (
     accessToken: string
-  ) => Effect.Effect<string | null, AuthProviderAPIError>
+  ) => Effect.Effect<string | null, AuthProviderAPIError>;
 
   /**
    * Validate access token with the platform
    */
   readonly validateToken: (
     accessToken: string
-  ) => Effect.Effect<TokenValidationResult, AuthProviderAPIError>
+  ) => Effect.Effect<TokenValidationResult, AuthProviderAPIError>;
 }
 
 // Effect Context for dependency injection

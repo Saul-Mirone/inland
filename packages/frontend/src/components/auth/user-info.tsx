@@ -1,20 +1,20 @@
-import { authModel } from '@/model/auth-model'
-import { useObservable } from '@/utils/use-observable'
+import { authModel } from '@/model/auth-model';
+import { useObservable } from '@/utils/use-observable';
 
 export const UserInfo = () => {
-  const authState = useObservable(authModel.authState$)
-  const user = authState.user
+  const authState = useObservable(authModel.authState$);
+  const user = authState.user;
 
   if (authState.status === 'loading')
     return (
       <div className="text-sm text-muted-foreground">Loading user info...</div>
-    )
+    );
   if (authState.error)
     return (
       <div className="text-sm text-destructive">Error: {authState.error}</div>
-    )
+    );
   if (!user)
-    return <div className="text-sm text-muted-foreground">No user data</div>
+    return <div className="text-sm text-muted-foreground">No user data</div>;
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-card p-4">
@@ -53,5 +53,5 @@ export const UserInfo = () => {
         </ul>
       </div>
     </div>
-  )
-}
+  );
+};

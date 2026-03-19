@@ -1,12 +1,12 @@
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from 'effect';
 
 import {
   ArticleService,
   type ArticleServiceInterface,
-} from '../../services/article/article-service'
+} from '../../services/article/article-service';
 
 const notImplemented = (name: string) => () =>
-  Effect.die(new Error(`MockArticleService.${name} not implemented`))
+  Effect.die(new Error(`MockArticleService.${name} not implemented`));
 
 // Mock implementation for testing
 export const makeMockArticleService = (): ArticleServiceInterface => ({
@@ -27,10 +27,10 @@ export const makeMockArticleService = (): ArticleServiceInterface => ({
   validateTitle: notImplemented('validateTitle'),
   validateSlug: notImplemented('validateSlug'),
   generateSlugFromTitle: notImplemented('generateSlugFromTitle'),
-})
+});
 
 // Mock layer for testing
 export const MockArticleServiceLive = Layer.succeed(
   ArticleService,
   makeMockArticleService()
-)
+);

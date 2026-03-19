@@ -1,18 +1,18 @@
-import { Context, Effect, Layer } from 'effect'
+import { Context, Effect, Layer } from 'effect';
 
 export interface AppConfig {
-  readonly port: number
-  readonly nodeEnv: string
-  readonly databaseUrl: string
-  readonly jwtSecret: string
-  readonly sessionSecret: string
-  readonly githubClientId: string
-  readonly githubClientSecret: string
-  readonly authCallbackUrl: string
-  readonly appUrl: string
-  readonly apiUrl: string
-  readonly redisUrl: string
-  readonly templateRepo: string
+  readonly port: number;
+  readonly nodeEnv: string;
+  readonly databaseUrl: string;
+  readonly jwtSecret: string;
+  readonly sessionSecret: string;
+  readonly githubClientId: string;
+  readonly githubClientSecret: string;
+  readonly authCallbackUrl: string;
+  readonly appUrl: string;
+  readonly apiUrl: string;
+  readonly redisUrl: string;
+  readonly templateRepo: string;
 }
 
 export class ConfigService extends Context.Tag('ConfigService')<
@@ -37,10 +37,10 @@ export function resolveConfig(): AppConfig {
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6381',
     templateRepo:
       process.env.TEMPLATE_REPO || 'Saul-Mirone/inland-template-basic',
-  }
+  };
 }
 
 export const makeConfigService = Layer.effect(
   ConfigService,
   Effect.sync(() => resolveConfig())
-)
+);

@@ -1,10 +1,10 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { TokenGenerationError, generateJWTPayload } from '../../services/auth'
-import { UserService } from '../../services/user'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+import { TokenGenerationError, generateJWTPayload } from '../../services/auth';
+import { UserService } from '../../services/user';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const refreshTokenRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -13,28 +13,28 @@ export const refreshTokenRoute = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticateRefresh],
     },
     async (request, reply) => {
-      const userId = request.jwtPayload!.userId
-      const refreshToken = request.refreshToken
+      const userId = request.jwtPayload!.userId;
+      const refreshToken = request.refreshToken;
 
       const refreshSession = Effect.gen(function* () {
-        const userService = yield* UserService
-        const user = yield* userService.findUserById(userId)
-        const sessionPayload = generateJWTPayload(user)
+        const userService = yield* UserService;
+        const user = yield* userService.findUserById(userId);
+        const sessionPayload = generateJWTPayload(user);
 
         yield* Effect.tryPromise({
           try: async () => {
-            await fastify.clearRefreshSession(reply, refreshToken)
-            await fastify.createRefreshSession(reply, sessionPayload)
-            await fastify.setAuthCookie(reply, sessionPayload)
+            await fastify.clearRefreshSession(reply, refreshToken);
+            await fastify.createRefreshSession(reply, sessionPayload);
+            await fastify.setAuthCookie(reply, sessionPayload);
           },
           catch: () =>
             new TokenGenerationError({
               reason: 'Failed to refresh session cookies',
             }),
-        })
+        });
 
-        return { message: 'Session refreshed' }
-      })
+        return { message: 'Session refreshed' };
+      });
 
       return runRouteEffect(
         fastify,
@@ -47,7 +47,7 @@ export const refreshTokenRoute = async (fastify: FastifyInstance) => {
           })
         ),
         { fallbackMessage: 'Failed to refresh token' }
-      )
+      );
     }
-  )
-}
+  );
+};

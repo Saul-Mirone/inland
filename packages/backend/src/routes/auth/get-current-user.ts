@@ -1,9 +1,9 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { UserService } from '../../services/user'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+import { UserService } from '../../services/user';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -12,11 +12,11 @@ export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
       preHandler: [fastify.authenticate],
     },
     async (request, reply) => {
-      const userPayload = request.jwtPayload!
+      const userPayload = request.jwtPayload!;
 
       const getUserInfo = Effect.gen(function* () {
-        const userService = yield* UserService
-        const user = yield* userService.findUserById(userPayload.userId)
+        const userService = yield* UserService;
+        const user = yield* userService.findUserById(userPayload.userId);
 
         return {
           user: {
@@ -30,8 +30,8 @@ export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
               platformUsername: integration.platformUsername,
             })),
           },
-        }
-      })
+        };
+      });
 
       return runRouteEffect(
         fastify,
@@ -42,7 +42,7 @@ export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
           })
         ),
         { fallbackMessage: 'Failed to fetch user info' }
-      )
+      );
     }
-  )
-}
+  );
+};

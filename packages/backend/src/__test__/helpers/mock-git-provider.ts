@@ -1,4 +1,4 @@
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from 'effect';
 
 import {
   GitProviderRepository,
@@ -7,7 +7,7 @@ import {
   type CreateRepoData,
   type TemplateData,
   type ImportedArticle,
-} from '../../repositories/git-provider-repository'
+} from '../../repositories/git-provider-repository';
 
 // Mock implementation for testing
 export const makeMockGitProvider = (): GitProviderRepositoryService => ({
@@ -101,10 +101,10 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
 
   enablePages: (_accessToken: string, repoFullName: string) =>
     Effect.succeed(`https://testuser.github.io/${repoFullName.split('/')[1]}`),
-})
+});
 
 // Mock layer for testing
 export const MockGitProviderLive = Layer.succeed(
   GitProviderRepository,
   makeMockGitProvider()
-)
+);

@@ -1,23 +1,23 @@
-import type { Effect } from 'effect'
+import type { Effect } from 'effect';
 
-import { Context } from 'effect'
+import { Context } from 'effect';
 
-import type { JWTPayload } from '../../types/auth'
-import type { SessionError } from './session-types'
+import type { JWTPayload } from '../../types/auth';
+import type { SessionError } from './session-types';
 
 export interface SessionServiceInterface {
   readonly createSession: (
     payload: JWTPayload
-  ) => Effect.Effect<string, SessionError>
+  ) => Effect.Effect<string, SessionError>;
   readonly getSession: (
     refreshToken: string
-  ) => Effect.Effect<JWTPayload | null, SessionError>
+  ) => Effect.Effect<JWTPayload | null, SessionError>;
   readonly clearSession: (
     refreshToken: string
-  ) => Effect.Effect<void, SessionError>
+  ) => Effect.Effect<void, SessionError>;
   readonly signAccessToken: (
     payload: JWTPayload
-  ) => Effect.Effect<string, SessionError>
+  ) => Effect.Effect<string, SessionError>;
 }
 
 export class SessionService extends Context.Tag('SessionService')<

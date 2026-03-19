@@ -1,7 +1,7 @@
-import type { FastifyInstance, FastifyRequest } from 'fastify'
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 
-import { Effect, Schema as S } from 'effect'
-import fp from 'fastify-plugin'
+import { Effect, Schema as S } from 'effect';
+import fp from 'fastify-plugin';
 
 // Schema validation errors
 export class SchemaValidationError extends Error {
@@ -9,14 +9,14 @@ export class SchemaValidationError extends Error {
     public readonly field: 'body' | 'params' | 'querystring' | 'headers',
     public readonly details: Array<{ path: string; message: string }>
   ) {
-    super(`Schema validation failed for ${field}`)
-    this.name = 'SchemaValidationError'
+    super(`Schema validation failed for ${field}`);
+    this.name = 'SchemaValidationError';
   }
 }
 
 // Plugin options interface
 interface SchemaValidationOptions {
-  includeErrorDetails?: boolean
+  includeErrorDetails?: boolean;
 }
 
 // Type-safe validation function using Effect-TS
@@ -33,24 +33,24 @@ export const validateWithSchema = <T>(
           path: field,
           message: parseError.message || 'Schema validation failed',
         },
-      ]
+      ];
 
-      return new SchemaValidationError(field, details)
+      return new SchemaValidationError(field, details);
     })
-  )
-}
+  );
+};
 
 // Type-safe schema validation configuration
 // Use `any` because we don't care the exact shape of the data
 export interface SchemaValidationConfig {
   // oxlint-disable-next-line no-explicit-any
-  body?: S.Schema<any>
+  body?: S.Schema<any>;
   // oxlint-disable-next-line no-explicit-any
-  params?: S.Schema<any>
+  params?: S.Schema<any>;
   // oxlint-disable-next-line no-explicit-any
-  querystring?: S.Schema<any>
+  querystring?: S.Schema<any>;
   // oxlint-disable-next-line no-explicit-any
-  headers?: S.Schema<any>
+  headers?: S.Schema<any>;
 }
 
 const VALIDATION_FIELDS = [
@@ -66,24 +66,24 @@ const VALIDATION_FIELDS = [
     requestData: 'headers',
     resultKey: 'validatedHeaders',
   },
-] as const
+] as const;
 
 export const withSchemaValidation = (config: SchemaValidationConfig) => {
   return async (request: FastifyRequest): Promise<void> => {
     const validateAllFields = Effect.gen(function* () {
       for (const { configKey, requestData, resultKey } of VALIDATION_FIELDS) {
-        const schema = config[configKey]
+        const schema = config[configKey];
         if (schema) {
           const validated = yield* validateWithSchema(
             schema,
             request[requestData],
             configKey
-          )
-          ;(request as unknown as Record<string, unknown>)[resultKey] =
-            validated
+          );
+          (request as unknown as Record<string, unknown>)[resultKey] =
+            validated;
         }
       }
-    })
+    });
 
     // Run the validation Effect - let SchemaValidationError throw
     // so the global error handler can catch it and stop request processing
@@ -91,23 +91,23 @@ export const withSchemaValidation = (config: SchemaValidationConfig) => {
       validateAllFields.pipe(
         Effect.catchAll((validationError: SchemaValidationError) =>
           Effect.sync(() => {
-            throw validationError
+            throw validationError;
           })
         )
       )
-    )
-  }
-}
+    );
+  };
+};
 
 const schemaValidationPluginImpl = async (
   fastify: FastifyInstance,
   options: SchemaValidationOptions = {}
 ) => {
-  const { includeErrorDetails = true } = options
+  const { includeErrorDetails = true } = options;
 
   // Add utility methods to fastify instance
-  fastify.decorate('validateWithSchema', validateWithSchema)
-  fastify.decorate('withSchemaValidation', withSchemaValidation)
+  fastify.decorate('validateWithSchema', validateWithSchema);
+  fastify.decorate('withSchemaValidation', withSchemaValidation);
 
   // Global error handler for schema validation errors
   fastify.setErrorHandler(async (error, _request, reply) => {
@@ -118,15 +118,15 @@ const schemaValidationPluginImpl = async (
         field: error.field,
         message: `Invalid ${error.field} data`,
         ...(includeErrorDetails && { details: error.details }),
-      }
+      };
 
-      return reply.code(400).send(errorResponse)
+      return reply.code(400).send(errorResponse);
     }
 
     // Pass through other errors
-    throw error
-  })
-}
+    throw error;
+  });
+};
 
 // Enhanced FastifyRequest with typed validation results
 export interface TypedFastifyRequest<
@@ -135,21 +135,21 @@ export interface TypedFastifyRequest<
   TQuery = unknown,
   THeaders = unknown,
 > extends FastifyRequest {
-  validatedBody?: TBody
-  validatedParams?: TParams
-  validatedQuery?: TQuery
-  validatedHeaders?: THeaders
+  validatedBody?: TBody;
+  validatedParams?: TParams;
+  validatedQuery?: TQuery;
+  validatedHeaders?: THeaders;
 }
 
 // Extend Fastify instance with schema validation methods
 declare module 'fastify' {
   interface FastifyInstance {
-    validateWithSchema: typeof validateWithSchema
-    withSchemaValidation: typeof withSchemaValidation
+    validateWithSchema: typeof validateWithSchema;
+    withSchemaValidation: typeof withSchemaValidation;
   }
 }
 
 export const schemaValidationPlugin = fp(schemaValidationPluginImpl, {
   name: 'schema-validation',
   fastify: '5.x',
-})
+});

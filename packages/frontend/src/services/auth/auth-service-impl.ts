@@ -1,16 +1,16 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import type { AuthModelService, AuthState, AuthUser } from '@/model/auth-model'
-import type { ApiClientService } from '@/services/api'
-import type { NavigationServiceInterface } from '@/services/navigation'
+import type { AuthModelService, AuthState, AuthUser } from '@/model/auth-model';
+import type { ApiClientService } from '@/services/api';
+import type { NavigationServiceInterface } from '@/services/navigation';
 
-import type { AuthServiceInterface } from './auth-service'
+import type { AuthServiceInterface } from './auth-service';
 
 const anonymousState: AuthState = {
   status: 'anonymous',
   user: null,
   error: null,
-}
+};
 
 export class AuthServiceImpl implements AuthServiceInterface {
   constructor(
@@ -20,26 +20,26 @@ export class AuthServiceImpl implements AuthServiceInterface {
   ) {}
 
   private setAuthState(state: AuthState): AuthState {
-    this.model.authState$.next(state)
-    return state
+    this.model.authState$.next(state);
+    return state;
   }
 
   private clearState(): AuthState {
-    return this.setAuthState(anonymousState)
+    return this.setAuthState(anonymousState);
   }
 
   bootstrap = (force = false): Effect.Effect<AuthState> =>
     Effect.gen(this, function* () {
       if (!force) {
-        const current = this.model.authState$.getValue()
-        if (current.status === 'authenticated') return current
+        const current = this.model.authState$.getValue();
+        if (current.status === 'authenticated') return current;
       }
 
       this.setAuthState({
         status: 'loading',
         user: null,
         error: null,
-      })
+      });
 
       return yield* this.api.get<{ user: AuthUser }>('/auth/me').pipe(
         Effect.map((data) =>
@@ -59,20 +59,20 @@ export class AuthServiceImpl implements AuthServiceInterface {
                 })
           )
         )
-      )
-    })
+      );
+    });
 
   login = (): Effect.Effect<void> =>
     Effect.sync(() => {
-      this.nav.navigate(this.api.buildUrl('/auth/github'))
-    })
+      this.nav.navigate(this.api.buildUrl('/auth/github'));
+    });
 
   logout = (): Effect.Effect<void> =>
     Effect.gen(this, function* () {
       yield* this.api
         .post('/auth/logout')
-        .pipe(Effect.catchAll(() => Effect.void))
-      this.clearState()
-      this.nav.navigate('/')
-    })
+        .pipe(Effect.catchAll(() => Effect.void));
+      this.clearState();
+      this.nav.navigate('/');
+    });
 }

@@ -1,24 +1,24 @@
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from 'effect';
 
-import { DatabaseService } from '../../services/database-service'
+import { DatabaseService } from '../../services/database-service';
 import {
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
   type PaginationOptions,
-} from '../pagination'
-import { RepositoryError } from '../repository-error'
+} from '../pagination';
+import { RepositoryError } from '../repository-error';
 import {
   SiteRepository,
   type SiteRepositoryService,
   type SiteCreateData,
   type SiteUpdateData,
-} from '../site-repository'
-import { withDatabase } from '../with-database'
+} from '../site-repository';
+import { withDatabase } from '../with-database';
 
 // Individual atomic operations
 const findSiteById = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.findUnique({
@@ -26,12 +26,12 @@ const findSiteById = (id: string) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'site.findById', cause: error }),
-    })
-  })
+    });
+  });
 
 const findSiteByIdWithUserId = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.findUnique({
@@ -43,12 +43,12 @@ const findSiteByIdWithUserId = (id: string) =>
           operation: 'site.findByIdWithUserId',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const findSiteByIdWithDetails = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.findUnique({
@@ -64,12 +64,12 @@ const findSiteByIdWithDetails = (id: string) =>
           operation: 'site.findByIdWithDetails',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const findSitesByUserId = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.findMany({
@@ -81,18 +81,18 @@ const findSitesByUserId = (userId: string) =>
           operation: 'site.findByUserId',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const findSitesByUserIdWithCounts = (
   userId: string,
   pagination?: PaginationOptions
 ) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
-    const page = pagination?.page ?? DEFAULT_PAGE
-    const limit = pagination?.limit ?? DEFAULT_LIMIT
-    const skip = (page - 1) * limit
+    const { prisma } = yield* DatabaseService;
+    const page = pagination?.page ?? DEFAULT_PAGE;
+    const limit = pagination?.limit ?? DEFAULT_LIMIT;
+    const skip = (page - 1) * limit;
 
     const [items, total] = yield* Effect.tryPromise({
       try: () =>
@@ -118,7 +118,7 @@ const findSitesByUserIdWithCounts = (
           operation: 'site.findByUserIdWithCounts',
           cause: error,
         }),
-    })
+    });
 
     return {
       items,
@@ -126,12 +126,12 @@ const findSitesByUserIdWithCounts = (
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-    }
-  })
+    };
+  });
 
 const findSiteByIdWithFullDetails = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.findUnique({
@@ -174,12 +174,12 @@ const findSiteByIdWithFullDetails = (id: string) =>
           operation: 'site.findByIdWithFullDetails',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const updateSite = (id: string, data: SiteUpdateData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.update({
@@ -195,12 +195,12 @@ const updateSite = (id: string, data: SiteUpdateData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'site.update', cause: error }),
-    })
-  })
+    });
+  });
 
 const deleteSite = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.delete({
@@ -208,12 +208,12 @@ const deleteSite = (id: string) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'site.delete', cause: error }),
-    })
-  })
+    });
+  });
 
 const createSite = (data: SiteCreateData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.site.create({
@@ -228,14 +228,14 @@ const createSite = (data: SiteCreateData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'site.create', cause: error }),
-    })
-  })
+    });
+  });
 
 // Repository implementation — DatabaseService resolved at layer construction
 export const PrismaSiteRepositoryLive = Layer.effect(
   SiteRepository,
   Effect.gen(function* () {
-    const bind = withDatabase(yield* DatabaseService)
+    const bind = withDatabase(yield* DatabaseService);
 
     return {
       findById: bind(findSiteById),
@@ -247,6 +247,6 @@ export const PrismaSiteRepositoryLive = Layer.effect(
       update: bind(updateSite),
       delete: bind(deleteSite),
       create: bind(createSite),
-    } satisfies SiteRepositoryService
+    } satisfies SiteRepositoryService;
   })
-)
+);

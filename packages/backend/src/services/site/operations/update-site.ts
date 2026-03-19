@@ -1,15 +1,15 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { isUniqueConstraintError } from '../../../repositories/repository-error'
-import { SiteRepository } from '../../../repositories/site-repository'
+import { isUniqueConstraintError } from '../../../repositories/repository-error';
+import { SiteRepository } from '../../../repositories/site-repository';
 import {
   SiteNotFoundError,
   SiteUpdateError,
   SiteAccessDeniedError,
   DuplicateSiteNameError,
   type UpdateSiteData,
-} from '../site-types'
-import { validateSiteName, validateGitRepo } from '../site-validation'
+} from '../site-types';
+import { validateSiteName, validateGitRepo } from '../site-validation';
 
 export const updateSite = (
   siteId: string,
@@ -17,16 +17,16 @@ export const updateSite = (
   data: UpdateSiteData
 ) =>
   Effect.gen(function* () {
-    const siteRepo = yield* SiteRepository
+    const siteRepo = yield* SiteRepository;
 
-    const existingSite = yield* siteRepo.findByIdWithUserId(siteId)
+    const existingSite = yield* siteRepo.findByIdWithUserId(siteId);
 
     if (!existingSite) {
-      return yield* new SiteNotFoundError({ siteId })
+      return yield* new SiteNotFoundError({ siteId });
     }
 
     if (existingSite.userId !== userId) {
-      return yield* new SiteAccessDeniedError({ siteId, userId })
+      return yield* new SiteAccessDeniedError({ siteId, userId });
     }
 
     const validatedData: UpdateSiteData = {
@@ -42,7 +42,7 @@ export const updateSite = (
       ...(data.deployStatus !== undefined && {
         deployStatus: data.deployStatus,
       }),
-    }
+    };
 
     const updatedSite = yield* siteRepo.update(siteId, validatedData).pipe(
       Effect.catchTag(
@@ -66,6 +66,6 @@ export const updateSite = (
                 })
               )
       )
-    )
-    return updatedSite
-  })
+    );
+    return updatedSite;
+  });

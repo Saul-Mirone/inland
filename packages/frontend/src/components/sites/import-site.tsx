@@ -1,9 +1,9 @@
-import { Effect } from 'effect'
-import { useState } from 'react'
+import { Effect } from 'effect';
+import { useState } from 'react';
 
-import { Button } from '@/components/ui/button'
-import { SiteService } from '@/services/site'
-import { runEffect } from '@/utils/effect-runtime'
+import { Button } from '@/components/ui/button';
+import { SiteService } from '@/services/site';
+import { runEffect } from '@/utils/effect-runtime';
 
 const initialFormState = {
   name: '',
@@ -12,18 +12,18 @@ const initialFormState = {
   setupWorkflow: true,
   enablePages: true,
   overrideExistingFiles: false,
-}
+};
 
 export const ImportSite = () => {
-  const [form, setForm] = useState(initialFormState)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [form, setForm] = useState(initialFormState);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const updateTextField =
     (field: 'name' | 'gitRepoFullName' | 'description') =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }))
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const updateCheckbox =
     (field: 'setupWorkflow' | 'enablePages' | 'overrideExistingFiles') =>
@@ -31,31 +31,31 @@ export const ImportSite = () => {
       setForm((prev) => ({
         ...prev,
         [field]: e.target.checked,
-      }))
+      }));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!form.name.trim()) {
-      setError('Please enter a site name')
-      return
+      setError('Please enter a site name');
+      return;
     }
 
     if (!form.gitRepoFullName.trim()) {
-      setError('Please enter the repository full name (owner/repo)')
-      return
+      setError('Please enter the repository full name (owner/repo)');
+      return;
     }
 
     if (
       !/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(form.gitRepoFullName.trim())
     ) {
-      setError('Invalid repository format. Use: owner/repo-name')
-      return
+      setError('Invalid repository format. Use: owner/repo-name');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
-    setSuccess(null)
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
     try {
       const result = await runEffect(
@@ -69,21 +69,21 @@ export const ImportSite = () => {
             overrideExistingFiles: form.overrideExistingFiles,
           })
         )
-      )
+      );
 
       const articlesMsg =
         result?.articlesImported !== undefined
           ? ` (${result.articlesImported} articles imported)`
-          : ''
-      setSuccess(`Import completed successfully!${articlesMsg}`)
+          : '';
+      setSuccess(`Import completed successfully!${articlesMsg}`);
 
-      setForm(initialFormState)
+      setForm(initialFormState);
     } catch {
-      setError('Failed to import repository')
+      setError('Failed to import repository');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -188,5 +188,5 @@ export const ImportSite = () => {
         </Button>
       </form>
     </div>
-  )
-}
+  );
+};

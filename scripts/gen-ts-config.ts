@@ -1,3 +1,3 @@
-import { generateTsConfig } from '@inland/dev/generate'
+import { generateTsConfig } from '@inland/dev/generate';
 
-generateTsConfig()
+generateTsConfig();

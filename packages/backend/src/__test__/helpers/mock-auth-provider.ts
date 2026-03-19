@@ -1,10 +1,10 @@
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from 'effect';
 
 import {
   AuthProviderRepository,
   type AuthProviderRepositoryService,
   type PlatformUser,
-} from '../../repositories/auth-provider-repository'
+} from '../../repositories/auth-provider-repository';
 
 // Mock implementation for testing
 export const makeMockAuthProvider = (): AuthProviderRepositoryService => ({
@@ -22,10 +22,10 @@ export const makeMockAuthProvider = (): AuthProviderRepositoryService => ({
     Effect.succeed({
       isValid: true,
     }),
-})
+});
 
 // Mock layer for testing
 export const MockAuthProviderLive = Layer.succeed(
   AuthProviderRepository,
   makeMockAuthProvider()
-)
+);

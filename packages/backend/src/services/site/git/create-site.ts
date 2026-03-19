@@ -1,26 +1,26 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { GitProviderRepository } from '../../../repositories/git-provider-repository'
-import { isUniqueConstraintError } from '../../../repositories/repository-error'
-import { SiteRepository } from '../../../repositories/site-repository'
-import { ArticleService } from '../../article/article-service'
-import { AuthService } from '../../auth'
+import { GitProviderRepository } from '../../../repositories/git-provider-repository';
+import { isUniqueConstraintError } from '../../../repositories/repository-error';
+import { SiteRepository } from '../../../repositories/site-repository';
+import { ArticleService } from '../../article/article-service';
+import { AuthService } from '../../auth';
 import {
   SiteCreationError,
   DuplicateSiteNameError,
   type CreateSiteData,
-} from '../site-types'
-import { generateSlug } from '../site-utils'
+} from '../site-types';
+import { generateSlug } from '../site-utils';
 
 export const createSite = (data: CreateSiteData) =>
   Effect.gen(function* () {
-    const siteRepo = yield* SiteRepository
-    const gitProvider = yield* GitProviderRepository
+    const siteRepo = yield* SiteRepository;
+    const gitProvider = yield* GitProviderRepository;
 
-    const authService = yield* AuthService
-    const accessToken = yield* authService.getUserAuthToken(data.userId)
+    const authService = yield* AuthService;
+    const accessToken = yield* authService.getUserAuthToken(data.userId);
 
-    const platformUser = yield* authService.fetchUser(accessToken)
+    const platformUser = yield* authService.fetchUser(accessToken);
 
     const gitRepo = yield* gitProvider.createRepositoryWithPages(
       accessToken,
@@ -37,7 +37,7 @@ export const createSite = (data: CreateSiteData) =>
         siteAuthor: data.author || platformUser.username,
         platformUsername: platformUser.username,
       }
-    )
+    );
 
     const site = yield* siteRepo
       .create({
@@ -70,23 +70,23 @@ export const createSite = (data: CreateSiteData) =>
                   })
                 )
         )
-      )
+      );
 
     yield* Effect.gen(function* () {
-      const articleService = yield* ArticleService
+      const articleService = yield* ArticleService;
       const importResult = yield* articleService.importArticlesFromGit(
         site.id,
         data.userId
-      )
+      );
 
       yield* Effect.logInfo(
         `Imported ${importResult.imported}/${importResult.total} articles for site ${site.name}`
-      )
-    }).pipe(Effect.catchAll(() => Effect.void))
+      );
+    }).pipe(Effect.catchAll(() => Effect.void));
 
     return {
       ...site,
       gitUrl: gitRepo.htmlUrl,
       pagesUrl: gitRepo.pagesUrl,
-    }
-  })
+    };
+  });

@@ -1,3 +1,6 @@
-export * from './session-types'
+export * from './session-types';
 
-export { SessionService, type SessionServiceInterface } from './session-service'
+export {
+  SessionService,
+  type SessionServiceInterface,
+} from './session-service';

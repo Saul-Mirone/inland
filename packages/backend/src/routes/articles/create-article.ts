@@ -1,14 +1,14 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { ArticleService } from '../../services/article'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { ArticleService } from '../../services/article';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const createArticleRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -22,17 +22,17 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
       ],
     },
     async (request: TypedFastifyRequest<Schemas.CreateArticleData>, reply) => {
-      const userPayload = request.jwtPayload!
-      const { siteId, title, slug, content, status } = request.validatedBody!
+      const userPayload = request.jwtPayload!;
+      const { siteId, title, slug, content, status } = request.validatedBody!;
 
       const createArticle = Effect.gen(function* () {
-        const articleService = yield* ArticleService
+        const articleService = yield* ArticleService;
 
-        const validTitle = yield* articleService.validateTitle(title)
+        const validTitle = yield* articleService.validateTitle(title);
 
         const validSlug = slug
           ? yield* articleService.validateSlug(slug)
-          : yield* articleService.generateSlugFromTitle(validTitle)
+          : yield* articleService.generateSlugFromTitle(validTitle);
 
         const article = yield* articleService.createArticle(
           userPayload.userId,
@@ -43,10 +43,10 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
             content,
             status,
           }
-        )
+        );
 
-        return { article }
-      })
+        return { article };
+      });
 
       return runRouteEffect(
         fastify,
@@ -69,7 +69,7 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
           fallbackMessage: 'Failed to create article',
           successCode: 201,
         }
-      )
+      );
     }
-  )
-}
+  );
+};

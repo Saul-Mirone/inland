@@ -1,7 +1,7 @@
-import { Data } from 'effect'
+import { Data } from 'effect';
 
 export class ApiError extends Data.TaggedError('ApiError')<{
-  readonly status: number
-  readonly message: string
-  readonly redirectUrl?: string
+  readonly status: number;
+  readonly message: string;
+  readonly redirectUrl?: string;
 }> {}

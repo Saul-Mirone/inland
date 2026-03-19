@@ -1,31 +1,31 @@
-import { Effect } from 'effect'
-import { useEffect } from 'react'
+import { Effect } from 'effect';
+import { useEffect } from 'react';
 
-import type { Article } from '@/model/articles-model'
+import type { Article } from '@/model/articles-model';
 
-import { Button } from '@/components/ui/button'
-import { articlesModel } from '@/model/articles-model'
-import { ArticleService } from '@/services/article'
-import { runEffect } from '@/utils/effect-runtime'
-import { useObservable } from '@/utils/use-observable'
+import { Button } from '@/components/ui/button';
+import { articlesModel } from '@/model/articles-model';
+import { ArticleService } from '@/services/article';
+import { runEffect } from '@/utils/effect-runtime';
+import { useObservable } from '@/utils/use-observable';
 
 interface ArticleListProps {
-  siteId?: string
-  onEditArticle?: (article: Article) => void
+  siteId?: string;
+  onEditArticle?: (article: Article) => void;
 }
 
 export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
-  const articles = useObservable(articlesModel.articles$)
-  const loading = useObservable(articlesModel.loading$)
-  const error = useObservable(articlesModel.error$)
-  const deletingId = useObservable(articlesModel.deletingId$)
-  const publishingId = useObservable(articlesModel.publishingId$)
+  const articles = useObservable(articlesModel.articles$);
+  const loading = useObservable(articlesModel.loading$);
+  const error = useObservable(articlesModel.error$);
+  const deletingId = useObservable(articlesModel.deletingId$);
+  const publishingId = useObservable(articlesModel.publishingId$);
 
   useEffect(() => {
     void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.fetchArticles(siteId))
-    )
-  }, [siteId])
+    );
+  }, [siteId]);
 
   const handleDelete = (articleId: string) => {
     if (
@@ -33,27 +33,27 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
         'Are you sure you want to delete this article? This action cannot be undone.'
       )
     ) {
-      return
+      return;
     }
     void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.deleteArticle(articleId))
-    )
-  }
+    );
+  };
 
   const handlePublish = (articleId: string) => {
     void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.publishArticle(articleId))
-    )
-  }
+    );
+  };
 
   if (loading) {
     return (
       <div className="text-sm text-muted-foreground">Loading articles...</div>
-    )
+    );
   }
 
   if (error) {
-    return <div className="text-sm text-destructive">Error: {error}</div>
+    return <div className="text-sm text-destructive">Error: {error}</div>;
   }
 
   return (
@@ -123,5 +123,5 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};

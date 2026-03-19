@@ -1,15 +1,15 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { ArticleService } from '../../services/article'
-import { toPaginatedResponse } from '../../utils/pagination-response'
-import { runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { ArticleService } from '../../services/article';
+import { toPaginatedResponse } from '../../utils/pagination-response';
+import { runRouteEffect } from '../../utils/route-effect';
 
 export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -26,21 +26,21 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
       request: TypedFastifyRequest<unknown, unknown, Schemas.PaginationParams>,
       reply
     ) => {
-      const userPayload = request.jwtPayload!
-      const { page, limit } = request.validatedQuery!
+      const userPayload = request.jwtPayload!;
+      const { page, limit } = request.validatedQuery!;
 
       const getUserArticles = Effect.gen(function* () {
-        const articleService = yield* ArticleService
+        const articleService = yield* ArticleService;
         const result = yield* articleService.findUserArticles(
           userPayload.userId,
           { page, limit }
-        )
-        return toPaginatedResponse('articles', result)
-      })
+        );
+        return toPaginatedResponse('articles', result);
+      });
 
       return runRouteEffect(fastify, reply, getUserArticles, {
         fallbackMessage: 'Failed to fetch articles',
-      })
+      });
     }
-  )
-}
+  );
+};

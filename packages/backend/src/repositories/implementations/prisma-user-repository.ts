@@ -1,19 +1,19 @@
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from 'effect';
 
-import { DatabaseService } from '../../services/database-service'
-import { RepositoryError } from '../repository-error'
+import { DatabaseService } from '../../services/database-service';
+import { RepositoryError } from '../repository-error';
 import {
   UserRepository,
   type UserRepositoryService,
   type CreateUserData,
   type CreateGitIntegrationData,
-} from '../user-repository'
-import { withDatabase } from '../with-database'
+} from '../user-repository';
+import { withDatabase } from '../with-database';
 
 // Individual atomic operations
 const createUser = (data: CreateUserData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.user.create({
@@ -25,12 +25,12 @@ const createUser = (data: CreateUserData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'user.create', cause: error }),
-    })
-  })
+    });
+  });
 
 const findUserByUsername = (username: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.user.findUnique({
@@ -41,12 +41,12 @@ const findUserByUsername = (username: string) =>
           operation: 'user.findByUsername',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const findUserById = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.user.findUnique({
@@ -57,12 +57,12 @@ const findUserById = (userId: string) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'user.findById', cause: error }),
-    })
-  })
+    });
+  });
 
 const upsertUser = (data: CreateUserData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.user.upsert({
@@ -79,12 +79,12 @@ const upsertUser = (data: CreateUserData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'user.upsert', cause: error }),
-    })
-  })
+    });
+  });
 
 const upsertGitIntegration = (data: CreateGitIntegrationData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.gitIntegration.upsert({
@@ -112,12 +112,12 @@ const upsertGitIntegration = (data: CreateGitIntegrationData) =>
           operation: 'gitIntegration.upsert',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const getAuthToken = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
 
     const gitIntegration = yield* Effect.tryPromise({
       try: () =>
@@ -135,14 +135,14 @@ const getAuthToken = (userId: string) =>
           operation: 'gitIntegration.getAuthToken',
           cause: error,
         }),
-    })
+    });
 
-    return gitIntegration?.accessToken || null
-  })
+    return gitIntegration?.accessToken || null;
+  });
 
 const clearAuthToken = (userId: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
 
     yield* Effect.tryPromise({
       try: () =>
@@ -161,14 +161,14 @@ const clearAuthToken = (userId: string) =>
           operation: 'gitIntegration.clearAuthToken',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 // Repository implementation — DatabaseService resolved at layer construction
 export const PrismaUserRepositoryLive = Layer.effect(
   UserRepository,
   Effect.gen(function* () {
-    const bind = withDatabase(yield* DatabaseService)
+    const bind = withDatabase(yield* DatabaseService);
 
     return {
       create: bind(createUser),
@@ -178,6 +178,6 @@ export const PrismaUserRepositoryLive = Layer.effect(
       upsertGitIntegration: bind(upsertGitIntegration),
       getAuthToken: bind(getAuthToken),
       clearAuthToken: bind(clearAuthToken),
-    } satisfies UserRepositoryService
+    } satisfies UserRepositoryService;
   })
-)
+);

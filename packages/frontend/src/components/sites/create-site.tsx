@@ -1,9 +1,9 @@
-import { Effect } from 'effect'
-import { useState } from 'react'
+import { Effect } from 'effect';
+import { useState } from 'react';
 
-import { Button } from '@/components/ui/button'
-import { SiteService } from '@/services/site'
-import { runEffect } from '@/utils/effect-runtime'
+import { Button } from '@/components/ui/button';
+import { SiteService } from '@/services/site';
+import { runEffect } from '@/utils/effect-runtime';
 
 const initialFormState = {
   name: '',
@@ -11,28 +11,28 @@ const initialFormState = {
   author: '',
   templateOwner: 'Saul-Mirone',
   templateRepo: 'inland-template-basic',
-}
+};
 
 export const CreateSite = () => {
-  const [form, setForm] = useState(initialFormState)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [form, setForm] = useState(initialFormState);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const updateField =
     (field: keyof typeof initialFormState) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }))
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!form.name.trim()) {
-      setError('Please enter a site name')
-      return
+      setError('Please enter a site name');
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       await runEffect(
@@ -45,15 +45,15 @@ export const CreateSite = () => {
             templateRepo: form.templateRepo,
           })
         )
-      )
+      );
 
-      setForm(initialFormState)
+      setForm(initialFormState);
     } catch {
-      setError('Failed to create site')
+      setError('Failed to create site');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -148,5 +148,5 @@ export const CreateSite = () => {
         </Button>
       </form>
     </div>
-  )
-}
+  );
+};

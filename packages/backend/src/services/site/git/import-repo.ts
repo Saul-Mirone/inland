@@ -1,48 +1,48 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { GitProviderRepository } from '../../../repositories/git-provider-repository'
-import { isUniqueConstraintError } from '../../../repositories/repository-error'
-import { SiteRepository } from '../../../repositories/site-repository'
-import { ArticleService } from '../../article/article-service'
-import { AuthService } from '../../auth'
+import { GitProviderRepository } from '../../../repositories/git-provider-repository';
+import { isUniqueConstraintError } from '../../../repositories/repository-error';
+import { SiteRepository } from '../../../repositories/site-repository';
+import { ArticleService } from '../../article/article-service';
+import { AuthService } from '../../auth';
 import {
   DuplicateSiteNameError,
   SiteCreationError,
   type ImportRepoData,
-} from '../site-types'
-import { generateSlug } from '../site-utils'
+} from '../site-types';
+import { generateSlug } from '../site-utils';
 
 export const importRepo = (data: ImportRepoData) =>
   Effect.gen(function* () {
-    const siteRepo = yield* SiteRepository
-    const gitProvider = yield* GitProviderRepository
+    const siteRepo = yield* SiteRepository;
+    const gitProvider = yield* GitProviderRepository;
 
-    const authService = yield* AuthService
-    const accessToken = yield* authService.getUserAuthToken(data.userId)
+    const authService = yield* AuthService;
+    const accessToken = yield* authService.getUserAuthToken(data.userId);
 
     const repoInfo = yield* gitProvider.getRepositoryInfo(
       accessToken,
       data.gitRepoFullName
-    )
+    );
 
     yield* Effect.logInfo(
       `Importing repository: ${data.gitRepoFullName} (branch: ${repoInfo.defaultBranch})`
-    )
+    );
 
     const pagesStatus = yield* gitProvider.checkPagesStatus(
       accessToken,
       data.gitRepoFullName
-    )
+    );
 
     yield* Effect.logInfo(
       `Pages status: ${pagesStatus.enabled ? `enabled (${pagesStatus.url})` : 'disabled'}`
-    )
+    );
 
     let workflowResult:
       | { filesCreated: string[]; filesSkipped: string[] }
-      | undefined
+      | undefined;
     if (data.setupWorkflow !== false) {
-      const platformUser = yield* authService.fetchUser(accessToken)
+      const platformUser = yield* authService.fetchUser(accessToken);
 
       workflowResult = yield* gitProvider.injectInlandWorkflow(
         accessToken,
@@ -55,22 +55,22 @@ export const importRepo = (data: ImportRepoData) =>
           platformUsername: platformUser.username,
         },
         { overrideExistingFiles: data.overrideExistingFiles }
-      )
+      );
 
       yield* Effect.logInfo(
         `Workflow injection: ${workflowResult.filesCreated.length} files created, ${workflowResult.filesSkipped.length} files skipped`
-      )
+      );
     }
 
-    let pagesUrl = pagesStatus.url
+    let pagesUrl = pagesStatus.url;
     if (!pagesStatus.enabled && data.enablePages !== false) {
       const enablePagesEffect = gitProvider
         .enablePages(accessToken, data.gitRepoFullName)
         .pipe(
           Effect.tap((url) =>
             Effect.gen(function* () {
-              pagesUrl = url
-              yield* Effect.logInfo(`Pages enabled: ${pagesUrl}`)
+              pagesUrl = url;
+              yield* Effect.logInfo(`Pages enabled: ${pagesUrl}`);
             })
           ),
           Effect.catchAll((error) =>
@@ -83,9 +83,9 @@ export const importRepo = (data: ImportRepoData) =>
               Effect.as(undefined)
             )
           )
-        )
+        );
 
-      yield* enablePagesEffect
+      yield* enablePagesEffect;
     }
 
     const site = yield* siteRepo.create({
@@ -95,9 +95,9 @@ export const importRepo = (data: ImportRepoData) =>
       platform: data.platform || 'github',
       deployStatus: pagesUrl ? 'deployed' : 'pending',
       deployUrl: pagesUrl,
-    })
+    });
 
-    const articleService = yield* ArticleService
+    const articleService = yield* ArticleService;
     const importResult = yield* articleService
       .importArticlesFromGit(site.id, data.userId)
       .pipe(
@@ -110,11 +110,11 @@ export const importRepo = (data: ImportRepoData) =>
             }))
           )
         )
-      )
+      );
 
     yield* Effect.logInfo(
       `Imported ${importResult.imported}/${importResult.total} articles for site ${site.name}`
-    )
+    );
 
     return {
       site: {
@@ -128,7 +128,7 @@ export const importRepo = (data: ImportRepoData) =>
       filesSkipped: workflowResult?.filesSkipped || [],
       articlesImported: importResult.imported,
       totalArticles: importResult.total,
-    }
+    };
   }).pipe(
     Effect.catchTag(
       'RepositoryError',
@@ -151,4 +151,4 @@ export const importRepo = (data: ImportRepoData) =>
               })
             )
     )
-  )
+  );

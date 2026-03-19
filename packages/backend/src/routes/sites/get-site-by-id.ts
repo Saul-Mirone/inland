@@ -1,14 +1,14 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { SiteService } from '../../services/site'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { SiteService } from '../../services/site';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -22,14 +22,14 @@ export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
       ],
     },
     async (request: TypedFastifyRequest<unknown, Schemas.SiteParam>, reply) => {
-      const userPayload = request.jwtPayload!
-      const { id } = request.validatedParams!
+      const userPayload = request.jwtPayload!;
+      const { id } = request.validatedParams!;
 
       const getSite = Effect.gen(function* () {
-        const siteService = yield* SiteService
-        const site = yield* siteService.findSiteById(id, userPayload.userId)
-        return { site }
-      })
+        const siteService = yield* SiteService;
+        const site = yield* siteService.findSiteById(id, userPayload.userId);
+        return { site };
+      });
 
       return runRouteEffect(
         fastify,
@@ -41,7 +41,7 @@ export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
           })
         ),
         { fallbackMessage: 'Failed to fetch site' }
-      )
+      );
     }
-  )
-}
+  );
+};

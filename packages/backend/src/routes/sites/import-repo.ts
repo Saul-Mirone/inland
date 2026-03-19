@@ -1,14 +1,14 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { SiteService } from '../../services/site'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { SiteService } from '../../services/site';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const importRepoRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -22,7 +22,7 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
       ],
     },
     async (request: TypedFastifyRequest<Schemas.ImportRepoData>, reply) => {
-      const userPayload = request.jwtPayload!
+      const userPayload = request.jwtPayload!;
       const {
         name,
         gitRepoFullName,
@@ -31,12 +31,12 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
         enablePages,
         overrideExistingFiles,
         description,
-      } = request.validatedBody!
+      } = request.validatedBody!;
 
       const importRepoEffect = Effect.gen(function* () {
-        const siteService = yield* SiteService
+        const siteService = yield* SiteService;
 
-        const validName = yield* siteService.validateSiteName(name)
+        const validName = yield* siteService.validateSiteName(name);
 
         const result = yield* siteService.importRepo({
           userId: userPayload.userId,
@@ -47,10 +47,10 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
           enablePages,
           overrideExistingFiles,
           description,
-        })
+        });
 
-        return result
-      })
+        return result;
+      });
 
       return runRouteEffect(
         fastify,
@@ -77,7 +77,7 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
           fallbackMessage: 'Failed to import repository',
           successCode: 201,
         }
-      )
+      );
     }
-  )
-}
+  );
+};

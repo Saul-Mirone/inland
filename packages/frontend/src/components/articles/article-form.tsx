@@ -1,19 +1,19 @@
-import { Effect } from 'effect'
-import { useEffect, useState } from 'react'
+import { Effect } from 'effect';
+import { useEffect, useState } from 'react';
 
-import type { Article } from '@/model/articles-model'
+import type { Article } from '@/model/articles-model';
 
-import { Button } from '@/components/ui/button'
-import { sitesModel } from '@/model/sites-model'
-import { ArticleService } from '@/services/article'
-import { SiteService } from '@/services/site'
-import { runEffect } from '@/utils/effect-runtime'
-import { useObservable } from '@/utils/use-observable'
+import { Button } from '@/components/ui/button';
+import { sitesModel } from '@/model/sites-model';
+import { ArticleService } from '@/services/article';
+import { SiteService } from '@/services/site';
+import { runEffect } from '@/utils/effect-runtime';
+import { useObservable } from '@/utils/use-observable';
 
 interface ArticleFormProps {
-  onArticleCreated: () => void
-  editingArticle?: Article | null
-  onCancelEdit?: () => void
+  onArticleCreated: () => void;
+  editingArticle?: Article | null;
+  onCancelEdit?: () => void;
 }
 
 const INITIAL_FORM_DATA: ArticleFormData = {
@@ -22,30 +22,30 @@ const INITIAL_FORM_DATA: ArticleFormData = {
   slug: '',
   content: '',
   status: 'draft',
-}
+};
 
 type ArticleFormData = {
-  siteId: string
-  title: string
-  slug: string
-  content: string
-  status: 'draft' | 'published'
-}
+  siteId: string;
+  title: string;
+  slug: string;
+  content: string;
+  status: 'draft' | 'published';
+};
 
 export const ArticleForm = ({
   onArticleCreated,
   editingArticle,
   onCancelEdit,
 }: ArticleFormProps) => {
-  const sites = useObservable(sitesModel.sites$)
-  const sitesLoading = useObservable(sitesModel.loading$)
-  const [formData, setFormData] = useState<ArticleFormData>(INITIAL_FORM_DATA)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const sites = useObservable(sitesModel.sites$);
+  const sitesLoading = useObservable(sitesModel.loading$);
+  const [formData, setFormData] = useState<ArticleFormData>(INITIAL_FORM_DATA);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()))
-  }, [])
+    runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()));
+  }, []);
 
   useEffect(() => {
     if (editingArticle) {
@@ -55,22 +55,22 @@ export const ArticleForm = ({
         slug: editingArticle.slug,
         content: editingArticle.content,
         status: editingArticle.status,
-      })
+      });
     } else {
-      setFormData(INITIAL_FORM_DATA)
+      setFormData(INITIAL_FORM_DATA);
     }
-  }, [editingArticle])
+  }, [editingArticle]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!formData.siteId || !formData.title || !formData.content) {
-      setError('Site, title, and content are required')
-      return
+      setError('Site, title, and content are required');
+      return;
     }
 
-    setIsSubmitting(true)
-    setError(null)
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       if (editingArticle) {
@@ -78,36 +78,38 @@ export const ArticleForm = ({
           Effect.flatMap(ArticleService, (svc) =>
             svc.updateArticle(editingArticle.id, formData)
           )
-        )
+        );
       } else {
         await runEffect(
           Effect.flatMap(ArticleService, (svc) => svc.createArticle(formData))
-        )
-        setFormData(INITIAL_FORM_DATA)
+        );
+        setFormData(INITIAL_FORM_DATA);
       }
 
-      onArticleCreated()
+      onArticleCreated();
     } catch {
-      setError('Failed to save article')
+      setError('Failed to save article');
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   if (sitesLoading) {
-    return <div className="text-sm text-muted-foreground">Loading sites...</div>
+    return (
+      <div className="text-sm text-muted-foreground">Loading sites...</div>
+    );
   }
 
   return (
@@ -217,5 +219,5 @@ export const ArticleForm = ({
         )}
       </div>
     </form>
-  )
-}
+  );
+};

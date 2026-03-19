@@ -1,9 +1,9 @@
-import { Route, Routes } from 'react-router'
+import { Route, Routes } from 'react-router';
 
-import { AuthBouncer } from './routes/auth-bouncer'
-import { AuthCallback } from './routes/auth-callback'
-import { AuthError } from './routes/auth-error'
-import { Home } from './routes/home'
+import { AuthBouncer } from './routes/auth-bouncer';
+import { AuthCallback } from './routes/auth-callback';
+import { AuthError } from './routes/auth-error';
+import { Home } from './routes/home';
 
 export const AppRouter = () => (
   <Routes>
@@ -15,4 +15,4 @@ export const AppRouter = () => (
       <Route path="callback" element={<AuthCallback />} />
     </Route>
   </Routes>
-)
+);

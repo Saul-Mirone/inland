@@ -1,11 +1,11 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { UserRepository } from '../../../repositories/user-repository'
-import { UserCreationError, type CreateUserData } from '../user-types'
+import { UserRepository } from '../../../repositories/user-repository';
+import { UserCreationError, type CreateUserData } from '../user-types';
 
 export const createUser = (data: CreateUserData) =>
   Effect.gen(function* () {
-    const userRepo = yield* UserRepository
+    const userRepo = yield* UserRepository;
 
     const user = yield* userRepo.create(data).pipe(
       Effect.catchTag('RepositoryError', (error) =>
@@ -18,6 +18,6 @@ export const createUser = (data: CreateUserData) =>
           })
         )
       )
-    )
-    return user
-  })
+    );
+    return user;
+  });

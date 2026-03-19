@@ -1,14 +1,14 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { SiteService } from '../../services/site'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { SiteService } from '../../services/site';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const updateSiteRoute = async (fastify: FastifyInstance) => {
   fastify.put(
@@ -26,19 +26,19 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
       request: TypedFastifyRequest<Schemas.UpdateSiteData, Schemas.SiteParam>,
       reply
     ) => {
-      const userPayload = request.jwtPayload!
-      const { id } = request.validatedParams!
-      const updateData = request.validatedBody!
+      const userPayload = request.jwtPayload!;
+      const { id } = request.validatedParams!;
+      const updateData = request.validatedBody!;
 
       const effect = Effect.gen(function* () {
-        const siteService = yield* SiteService
+        const siteService = yield* SiteService;
         const site = yield* siteService.updateSite(
           id,
           userPayload.userId,
           updateData
-        )
-        return { site }
-      })
+        );
+        return { site };
+      });
 
       return runRouteEffect(
         fastify,
@@ -54,7 +54,7 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
           })
         ),
         { fallbackMessage: 'Failed to update site' }
-      )
+      );
     }
-  )
-}
+  );
+};

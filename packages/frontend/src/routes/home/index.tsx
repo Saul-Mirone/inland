@@ -1,24 +1,24 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { ArticleManager } from '@/components/articles/article-manager'
-import { LoginButton } from '@/components/auth/login-button'
-import { UserInfo } from '@/components/auth/user-info'
-import { SiteManager } from '@/components/sites/site-manager'
-import { Button } from '@/components/ui/button'
-import { authModel } from '@/model/auth-model'
-import { AuthService } from '@/services/auth'
-import { runEffect } from '@/utils/effect-runtime'
-import { useObservable } from '@/utils/use-observable'
+import { ArticleManager } from '@/components/articles/article-manager';
+import { LoginButton } from '@/components/auth/login-button';
+import { UserInfo } from '@/components/auth/user-info';
+import { SiteManager } from '@/components/sites/site-manager';
+import { Button } from '@/components/ui/button';
+import { authModel } from '@/model/auth-model';
+import { AuthService } from '@/services/auth';
+import { runEffect } from '@/utils/effect-runtime';
+import { useObservable } from '@/utils/use-observable';
 
 export function Home() {
-  const authState = useObservable(authModel.authState$)
+  const authState = useObservable(authModel.authState$);
 
   if (authState.status === 'loading') {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         Checking session...
       </div>
-    )
+    );
   }
 
   return (
@@ -33,7 +33,7 @@ export function Home() {
             <Button
               variant="destructive"
               onClick={() => {
-                void runEffect(Effect.flatMap(AuthService, (s) => s.logout()))
+                void runEffect(Effect.flatMap(AuthService, (s) => s.logout()));
               }}
             >
               Logout
@@ -52,5 +52,5 @@ export function Home() {
         </div>
       )}
     </div>
-  )
+  );
 }

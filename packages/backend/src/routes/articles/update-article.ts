@@ -1,14 +1,14 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { ArticleService } from '../../services/article'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { ArticleService } from '../../services/article';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const updateArticleRoute = async (fastify: FastifyInstance) => {
   fastify.put(
@@ -29,19 +29,19 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
       >,
       reply
     ) => {
-      const userPayload = request.jwtPayload!
-      const { id } = request.validatedParams!
-      const updateData = request.validatedBody!
+      const userPayload = request.jwtPayload!;
+      const { id } = request.validatedParams!;
+      const updateData = request.validatedBody!;
 
       const effect = Effect.gen(function* () {
-        const articleService = yield* ArticleService
+        const articleService = yield* ArticleService;
         const article = yield* articleService.updateArticle(
           id,
           userPayload.userId,
           updateData
-        )
-        return { article }
-      })
+        );
+        return { article };
+      });
 
       return runRouteEffect(
         fastify,
@@ -60,7 +60,7 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
           })
         ),
         { fallbackMessage: 'Failed to update article' }
-      )
+      );
     }
-  )
-}
+  );
+};

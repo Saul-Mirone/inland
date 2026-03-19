@@ -1,24 +1,24 @@
-import { Effect, Layer } from 'effect'
+import { Effect, Layer } from 'effect';
 
-import { DatabaseService } from '../../services/database-service'
+import { DatabaseService } from '../../services/database-service';
 import {
   ArticleRepository,
   type ArticleRepositoryService,
   type ArticleCreateData,
   type ArticleUpdateData,
-} from '../article-repository'
+} from '../article-repository';
 import {
   DEFAULT_LIMIT,
   DEFAULT_PAGE,
   type PaginationOptions,
-} from '../pagination'
-import { RepositoryError } from '../repository-error'
-import { withDatabase } from '../with-database'
+} from '../pagination';
+import { RepositoryError } from '../repository-error';
+import { withDatabase } from '../with-database';
 
 // Individual atomic operations
 const createArticle = (data: ArticleCreateData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.article.create({
@@ -42,12 +42,12 @@ const createArticle = (data: ArticleCreateData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'article.create', cause: error }),
-    })
-  })
+    });
+  });
 
 const findArticleById = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.article.findUnique({
@@ -65,12 +65,12 @@ const findArticleById = (id: string) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'article.findById', cause: error }),
-    })
-  })
+    });
+  });
 
 const findArticleBySiteIdAndSlug = (siteId: string, slug: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.article.findFirst({
@@ -81,15 +81,15 @@ const findArticleBySiteIdAndSlug = (siteId: string, slug: string) =>
           operation: 'article.findBySiteIdAndSlug',
           cause: error,
         }),
-    })
-  })
+    });
+  });
 
 const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
-    const page = pagination?.page ?? DEFAULT_PAGE
-    const limit = pagination?.limit ?? DEFAULT_LIMIT
-    const skip = (page - 1) * limit
+    const { prisma } = yield* DatabaseService;
+    const page = pagination?.page ?? DEFAULT_PAGE;
+    const limit = pagination?.limit ?? DEFAULT_LIMIT;
+    const skip = (page - 1) * limit;
 
     const [items, total] = yield* Effect.tryPromise({
       try: () =>
@@ -115,7 +115,7 @@ const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
           operation: 'article.findBySiteId',
           cause: error,
         }),
-    })
+    });
 
     return {
       items,
@@ -123,16 +123,16 @@ const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-    }
-  })
+    };
+  });
 
 const findArticlesByUserId = (userId: string, pagination?: PaginationOptions) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
-    const page = pagination?.page ?? DEFAULT_PAGE
-    const limit = pagination?.limit ?? DEFAULT_LIMIT
-    const skip = (page - 1) * limit
-    const where = { site: { userId } }
+    const { prisma } = yield* DatabaseService;
+    const page = pagination?.page ?? DEFAULT_PAGE;
+    const limit = pagination?.limit ?? DEFAULT_LIMIT;
+    const skip = (page - 1) * limit;
+    const where = { site: { userId } };
 
     const [items, total] = yield* Effect.tryPromise({
       try: () =>
@@ -160,7 +160,7 @@ const findArticlesByUserId = (userId: string, pagination?: PaginationOptions) =>
           operation: 'article.findByUserId',
           cause: error,
         }),
-    })
+    });
 
     return {
       items,
@@ -168,12 +168,12 @@ const findArticlesByUserId = (userId: string, pagination?: PaginationOptions) =>
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-    }
-  })
+    };
+  });
 
 const updateArticle = (id: string, data: ArticleUpdateData) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.article.update({
@@ -197,12 +197,12 @@ const updateArticle = (id: string, data: ArticleUpdateData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'article.update', cause: error }),
-    })
-  })
+    });
+  });
 
 const deleteArticle = (id: string) =>
   Effect.gen(function* () {
-    const { prisma } = yield* DatabaseService
+    const { prisma } = yield* DatabaseService;
     return yield* Effect.tryPromise({
       try: () =>
         prisma.article.delete({
@@ -210,14 +210,14 @@ const deleteArticle = (id: string) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'article.delete', cause: error }),
-    })
-  })
+    });
+  });
 
 // Repository implementation — DatabaseService resolved at layer construction
 export const PrismaArticleRepositoryLive = Layer.effect(
   ArticleRepository,
   Effect.gen(function* () {
-    const bind = withDatabase(yield* DatabaseService)
+    const bind = withDatabase(yield* DatabaseService);
 
     return {
       create: bind(createArticle),
@@ -227,6 +227,6 @@ export const PrismaArticleRepositoryLive = Layer.effect(
       findByUserId: bind(findArticlesByUserId),
       update: bind(updateArticle),
       delete: bind(deleteArticle),
-    } satisfies ArticleRepositoryService
+    } satisfies ArticleRepositoryService;
   })
-)
+);

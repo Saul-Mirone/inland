@@ -1,18 +1,18 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   ArticleRepository,
   type ArticleUpdateData,
-} from '../../../repositories/article-repository'
-import { isUniqueConstraintError } from '../../../repositories/repository-error'
+} from '../../../repositories/article-repository';
+import { isUniqueConstraintError } from '../../../repositories/repository-error';
 import {
   ArticleNotFoundError,
   ArticleUpdateError,
   ArticleAccessDeniedError,
   DuplicateSlugError,
   type UpdateArticleData,
-} from '../article-types'
-import { validateTitle, validateSlug } from '../article-validation'
+} from '../article-types';
+import { validateTitle, validateSlug } from '../article-validation';
 
 export const updateArticle = (
   articleId: string,
@@ -20,16 +20,16 @@ export const updateArticle = (
   data: UpdateArticleData
 ) =>
   Effect.gen(function* () {
-    const articleRepo = yield* ArticleRepository
+    const articleRepo = yield* ArticleRepository;
 
-    const existingArticle = yield* articleRepo.findById(articleId)
+    const existingArticle = yield* articleRepo.findById(articleId);
 
     if (!existingArticle) {
-      return yield* new ArticleNotFoundError({ articleId })
+      return yield* new ArticleNotFoundError({ articleId });
     }
 
     if (existingArticle.site.userId !== userId) {
-      return yield* new ArticleAccessDeniedError({ articleId, userId })
+      return yield* new ArticleAccessDeniedError({ articleId, userId });
     }
 
     const repoData: ArticleUpdateData = {
@@ -41,7 +41,7 @@ export const updateArticle = (
       }),
       ...(data.content !== undefined && { content: data.content }),
       ...(data.status !== undefined && { status: data.status }),
-    }
+    };
     const article = yield* articleRepo.update(articleId, repoData).pipe(
       Effect.catchTag(
         'RepositoryError',
@@ -64,6 +64,6 @@ export const updateArticle = (
                 })
               )
       )
-    )
-    return { article }
-  })
+    );
+    return { article };
+  });

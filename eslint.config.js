@@ -1,13 +1,13 @@
-import tsParser from '@typescript-eslint/parser'
-import pluginImportX from 'eslint-plugin-import-x'
-import { defineConfig } from 'eslint/config'
-import tseslint from 'typescript-eslint'
+import tsParser from '@typescript-eslint/parser';
+import pluginImportX from 'eslint-plugin-import-x';
+import { defineConfig } from 'eslint/config';
+import tseslint from 'typescript-eslint';
 
-import oxfmtrc from './.oxfmtrc.json' with { type: 'json' }
+import oxfmtrc from './.oxfmtrc.json' with { type: 'json' };
 
-const ignoreList = oxfmtrc.ignorePatterns
+const ignoreList = oxfmtrc.ignorePatterns;
 
-const typeScriptExtensions = ['.ts', '.tsx', '.cts', '.mts']
+const typeScriptExtensions = ['.ts', '.tsx', '.cts', '.mts'];
 
 export default defineConfig(
   {
@@ -54,4 +54,4 @@ export default defineConfig(
       ],
     },
   }
-)
+);

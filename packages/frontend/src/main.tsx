@@ -1,9 +1,9 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router'
-import { Toaster } from 'sonner'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router';
+import { Toaster } from 'sonner';
 
-import { AppRouter } from './router'
+import { AppRouter } from './router';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -12,4 +12,4 @@ createRoot(document.getElementById('root')!).render(
       <Toaster richColors />
     </BrowserRouter>
   </StrictMode>
-)
+);

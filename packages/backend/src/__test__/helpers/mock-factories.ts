@@ -3,9 +3,9 @@ import type {
   GitIntegration,
   Site,
   User,
-} from '../../../generated/prisma/client'
+} from '../../../generated/prisma/client';
 
-const now = new Date()
+const now = new Date();
 
 export const mockUser = (overrides: Partial<User> = {}): User => ({
   id: 'user-1',
@@ -15,7 +15,7 @@ export const mockUser = (overrides: Partial<User> = {}): User => ({
   createdAt: now,
   updatedAt: now,
   ...overrides,
-})
+});
 
 export const mockSite = (overrides: Partial<Site> = {}): Site => ({
   id: 'site-1',
@@ -28,7 +28,7 @@ export const mockSite = (overrides: Partial<Site> = {}): Site => ({
   createdAt: now,
   updatedAt: now,
   ...overrides,
-})
+});
 
 export const mockArticle = (overrides: Partial<Article> = {}): Article => ({
   id: 'article-1',
@@ -40,7 +40,7 @@ export const mockArticle = (overrides: Partial<Article> = {}): Article => ({
   createdAt: now,
   updatedAt: now,
   ...overrides,
-})
+});
 
 export const mockGitIntegration = (
   overrides: Partial<GitIntegration> = {}
@@ -54,4 +54,4 @@ export const mockGitIntegration = (
   createdAt: now,
   updatedAt: now,
   ...overrides,
-})
+});

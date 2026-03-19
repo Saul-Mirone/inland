@@ -1,27 +1,27 @@
-import { Context, Layer } from 'effect'
-import { BehaviorSubject } from 'rxjs'
+import { Context, Layer } from 'effect';
+import { BehaviorSubject } from 'rxjs';
 
 export interface Article {
-  id: string
-  title: string
-  slug: string
-  content: string
-  status: 'draft' | 'published'
-  siteId: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  status: 'draft' | 'published';
+  siteId: string;
+  createdAt: string;
+  updatedAt: string;
   site: {
-    id: string
-    name: string
-  }
+    id: string;
+    name: string;
+  };
 }
 
 export interface ArticlesModelService {
-  readonly articles$: BehaviorSubject<Article[]>
-  readonly loading$: BehaviorSubject<boolean>
-  readonly error$: BehaviorSubject<string | null>
-  readonly deletingId$: BehaviorSubject<string | null>
-  readonly publishingId$: BehaviorSubject<string | null>
+  readonly articles$: BehaviorSubject<Article[]>;
+  readonly loading$: BehaviorSubject<boolean>;
+  readonly error$: BehaviorSubject<string | null>;
+  readonly deletingId$: BehaviorSubject<string | null>;
+  readonly publishingId$: BehaviorSubject<string | null>;
 }
 
 const instance: ArticlesModelService = {
@@ -30,13 +30,13 @@ const instance: ArticlesModelService = {
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),
   publishingId$: new BehaviorSubject<string | null>(null),
-}
+};
 
 export class ArticlesModel extends Context.Tag('ArticlesModel')<
   ArticlesModel,
   ArticlesModelService
 >() {}
 
-export const ArticlesModelLive = Layer.succeed(ArticlesModel, instance)
+export const ArticlesModelLive = Layer.succeed(ArticlesModel, instance);
 
-export const articlesModel = instance
+export const articlesModel = instance;

@@ -1,37 +1,37 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   ArticleRepository,
   type ArticleCreateData,
-} from '../../../repositories/article-repository'
-import { isUniqueConstraintError } from '../../../repositories/repository-error'
-import { SiteRepository } from '../../../repositories/site-repository'
-import { SiteAccessDeniedError } from '../../site/site-types'
+} from '../../../repositories/article-repository';
+import { isUniqueConstraintError } from '../../../repositories/repository-error';
+import { SiteRepository } from '../../../repositories/site-repository';
+import { SiteAccessDeniedError } from '../../site/site-types';
 import {
   ArticleCreationError,
   DuplicateSlugError,
   type CreateArticleData,
-} from '../article-types'
+} from '../article-types';
 
 export const createArticle = (userId: string, data: CreateArticleData) =>
   Effect.gen(function* () {
-    const siteRepo = yield* SiteRepository
-    const articleRepo = yield* ArticleRepository
+    const siteRepo = yield* SiteRepository;
+    const articleRepo = yield* ArticleRepository;
 
-    const site = yield* siteRepo.findByIdWithUserId(data.siteId)
+    const site = yield* siteRepo.findByIdWithUserId(data.siteId);
 
     if (!site) {
       return yield* new SiteAccessDeniedError({
         siteId: data.siteId,
         userId,
-      })
+      });
     }
 
     if (site.userId !== userId) {
       return yield* new SiteAccessDeniedError({
         siteId: data.siteId,
         userId,
-      })
+      });
     }
 
     const repoData: ArticleCreateData = {
@@ -40,7 +40,7 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
       slug: data.slug,
       content: data.content,
       status: data.status ?? 'draft',
-    }
+    };
     const article = yield* articleRepo.create(repoData).pipe(
       Effect.catchTag(
         'RepositoryError',
@@ -63,6 +63,6 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
                 })
               )
       )
-    )
-    return article
-  })
+    );
+    return article;
+  });

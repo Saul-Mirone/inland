@@ -1,15 +1,15 @@
-import { Data } from 'effect'
+import { Data } from 'effect';
 
 export type {
   CreateUserData,
   CreateGitIntegrationData,
   UserWithIntegrations,
-} from '../../repositories/user-repository'
+} from '../../repositories/user-repository';
 
 export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
-  readonly identifier: string
+  readonly identifier: string;
 }> {}
 
 export class UserCreationError extends Data.TaggedError('UserCreationError')<{
-  readonly reason: string
+  readonly reason: string;
 }> {}

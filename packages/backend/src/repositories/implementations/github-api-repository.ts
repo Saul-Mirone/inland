@@ -1,4 +1,4 @@
-import { Effect, Schedule } from 'effect'
+import { Effect, Schedule } from 'effect';
 
 import type {
   GitProviderRepositoryService,
@@ -6,13 +6,13 @@ import type {
   CreateRepoData,
   TemplateData,
   ImportedArticle,
-} from '../git-provider-repository'
+} from '../git-provider-repository';
 
 import {
   GitProviderError,
   RepositoryCreationError,
   PagesDeploymentError,
-} from '../git-provider-repository'
+} from '../git-provider-repository';
 import {
   githubFetch,
   assertFields as sharedAssertFields,
@@ -21,25 +21,25 @@ import {
   type GitHubRepoResponse,
   type GitHubTreeResponse,
   type GitHubFileContentResponse,
-} from './github-utils'
+} from './github-utils';
 
-const REPO_READY_DELAY_MS = 1000
-const MAX_RETRY_ATTEMPTS = 9
+const REPO_READY_DELAY_MS = 1000;
+const MAX_RETRY_ATTEMPTS = 9;
 
 const makeError = (message: string, status?: number) =>
-  new GitProviderError({ message, status })
+  new GitProviderError({ message, status });
 
 const makeGitHubApiRequest = (
   accessToken: string,
   endpoint: string,
   options: RequestInit = {}
-) => githubFetch(accessToken, endpoint, makeError, options)
+) => githubFetch(accessToken, endpoint, makeError, options);
 
 const assertFields = (
   response: unknown,
   fields: readonly string[],
   context: string
-) => sharedAssertFields(response, fields, context, makeError)
+) => sharedAssertFields(response, fields, context, makeError);
 
 // Utility functions (pure, module-level)
 const shouldProcessFile = (filePath: string): boolean => {
@@ -52,19 +52,19 @@ const shouldProcessFile = (filePath: string): boolean => {
     '.yml',
     '.yaml',
     '.txt',
-  ]
-  return textExtensions.some((ext) => filePath.endsWith(ext))
-}
+  ];
+  return textExtensions.some((ext) => filePath.endsWith(ext));
+};
 
 const parseMarkdownContent = (
   content: string,
   filePath: string
 ): ImportedArticle | null => {
   try {
-    const slug = filePath.replace('content/', '').replace('.md', '')
+    const slug = filePath.replace('content/', '').replace('.md', '');
     const frontMatterMatch = content.match(
       /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/
-    )
+    );
 
     if (!frontMatterMatch) {
       return {
@@ -72,20 +72,20 @@ const parseMarkdownContent = (
         slug,
         content: content.trim(),
         status: 'published' as const,
-      }
+      };
     }
 
-    const [, frontMatterText, markdownContent] = frontMatterMatch
-    const frontMatter: Record<string, string> = {}
+    const [, frontMatterText, markdownContent] = frontMatterMatch;
+    const frontMatter: Record<string, string> = {};
 
     frontMatterText.split('\n').forEach((line) => {
-      const colonIndex = line.indexOf(':')
+      const colonIndex = line.indexOf(':');
       if (colonIndex > 0) {
-        const key = line.substring(0, colonIndex).trim()
-        const value = line.substring(colonIndex + 1).trim()
-        frontMatter[key] = value
+        const key = line.substring(0, colonIndex).trim();
+        const value = line.substring(colonIndex + 1).trim();
+        frontMatter[key] = value;
       }
-    })
+    });
 
     return {
       title:
@@ -96,20 +96,20 @@ const parseMarkdownContent = (
       status: (frontMatter.status === 'draft' ? 'draft' : 'published') as
         | 'draft'
         | 'published',
-    }
+    };
   } catch {
-    return null
+    return null;
   }
-}
+};
 
 // Atomic GitHub operations
 const createRepoFromTemplate = (
   accessToken: string,
   opts: {
-    templateOwner: string
-    templateRepo: string
-    repoName: string
-    description: string
+    templateOwner: string;
+    templateRepo: string;
+    repoName: string;
+    description: string;
   }
 ) =>
   Effect.gen(function* () {
@@ -125,14 +125,14 @@ const createRepoFromTemplate = (
           private: false,
         }),
       }
-    )
+    );
     yield* assertFields(
       response,
       ['id', 'name', 'full_name', 'html_url', 'clone_url', 'default_branch'],
       'POST /repos/.../generate'
-    )
-    return response as GitHubRepoResponse
-  })
+    );
+    return response as GitHubRepoResponse;
+  });
 
 const getRepoFiles = (
   accessToken: string,
@@ -143,11 +143,11 @@ const getRepoFiles = (
     const response = yield* makeGitHubApiRequest(
       accessToken,
       `/repos/${repoFullName}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`
-    )
-    yield* assertFields(response, ['tree'], 'GET /repos/.../git/trees/...')
-    const tree = response as GitHubTreeResponse
-    return tree.tree.filter((item) => item.type === 'blob')
-  })
+    );
+    yield* assertFields(response, ['tree'], 'GET /repos/.../git/trees/...');
+    const tree = response as GitHubTreeResponse;
+    return tree.tree.filter((item) => item.type === 'blob');
+  });
 
 const getFileContent = (
   accessToken: string,
@@ -158,23 +158,23 @@ const getFileContent = (
     const response = yield* makeGitHubApiRequest(
       accessToken,
       `/repos/${repoFullName}/contents/${filePath}`
-    )
+    );
     yield* assertFields(
       response,
       ['content', 'sha'],
       `GET /repos/.../contents/${filePath}`
-    )
-    return response as GitHubFileContentResponse
-  })
+    );
+    return response as GitHubFileContentResponse;
+  });
 
 const updateFileContent = (
   accessToken: string,
   repoFullName: string,
   opts: {
-    filePath: string
-    content: string
-    message: string
-    sha?: string
+    filePath: string;
+    content: string;
+    message: string;
+    sha?: string;
   }
 ) =>
   makeGitHubApiRequest(
@@ -189,15 +189,15 @@ const updateFileContent = (
         ...(opts.sha !== undefined && { sha: opts.sha }),
       }),
     }
-  )
+  );
 
 const deleteFile = (
   accessToken: string,
   repoFullName: string,
   opts: {
-    filePath: string
-    sha: string
-    message: string
+    filePath: string;
+    sha: string;
+    message: string;
   }
 ) =>
   makeGitHubApiRequest(
@@ -208,7 +208,7 @@ const deleteFile = (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: opts.message, sha: opts.sha }),
     }
-  )
+  );
 
 const enableGitHubPages = (accessToken: string, repoFullName: string) =>
   Effect.gen(function* () {
@@ -216,11 +216,11 @@ const enableGitHubPages = (accessToken: string, repoFullName: string) =>
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ build_type: 'workflow' }),
-    })
+    });
 
-    const [owner, repoName] = repoFullName.split('/')
-    return `https://${owner}.github.io/${repoName}`
-  })
+    const [owner, repoName] = repoFullName.split('/');
+    return `https://${owner}.github.io/${repoName}`;
+  });
 
 const getFileOrNull = (
   accessToken: string,
@@ -230,11 +230,11 @@ const getFileOrNull = (
   getFileContent(accessToken, repoFullName, filePath).pipe(
     Effect.catchAll((error) => {
       if (error.status === 404) {
-        return Effect.succeed(null)
+        return Effect.succeed(null);
       }
-      return Effect.fail(error)
+      return Effect.fail(error);
     })
-  )
+  );
 
 // Composite operations
 const processFileWithPlaceholders = (
@@ -244,11 +244,15 @@ const processFileWithPlaceholders = (
   placeholders: Record<string, string>
 ) =>
   Effect.gen(function* () {
-    const fileData = yield* getFileContent(accessToken, repoFullName, file.path)
-    const content = Buffer.from(fileData.content, 'base64').toString('utf-8')
+    const fileData = yield* getFileContent(
+      accessToken,
+      repoFullName,
+      file.path
+    );
+    const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
 
-    const updatedContent = replacePlaceholders(content, placeholders)
-    const hasChanges = updatedContent !== content
+    const updatedContent = replacePlaceholders(content, placeholders);
+    const hasChanges = updatedContent !== content;
 
     if (hasChanges) {
       yield* updateFileContent(accessToken, repoFullName, {
@@ -256,11 +260,11 @@ const processFileWithPlaceholders = (
         content: updatedContent,
         message: `Replace template placeholders in ${file.path}`,
         sha: fileData.sha,
-      })
+      });
     }
 
-    return hasChanges
-  })
+    return hasChanges;
+  });
 
 const replaceTemplatePlaceholders = (
   accessToken: string,
@@ -271,9 +275,9 @@ const replaceTemplatePlaceholders = (
   Effect.gen(function* () {
     yield* Effect.logInfo(
       `Starting template placeholder replacement for ${repoFullName} on branch ${defaultBranch}`
-    )
+    );
 
-    yield* Effect.sleep(REPO_READY_DELAY_MS)
+    yield* Effect.sleep(REPO_READY_DELAY_MS);
 
     const files = yield* getRepoFiles(
       accessToken,
@@ -288,13 +292,13 @@ const replaceTemplatePlaceholders = (
               error.status === 409 ||
               error.status === 422 ||
               error.message?.includes('Git Repository is empty')
-            )
+            );
           })
         )
       )
-    )
+    );
 
-    const placeholders = buildTemplatePlaceholders(templateData)
+    const placeholders = buildTemplatePlaceholders(templateData);
 
     for (const file of files) {
       if (shouldProcessFile(file.path)) {
@@ -303,16 +307,16 @@ const replaceTemplatePlaceholders = (
           repoFullName,
           file,
           placeholders
-        )
+        );
       }
     }
 
-    return true
-  })
+    return true;
+  });
 
 // GitHub implementation factory
 export const makeGitHubApiRepository = (config?: {
-  templateRepo?: string
+  templateRepo?: string;
 }): GitProviderRepositoryService => ({
   createRepositoryWithPages: (
     accessToken: string,
@@ -324,7 +328,7 @@ export const makeGitHubApiRepository = (config?: {
         return yield* new GitProviderError({
           message:
             'templateOwner and templateRepo are required to create a repository',
-        })
+        });
       }
 
       const repoData = yield* createRepoFromTemplate(accessToken, {
@@ -332,7 +336,7 @@ export const makeGitHubApiRepository = (config?: {
         templateRepo: data.templateRepo,
         repoName: data.name,
         description: data.description ?? `Blog site: ${data.name}`,
-      })
+      });
 
       const gitRepo: GitRepo = {
         id: repoData.id,
@@ -341,7 +345,7 @@ export const makeGitHubApiRepository = (config?: {
         htmlUrl: repoData.html_url,
         cloneUrl: repoData.clone_url,
         defaultBranch: repoData.default_branch,
-      }
+      };
 
       if (templateData) {
         yield* replaceTemplatePlaceholders(
@@ -349,7 +353,7 @@ export const makeGitHubApiRepository = (config?: {
           gitRepo.fullName,
           gitRepo.defaultBranch,
           templateData
-        )
+        );
       }
 
       const pagesUrl = yield* enableGitHubPages(
@@ -361,16 +365,16 @@ export const makeGitHubApiRepository = (config?: {
             yield* Effect.logError(
               `Failed to enable GitHub Pages for ${gitRepo.fullName}`,
               { error }
-            )
+            );
             return yield* new PagesDeploymentError({
               repoName: gitRepo.fullName,
               reason: error.message,
-            })
+            });
           })
         )
-      )
+      );
 
-      return { ...gitRepo, pagesUrl }
+      return { ...gitRepo, pagesUrl };
     }).pipe(
       Effect.catchAll(
         (error) =>
@@ -387,25 +391,25 @@ export const makeGitHubApiRepository = (config?: {
     articleSlug: string
   ) =>
     Effect.gen(function* () {
-      const filePath = `content/${articleSlug}.md`
+      const filePath = `content/${articleSlug}.md`;
 
       const currentFile = yield* getFileOrNull(
         accessToken,
         repoFullName,
         filePath
-      )
+      );
 
       if (!currentFile) {
-        return { deleted: false, reason: 'File not found' }
+        return { deleted: false, reason: 'File not found' };
       }
 
       yield* deleteFile(accessToken, repoFullName, {
         filePath,
         sha: currentFile.sha,
         message: `Delete article: ${articleSlug}`,
-      })
+      });
 
-      return { deleted: true, filePath }
+      return { deleted: true, filePath };
     }),
 
   getMarkdownFilesFromRepo: (
@@ -414,18 +418,18 @@ export const makeGitHubApiRepository = (config?: {
     defaultBranch: string
   ) =>
     Effect.gen(function* () {
-      yield* Effect.logInfo(`Fetching markdown files from ${repoFullName}`)
+      yield* Effect.logInfo(`Fetching markdown files from ${repoFullName}`);
 
       const files = yield* getRepoFiles(
         accessToken,
         repoFullName,
         defaultBranch
-      )
+      );
       const markdownFiles = files.filter(
         (file) => file.path.startsWith('content/') && file.path.endsWith('.md')
-      )
+      );
 
-      const articles: ImportedArticle[] = []
+      const articles: ImportedArticle[] = [];
 
       for (const file of markdownFiles) {
         yield* Effect.gen(function* () {
@@ -433,14 +437,14 @@ export const makeGitHubApiRepository = (config?: {
             accessToken,
             repoFullName,
             file.path
-          )
+          );
           const content = Buffer.from(fileData.content, 'base64').toString(
             'utf-8'
-          )
+          );
 
-          const article = parseMarkdownContent(content, file.path)
+          const article = parseMarkdownContent(content, file.path);
           if (article) {
-            articles.push(article)
+            articles.push(article);
           }
         }).pipe(
           Effect.catchAll((error) =>
@@ -448,10 +452,10 @@ export const makeGitHubApiRepository = (config?: {
               error,
             })
           )
-        )
+        );
       }
 
-      return articles
+      return articles;
     }),
 
   publishArticleToRepo: (
@@ -461,40 +465,40 @@ export const makeGitHubApiRepository = (config?: {
     markdownContent: string
   ) =>
     Effect.gen(function* () {
-      const filePath = `content/${articleSlug}.md`
+      const filePath = `content/${articleSlug}.md`;
 
       const existingFile = yield* getFileOrNull(
         accessToken,
         repoFullName,
         filePath
-      )
+      );
 
-      const sha = existingFile ? existingFile.sha : undefined
-      const message = `${sha ? 'Update' : 'Add'} article: ${articleSlug}`
+      const sha = existingFile ? existingFile.sha : undefined;
+      const message = `${sha ? 'Update' : 'Add'} article: ${articleSlug}`;
 
       const response = yield* updateFileContent(accessToken, repoFullName, {
         filePath,
         content: markdownContent,
         message,
         sha,
-      })
+      });
       const validated = yield* assertFields(
         response,
         ['commit'],
         `PUT /repos/.../contents/${filePath}`
-      )
+      );
       const commit = yield* assertFields(
         validated.commit,
         ['sha'],
         `PUT /repos/.../contents/${filePath} → commit`
-      )
+      );
 
       return {
         published: true,
         filePath,
         commitSha: commit.sha as string,
         wasUpdate: sha !== undefined,
-      }
+      };
     }),
 
   getRepositoryInfo: (accessToken: string, repoFullName: string) =>
@@ -502,22 +506,22 @@ export const makeGitHubApiRepository = (config?: {
       const repoInfo = yield* makeGitHubApiRequest(
         accessToken,
         `/repos/${repoFullName}`
-      )
+      );
       const validated = yield* assertFields(
         repoInfo,
         ['default_branch'],
         `GET /repos/${repoFullName}`
-      )
+      );
 
       return {
         defaultBranch: (validated.default_branch as string) || 'main',
         ...validated,
-      }
+      };
     }),
 
   checkPagesStatus: (accessToken: string, repoFullName: string) =>
     Effect.gen(function* () {
-      yield* Effect.logInfo(`Checking Pages status for ${repoFullName}`)
+      yield* Effect.logInfo(`Checking Pages status for ${repoFullName}`);
 
       const pagesInfo = yield* makeGitHubApiRequest(
         accessToken,
@@ -525,14 +529,14 @@ export const makeGitHubApiRepository = (config?: {
       ).pipe(
         Effect.catchTag('GitProviderError', (error) => {
           if (error.status === 404) {
-            return Effect.succeed(null)
+            return Effect.succeed(null);
           }
-          return Effect.fail(error)
+          return Effect.fail(error);
         })
-      )
+      );
 
       if (!pagesInfo) {
-        return { enabled: false }
+        return { enabled: false };
       }
 
       return {
@@ -549,7 +553,7 @@ export const makeGitHubApiRepository = (config?: {
               | { branch?: string }
               | undefined
           )?.branch,
-      }
+      };
     }),
 
   injectInlandWorkflow: (
@@ -559,13 +563,13 @@ export const makeGitHubApiRepository = (config?: {
     options?: { overrideExistingFiles?: boolean }
   ) =>
     Effect.gen(function* () {
-      yield* Effect.logInfo(`Injecting Inland workflow into ${repoFullName}`)
+      yield* Effect.logInfo(`Injecting Inland workflow into ${repoFullName}`);
 
-      const overrideExisting = options?.overrideExistingFiles ?? false
+      const overrideExisting = options?.overrideExistingFiles ?? false;
       const templateRepo =
-        config?.templateRepo ?? 'Saul-Mirone/inland-template-basic'
-      const filesCreated: string[] = []
-      const filesSkipped: string[] = []
+        config?.templateRepo ?? 'Saul-Mirone/inland-template-basic';
+      const filesCreated: string[] = [];
+      const filesSkipped: string[] = [];
 
       const filesToInject = [
         '.github/workflows/deploy.yml',
@@ -578,9 +582,9 @@ export const makeGitHubApiRepository = (config?: {
         'templates/layout.html',
         'assets/styles.css',
         'assets/script.js',
-      ] as const
+      ] as const;
 
-      const placeholders = buildTemplatePlaceholders(templateData)
+      const placeholders = buildTemplatePlaceholders(templateData);
 
       for (const filePath of filesToInject) {
         const injectFileEffect = Effect.gen(function* () {
@@ -588,56 +592,58 @@ export const makeGitHubApiRepository = (config?: {
             accessToken,
             repoFullName,
             filePath
-          )
+          );
 
           if (existingFile && !overrideExisting) {
-            yield* Effect.logInfo(`Skipping existing file: ${filePath}`)
-            filesSkipped.push(filePath)
-            return { skipped: true }
+            yield* Effect.logInfo(`Skipping existing file: ${filePath}`);
+            filesSkipped.push(filePath);
+            return { skipped: true };
           }
 
           const templateFile = yield* getFileContent(
             accessToken,
             templateRepo,
             filePath
-          )
+          );
 
           const content = replacePlaceholders(
             Buffer.from(templateFile.content, 'base64').toString('utf-8'),
             placeholders
-          )
+          );
 
-          const sha = existingFile ? existingFile.sha : undefined
+          const sha = existingFile ? existingFile.sha : undefined;
 
           yield* updateFileContent(accessToken, repoFullName, {
             filePath,
             content,
             message: `Add Inland CMS workflow: ${filePath}`,
             sha,
-          })
+          });
 
-          filesCreated.push(filePath)
-          yield* Effect.logInfo(`Injected file: ${filePath}`)
-          return { skipped: false }
-        })
+          filesCreated.push(filePath);
+          yield* Effect.logInfo(`Injected file: ${filePath}`);
+          return { skipped: false };
+        });
 
         yield* injectFileEffect.pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
-              yield* Effect.logError(`Failed to inject ${filePath}:`, { error })
-              return { skipped: false, failed: true }
+              yield* Effect.logError(`Failed to inject ${filePath}:`, {
+                error,
+              });
+              return { skipped: false, failed: true };
             })
           )
-        )
+        );
       }
 
       return {
         filesCreated,
         filesSkipped,
         workflowUrl: `https://github.com/${repoFullName}/actions`,
-      }
+      };
     }),
 
   enablePages: (accessToken: string, repoFullName: string) =>
     enableGitHubPages(accessToken, repoFullName),
-})
+});

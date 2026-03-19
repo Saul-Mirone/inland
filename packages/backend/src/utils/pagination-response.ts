@@ -1,4 +1,4 @@
-import type { PaginatedResult } from '../repositories/pagination'
+import type { PaginatedResult } from '../repositories/pagination';
 
 export const toPaginatedResponse = <T>(
   key: string,
@@ -11,4 +11,4 @@ export const toPaginatedResponse = <T>(
     total: result.total,
     totalPages: result.totalPages,
   },
-})
+});

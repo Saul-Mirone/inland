@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState } from 'react';
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 
-import { CreateSite } from './create-site'
-import { ImportSite } from './import-site'
-import { SiteList } from './site-list'
+import { CreateSite } from './create-site';
+import { ImportSite } from './import-site';
+import { SiteList } from './site-list';
 
 export const SiteManager = () => {
-  const [showImport, setShowImport] = useState(false)
+  const [showImport, setShowImport] = useState(false);
 
   return (
     <div className="space-y-8">
@@ -34,5 +34,5 @@ export const SiteManager = () => {
 
       <SiteList />
     </div>
-  )
-}
+  );
+};

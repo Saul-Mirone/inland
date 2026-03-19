@@ -1,10 +1,10 @@
-import type { Context } from 'effect'
+import type { Context } from 'effect';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { DatabaseService } from '../services/database-service'
+import { DatabaseService } from '../services/database-service';
 
-type DatabaseServiceShape = Context.Tag.Service<typeof DatabaseService>
+type DatabaseServiceShape = Context.Tag.Service<typeof DatabaseService>;
 
 /**
  * Binds a resolved DatabaseService instance into repository
@@ -16,4 +16,4 @@ export const withDatabase =
     fn: (...args: Args) => Effect.Effect<A, E, DatabaseService>
   ) =>
   (...args: Args): Effect.Effect<A, E> =>
-    fn(...args).pipe(Effect.provideService(DatabaseService, db))
+    fn(...args).pipe(Effect.provideService(DatabaseService, db));

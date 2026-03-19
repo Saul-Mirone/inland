@@ -1,58 +1,58 @@
-import { Data } from 'effect'
+import { Data } from 'effect';
 
 // Error types
 export class ArticleNotFoundError extends Data.TaggedError(
   'ArticleNotFoundError'
 )<{
-  readonly articleId: string
+  readonly articleId: string;
 }> {}
 
 export class ArticleCreationError extends Data.TaggedError(
   'ArticleCreationError'
 )<{
-  readonly reason: string
+  readonly reason: string;
 }> {}
 
 export class ArticleUpdateError extends Data.TaggedError('ArticleUpdateError')<{
-  readonly reason: string
+  readonly reason: string;
 }> {}
 
 export class ArticleAccessDeniedError extends Data.TaggedError(
   'ArticleAccessDeniedError'
 )<{
-  readonly articleId: string
-  readonly userId: string
+  readonly articleId: string;
+  readonly userId: string;
 }> {}
 
 export class DuplicateSlugError extends Data.TaggedError('DuplicateSlugError')<{
-  readonly slug: string
-  readonly siteId: string
+  readonly slug: string;
+  readonly siteId: string;
 }> {}
 
 export class ArticleValidationError extends Data.TaggedError(
   'ArticleValidationError'
 )<{
-  readonly field: 'title' | 'slug' | 'content'
-  readonly message: string
+  readonly field: 'title' | 'slug' | 'content';
+  readonly message: string;
 }> {}
 
 export class GitRepositoryError extends Data.TaggedError('GitRepositoryError')<{
-  readonly siteId: string
-  readonly message: string
+  readonly siteId: string;
+  readonly message: string;
 }> {}
 
 // Domain types
 export interface CreateArticleData {
-  readonly siteId: string
-  readonly title: string
-  readonly slug: string
-  readonly content: string
-  readonly status?: 'draft' | 'published'
+  readonly siteId: string;
+  readonly title: string;
+  readonly slug: string;
+  readonly content: string;
+  readonly status?: 'draft' | 'published';
 }
 
 export interface UpdateArticleData {
-  readonly title?: string
-  readonly slug?: string
-  readonly content?: string
-  readonly status?: 'draft' | 'published'
+  readonly title?: string;
+  readonly slug?: string;
+  readonly content?: string;
+  readonly status?: 'draft' | 'published';
 }

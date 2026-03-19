@@ -1,15 +1,15 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify';
 
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
 import {
   withSchemaValidation,
   type TypedFastifyRequest,
-} from '../../plugins/schema-validation'
-import * as Schemas from '../../schemas'
-import { ArticleService } from '../../services/article'
-import { toPaginatedResponse } from '../../utils/pagination-response'
-import { httpError, runRouteEffect } from '../../utils/route-effect'
+} from '../../plugins/schema-validation';
+import * as Schemas from '../../schemas';
+import { ArticleService } from '../../services/article';
+import { toPaginatedResponse } from '../../utils/pagination-response';
+import { httpError, runRouteEffect } from '../../utils/route-effect';
 
 export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -31,19 +31,19 @@ export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
       >,
       reply
     ) => {
-      const userPayload = request.jwtPayload!
-      const { siteId } = request.validatedParams!
-      const { page, limit } = request.validatedQuery!
+      const userPayload = request.jwtPayload!;
+      const { siteId } = request.validatedParams!;
+      const { page, limit } = request.validatedQuery!;
 
       const getSiteArticles = Effect.gen(function* () {
-        const articleService = yield* ArticleService
+        const articleService = yield* ArticleService;
         const result = yield* articleService.findSiteArticles(
           siteId,
           userPayload.userId,
           { page, limit }
-        )
-        return toPaginatedResponse('articles', result)
-      })
+        );
+        return toPaginatedResponse('articles', result);
+      });
 
       return runRouteEffect(
         fastify,
@@ -55,7 +55,7 @@ export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
           })
         ),
         { fallbackMessage: 'Failed to fetch articles' }
-      )
+      );
     }
-  )
-}
+  );
+};

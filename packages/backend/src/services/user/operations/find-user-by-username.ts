@@ -1,17 +1,17 @@
-import { Effect } from 'effect'
+import { Effect } from 'effect';
 
-import { UserRepository } from '../../../repositories/user-repository'
-import { UserNotFoundError } from '../user-types'
+import { UserRepository } from '../../../repositories/user-repository';
+import { UserNotFoundError } from '../user-types';
 
 export const findUserByUsername = (username: string) =>
   Effect.gen(function* () {
-    const userRepo = yield* UserRepository
+    const userRepo = yield* UserRepository;
 
-    const user = yield* userRepo.findByUsername(username)
+    const user = yield* userRepo.findByUsername(username);
 
     if (!user) {
-      return yield* new UserNotFoundError({ identifier: username })
+      return yield* new UserNotFoundError({ identifier: username });
     }
 
-    return user
-  })
+    return user;
+  });
