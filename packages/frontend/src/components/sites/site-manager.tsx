@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+
 import { CreateSite } from './create-site'
 import { ImportSite } from './import-site'
 import { SiteList } from './site-list'
@@ -8,40 +10,27 @@ export const SiteManager = () => {
   const [showImport, setShowImport] = useState(false)
 
   return (
-    <div>
-      <h1>Site Management</h1>
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold tracking-tight">Site Management</h1>
 
-      <div style={{ marginBottom: '2rem' }}>
-        <button
+      <div className="flex gap-3">
+        <Button
+          variant={!showImport ? 'default' : 'outline'}
           onClick={() => setShowImport(false)}
-          style={{
-            padding: '0.5rem 1rem',
-            marginRight: '1rem',
-            backgroundColor: !showImport ? '#007bff' : '#fff',
-            color: !showImport ? '#fff' : '#000',
-            border: '1px solid #007bff',
-            cursor: 'pointer',
-          }}
         >
           Create New Site
-        </button>
-        <button
+        </Button>
+        <Button
+          variant={showImport ? 'default' : 'outline'}
           onClick={() => setShowImport(true)}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: showImport ? '#007bff' : '#fff',
-            color: showImport ? '#fff' : '#000',
-            border: '1px solid #007bff',
-            cursor: 'pointer',
-          }}
         >
           Import Existing Repository
-        </button>
+        </Button>
       </div>
 
       {showImport ? <ImportSite /> : <CreateSite />}
 
-      <hr style={{ margin: '2rem 0' }} />
+      <hr className="border-border" />
 
       <SiteList />
     </div>

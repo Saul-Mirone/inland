@@ -1,10 +1,16 @@
 import { Effect } from 'effect'
 
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
+import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository'
 import { ArticleService } from '../../article/article-service'
 import { AuthService } from '../../auth'
-import { DuplicateSiteNameError, type ImportRepoData } from '../site-types'
+import {
+  DuplicateSiteNameError,
+  SiteCreationError,
+  type ImportRepoData,
+} from '../site-types'
+import { generateSlug } from '../site-utils'
 
 export const importRepo = (data: ImportRepoData) =>
   Effect.gen(function* () {
@@ -44,7 +50,7 @@ export const importRepo = (data: ImportRepoData) =>
         {
           siteName: data.name,
           siteDescription: data.description || `Blog site: ${data.name}`,
-          siteNameSlug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          siteNameSlug: generateSlug(data.name),
           siteAuthor: platformUser.username,
           platformUsername: platformUser.username,
         },
@@ -68,13 +74,14 @@ export const importRepo = (data: ImportRepoData) =>
             })
           ),
           Effect.catchAll((error) =>
-            Effect.gen(function* () {
-              yield* Effect.logInfo(
-                'Failed to enable Pages (may already be enabled or not supported), continuing anyway'
-              )
-              yield* Effect.logDebug('Pages enable error:', { error })
-              return Effect.succeed(undefined)
-            })
+            Effect.logInfo(
+              'Failed to enable Pages (may already be enabled or not supported), continuing anyway'
+            ).pipe(
+              Effect.tap(() =>
+                Effect.logDebug('Pages enable error:', { error })
+              ),
+              Effect.as(undefined)
+            )
           )
         )
 
@@ -123,18 +130,25 @@ export const importRepo = (data: ImportRepoData) =>
       totalArticles: importResult.total,
     }
   }).pipe(
-    Effect.catchAll((error) =>
-      Effect.gen(function* () {
-        if (
-          error instanceof Error &&
-          error.message.includes('Unique constraint')
-        ) {
-          return yield* new DuplicateSiteNameError({
-            name: data.name,
-            userId: data.userId,
-          })
-        }
-        return yield* Effect.fail(error)
-      })
+    Effect.catchTag(
+      'RepositoryError',
+      (
+        error
+      ): Effect.Effect<never, DuplicateSiteNameError | SiteCreationError> =>
+        isUniqueConstraintError(error)
+          ? Effect.fail(
+              new DuplicateSiteNameError({
+                name: data.name,
+                userId: data.userId,
+              })
+            )
+          : Effect.fail(
+              new SiteCreationError({
+                reason:
+                  error.cause instanceof Error
+                    ? error.cause.message
+                    : 'Unknown error',
+              })
+            )
     )
   )

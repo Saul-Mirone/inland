@@ -40,23 +40,23 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
           deployStatus?: string
         } = {}
 
-        if (updateData.name) {
+        if (updateData.name !== undefined) {
           validatedData.name = yield* siteService.validateSiteName(
             updateData.name
           )
         }
 
-        if (updateData.gitRepo) {
+        if (updateData.gitRepo !== undefined) {
           validatedData.gitRepo = yield* siteService.validateGitRepo(
             updateData.gitRepo
           )
         }
 
-        if (updateData.platform) {
+        if (updateData.platform !== undefined) {
           validatedData.platform = updateData.platform
         }
 
-        if (updateData.deployStatus) {
+        if (updateData.deployStatus !== undefined) {
           validatedData.deployStatus = updateData.deployStatus
         }
 

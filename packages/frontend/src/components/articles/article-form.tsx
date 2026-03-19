@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import type { Article } from '@/model/articles-model'
 
+import { Button } from '@/components/ui/button'
 import { sitesModel } from '@/model/sites-model'
 import { ArticleService } from '@/services/article'
 import { SiteService } from '@/services/site'
@@ -15,6 +16,22 @@ interface ArticleFormProps {
   onCancelEdit?: () => void
 }
 
+const INITIAL_FORM_DATA: ArticleFormData = {
+  siteId: '',
+  title: '',
+  slug: '',
+  content: '',
+  status: 'draft',
+}
+
+type ArticleFormData = {
+  siteId: string
+  title: string
+  slug: string
+  content: string
+  status: 'draft' | 'published'
+}
+
 export const ArticleForm = ({
   onArticleCreated,
   editingArticle,
@@ -22,13 +39,7 @@ export const ArticleForm = ({
 }: ArticleFormProps) => {
   const sites = useObservable(sitesModel.sites$)
   const sitesLoading = useObservable(sitesModel.loading$)
-  const [formData, setFormData] = useState({
-    siteId: '',
-    title: '',
-    slug: '',
-    content: '',
-    status: 'draft' as 'draft' | 'published',
-  })
+  const [formData, setFormData] = useState<ArticleFormData>(INITIAL_FORM_DATA)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,13 +57,7 @@ export const ArticleForm = ({
         status: editingArticle.status,
       })
     } else {
-      setFormData({
-        siteId: '',
-        title: '',
-        slug: '',
-        content: '',
-        status: 'draft',
-      })
+      setFormData(INITIAL_FORM_DATA)
     }
   }, [editingArticle])
 
@@ -78,13 +83,7 @@ export const ArticleForm = ({
         await runEffect(
           Effect.flatMap(ArticleService, (svc) => svc.createArticle(formData))
         )
-        setFormData({
-          siteId: '',
-          title: '',
-          slug: '',
-          content: '',
-          status: 'draft',
-        })
+        setFormData(INITIAL_FORM_DATA)
       }
 
       onArticleCreated()
@@ -107,25 +106,29 @@ export const ArticleForm = ({
     }))
   }
 
-  if (sitesLoading) return <div>Loading sites...</div>
+  if (sitesLoading) {
+    return <div className="text-sm text-muted-foreground">Loading sites...</div>
+  }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h3>{editingArticle ? 'Edit Article' : 'Create New Article'}</h3>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <h3 className="text-lg font-semibold">
+        {editingArticle ? 'Edit Article' : 'Create New Article'}
+      </h3>
 
-      {error && (
-        <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>
-      )}
+      {error && <div className="text-sm text-destructive">{error}</div>}
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="siteId">Site:</label>
+      <div className="space-y-1.5">
+        <label htmlFor="siteId" className="text-sm font-medium">
+          Site:
+        </label>
         <select
           id="siteId"
           name="siteId"
           value={formData.siteId}
           onChange={handleInputChange}
           required
-          style={{ marginLeft: '0.5rem', padding: '0.25rem' }}
+          className="ml-2 rounded-md border border-border bg-background px-2 py-1 text-sm"
         >
           <option value="">Select a site</option>
           {sites.map((site) => (
@@ -136,8 +139,10 @@ export const ArticleForm = ({
         </select>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="title">Title:</label>
+      <div className="space-y-1.5">
+        <label htmlFor="title" className="text-sm font-medium">
+          Title:
+        </label>
         <input
           type="text"
           id="title"
@@ -145,16 +150,14 @@ export const ArticleForm = ({
           value={formData.title}
           onChange={handleInputChange}
           required
-          style={{
-            marginLeft: '0.5rem',
-            padding: '0.25rem',
-            width: '300px',
-          }}
+          className="ml-2 w-80 rounded-md border border-border bg-background px-2 py-1 text-sm"
         />
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="slug">Slug (optional):</label>
+      <div className="space-y-1.5">
+        <label htmlFor="slug" className="text-sm font-medium">
+          Slug (optional):
+        </label>
         <input
           type="text"
           id="slug"
@@ -162,30 +165,30 @@ export const ArticleForm = ({
           value={formData.slug}
           onChange={handleInputChange}
           placeholder="Leave empty to auto-generate"
-          style={{
-            marginLeft: '0.5rem',
-            padding: '0.25rem',
-            width: '300px',
-          }}
+          className="ml-2 w-80 rounded-md border border-border bg-background px-2 py-1 text-sm"
         />
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="status">Status:</label>
+      <div className="space-y-1.5">
+        <label htmlFor="status" className="text-sm font-medium">
+          Status:
+        </label>
         <select
           id="status"
           name="status"
           value={formData.status}
           onChange={handleInputChange}
-          style={{ marginLeft: '0.5rem', padding: '0.25rem' }}
+          className="ml-2 rounded-md border border-border bg-background px-2 py-1 text-sm"
         >
           <option value="draft">Draft</option>
           <option value="published">Published</option>
         </select>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="content">Content:</label>
+      <div className="space-y-1.5">
+        <label htmlFor="content" className="text-sm font-medium">
+          Content:
+        </label>
         <textarea
           id="content"
           name="content"
@@ -193,25 +196,12 @@ export const ArticleForm = ({
           onChange={handleInputChange}
           required
           rows={10}
-          style={{
-            marginLeft: '0.5rem',
-            padding: '0.5rem',
-            width: '500px',
-            display: 'block',
-            marginTop: '0.5rem',
-          }}
+          className="mt-1.5 block w-[500px] rounded-md border border-border bg-background p-2 text-sm"
         />
       </div>
 
-      <div>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{
-            padding: '0.5rem 1rem',
-            marginRight: '0.5rem',
-          }}
-        >
+      <div className="flex gap-2">
+        <Button type="submit" disabled={isSubmitting}>
           {isSubmitting
             ? editingArticle
               ? 'Updating...'
@@ -219,15 +209,11 @@ export const ArticleForm = ({
             : editingArticle
               ? 'Update Article'
               : 'Create Article'}
-        </button>
+        </Button>
         {editingArticle && onCancelEdit && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            style={{ padding: '0.5rem 1rem' }}
-          >
+          <Button type="button" variant="outline" onClick={onCancelEdit}>
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>

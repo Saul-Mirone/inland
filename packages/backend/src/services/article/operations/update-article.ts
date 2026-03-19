@@ -32,10 +32,10 @@ export const updateArticle = (
     }
 
     const repoData: ArticleUpdateData = {
-      ...(data.title && { title: data.title }),
-      ...(data.slug && { slug: data.slug }),
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.slug !== undefined && { slug: data.slug }),
       ...(data.content !== undefined && { content: data.content }),
-      ...(data.status && { status: data.status }),
+      ...(data.status !== undefined && { status: data.status }),
     }
     const article = yield* articleRepo.update(articleId, repoData).pipe(
       Effect.catchTag(
@@ -46,7 +46,7 @@ export const updateArticle = (
           isUniqueConstraintError(error)
             ? Effect.fail(
                 new DuplicateSlugError({
-                  slug: data.slug || '',
+                  slug: data.slug ?? '',
                   siteId: existingArticle.siteId,
                 })
               )

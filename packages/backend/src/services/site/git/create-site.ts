@@ -10,6 +10,7 @@ import {
   DuplicateSiteNameError,
   type CreateSiteData,
 } from '../site-types'
+import { generateSlug } from '../site-utils'
 
 export const createSite = (data: CreateSiteData) =>
   Effect.gen(function* () {
@@ -32,7 +33,7 @@ export const createSite = (data: CreateSiteData) =>
       {
         siteName: data.name,
         siteDescription: data.description || `Blog site: ${data.name}`,
-        siteNameSlug: data.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        siteNameSlug: generateSlug(data.name),
         siteAuthor: data.author || platformUser.username,
         platformUsername: platformUser.username,
       }

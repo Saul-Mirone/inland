@@ -43,13 +43,13 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
           status?: 'draft' | 'published'
         } = {}
 
-        if (updateData.title) {
+        if (updateData.title !== undefined) {
           validatedData.title = yield* articleService.validateTitle(
             updateData.title
           )
         }
 
-        if (updateData.slug) {
+        if (updateData.slug !== undefined) {
           validatedData.slug = yield* articleService.validateSlug(
             updateData.slug
           )
@@ -59,7 +59,7 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
           validatedData.content = updateData.content
         }
 
-        if (updateData.status) {
+        if (updateData.status !== undefined) {
           validatedData.status = updateData.status
         }
 

@@ -13,60 +13,33 @@ import {
   RepositoryCreationError,
   PagesDeploymentError,
 } from '../git-provider-repository'
+import {
+  githubFetch,
+  assertFields as sharedAssertFields,
+  buildTemplatePlaceholders,
+  replacePlaceholders,
+  type GitHubRepoResponse,
+  type GitHubTreeResponse,
+  type GitHubFileContentResponse,
+} from './github-utils'
 
-// GitHub API response types
-interface GitHubRepoResponse {
-  readonly id: number
-  readonly name: string
-  readonly full_name: string
-  readonly html_url: string
-  readonly clone_url: string
-  readonly default_branch: string
-}
+const REPO_READY_DELAY_MS = 1000
+const MAX_RETRY_ATTEMPTS = 9
 
-interface GitHubTreeResponse {
-  readonly tree: Array<{
-    readonly path: string
-    readonly type: string
-    readonly sha: string
-  }>
-}
+const makeError = (message: string, status?: number) =>
+  new GitProviderError({ message, status })
 
-interface GitHubFileContentResponse {
-  readonly content: string
-  readonly sha: string
-}
+const makeGitHubApiRequest = (
+  accessToken: string,
+  endpoint: string,
+  options: RequestInit = {}
+) => githubFetch(accessToken, endpoint, makeError, options)
 
-// Runtime validation helpers
 const assertFields = (
   response: unknown,
   fields: readonly string[],
   context: string
-): Effect.Effect<Record<string, unknown>, GitProviderError> => {
-  if (typeof response !== 'object' || response === null) {
-    return Effect.fail(
-      new GitProviderError({
-        message: `Expected object from ${context}, got ${typeof response}`,
-      })
-    )
-  }
-  const obj = response as Record<string, unknown>
-  const missing = fields.filter((f) => !(f in obj))
-  if (missing.length > 0) {
-    return Effect.fail(
-      new GitProviderError({
-        message: `Missing fields [${missing.join(', ')}] in response from ${context}`,
-      })
-    )
-  }
-  return Effect.succeed(obj)
-}
-
-const isGitProviderError = (error: unknown): error is GitProviderError =>
-  typeof error === 'object' &&
-  error !== null &&
-  '_tag' in error &&
-  (error as { _tag: string })._tag === 'GitProviderError'
+) => sharedAssertFields(response, fields, context, makeError)
 
 // Utility functions (pure, module-level)
 const shouldProcessFile = (filePath: string): boolean => {
@@ -116,9 +89,9 @@ const parseMarkdownContent = (
 
     return {
       title:
-        frontMatter.title ||
+        frontMatter.title ??
         slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-      slug: frontMatter.slug || slug,
+      slug: frontMatter.slug ?? slug,
       content: markdownContent.trim(),
       status: (frontMatter.status === 'draft' ? 'draft' : 'published') as
         | 'draft'
@@ -129,77 +102,26 @@ const parseMarkdownContent = (
   }
 }
 
-// Core GitHub API operations (module-level Effects)
-const makeGitHubApiRequest = (
-  accessToken: string,
-  endpoint: string,
-  options: RequestInit = {}
-): Effect.Effect<unknown, GitProviderError> =>
-  Effect.gen(function* () {
-    const response = yield* Effect.tryPromise({
-      try: () =>
-        fetch(`https://api.github.com${endpoint}`, {
-          ...options,
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: 'application/vnd.github.v3+json',
-            'User-Agent': 'Inland-CMS/1.0',
-            ...options.headers,
-          },
-        }),
-      catch: (error) =>
-        new GitProviderError({
-          message: error instanceof Error ? error.message : 'Network error',
-        }),
-    })
-
-    if (!response.ok) {
-      const errorText = yield* Effect.tryPromise({
-        try: () => response.text(),
-        catch: (error) =>
-          new GitProviderError({
-            message:
-              error instanceof Error
-                ? error.message
-                : 'Failed to read error response',
-          }),
-      })
-      return yield* new GitProviderError({
-        message: `GitHub API error: ${errorText}`,
-        status: response.status,
-      })
-    }
-
-    return yield* Effect.tryPromise({
-      try: () => response.json(),
-      catch: (error) =>
-        new GitProviderError({
-          message:
-            error instanceof Error
-              ? error.message
-              : 'Failed to parse response JSON',
-        }),
-    })
-  })
-
 // Atomic GitHub operations
 const createRepoFromTemplate = (
   accessToken: string,
-  templateOwner: string,
-  templateRepo: string,
-  repoName: string,
-  description: string
+  opts: {
+    templateOwner: string
+    templateRepo: string
+    repoName: string
+    description: string
+  }
 ) =>
   Effect.gen(function* () {
     const response = yield* makeGitHubApiRequest(
       accessToken,
-      `/repos/${templateOwner}/${templateRepo}/generate`,
+      `/repos/${opts.templateOwner}/${opts.templateRepo}/generate`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: repoName,
-          description,
+          name: opts.repoName,
+          description: opts.description,
           private: false,
         }),
       }
@@ -248,21 +170,23 @@ const getFileContent = (
 const updateFileContent = (
   accessToken: string,
   repoFullName: string,
-  filePath: string,
-  content: string,
-  message: string,
-  sha?: string
+  opts: {
+    filePath: string
+    content: string
+    message: string
+    sha?: string
+  }
 ) =>
   makeGitHubApiRequest(
     accessToken,
-    `/repos/${repoFullName}/contents/${filePath}`,
+    `/repos/${repoFullName}/contents/${opts.filePath}`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message,
-        content: Buffer.from(content).toString('base64'),
-        ...(sha && { sha }),
+        message: opts.message,
+        content: Buffer.from(opts.content).toString('base64'),
+        ...(opts.sha !== undefined && { sha: opts.sha }),
       }),
     }
   )
@@ -270,17 +194,19 @@ const updateFileContent = (
 const deleteFile = (
   accessToken: string,
   repoFullName: string,
-  filePath: string,
-  sha: string,
-  message: string
+  opts: {
+    filePath: string
+    sha: string
+    message: string
+  }
 ) =>
   makeGitHubApiRequest(
     accessToken,
-    `/repos/${repoFullName}/contents/${filePath}`,
+    `/repos/${repoFullName}/contents/${opts.filePath}`,
     {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, sha }),
+      body: JSON.stringify({ message: opts.message, sha: opts.sha }),
     }
   )
 
@@ -321,28 +247,16 @@ const processFileWithPlaceholders = (
     const fileData = yield* getFileContent(accessToken, repoFullName, file.path)
     const content = Buffer.from(fileData.content, 'base64').toString('utf-8')
 
-    let updatedContent = content
-    let hasChanges = false
-
-    for (const [placeholder, value] of Object.entries(placeholders)) {
-      if (updatedContent.includes(placeholder)) {
-        updatedContent = updatedContent.replace(
-          new RegExp(placeholder, 'g'),
-          value
-        )
-        hasChanges = true
-      }
-    }
+    const updatedContent = replacePlaceholders(content, placeholders)
+    const hasChanges = updatedContent !== content
 
     if (hasChanges) {
-      yield* updateFileContent(
-        accessToken,
-        repoFullName,
-        file.path,
-        updatedContent,
-        `Replace template placeholders in ${file.path}`,
-        fileData.sha
-      )
+      yield* updateFileContent(accessToken, repoFullName, {
+        filePath: file.path,
+        content: updatedContent,
+        message: `Replace template placeholders in ${file.path}`,
+        sha: fileData.sha,
+      })
     }
 
     return hasChanges
@@ -359,7 +273,7 @@ const replaceTemplatePlaceholders = (
       `Starting template placeholder replacement for ${repoFullName} on branch ${defaultBranch}`
     )
 
-    yield* Effect.sleep(1000) // Wait for repo to be ready
+    yield* Effect.sleep(REPO_READY_DELAY_MS)
 
     const files = yield* getRepoFiles(
       accessToken,
@@ -367,10 +281,9 @@ const replaceTemplatePlaceholders = (
       defaultBranch
     ).pipe(
       Effect.retry(
-        Schedule.exponential(1000).pipe(
-          Schedule.intersect(Schedule.recurs(9)),
-          Schedule.whileInput((error: unknown) => {
-            if (!isGitProviderError(error)) return false
+        Schedule.exponential(REPO_READY_DELAY_MS).pipe(
+          Schedule.intersect(Schedule.recurs(MAX_RETRY_ATTEMPTS)),
+          Schedule.whileInput((error: GitProviderError) => {
             return (
               error.status === 409 ||
               error.status === 422 ||
@@ -381,15 +294,8 @@ const replaceTemplatePlaceholders = (
       )
     )
 
-    const placeholders = {
-      '{{SITE_NAME}}': templateData.siteName,
-      '{{SITE_DESCRIPTION}}': templateData.siteDescription,
-      '{{SITE_NAME_SLUG}}': templateData.siteNameSlug,
-      '{{SITE_AUTHOR}}': templateData.siteAuthor,
-      '{{GITHUB_USERNAME}}': templateData.platformUsername,
-    }
+    const placeholders = buildTemplatePlaceholders(templateData)
 
-    // Process files sequentially to avoid rate limiting
     for (const file of files) {
       if (shouldProcessFile(file.path)) {
         yield* processFileWithPlaceholders(
@@ -404,7 +310,7 @@ const replaceTemplatePlaceholders = (
     return true
   })
 
-// GitHub implementation factory (minimal, only returns interface)
+// GitHub implementation factory
 export const makeGitHubApiRepository = (config?: {
   templateRepo?: string
 }): GitProviderRepositoryService => ({
@@ -414,14 +320,12 @@ export const makeGitHubApiRepository = (config?: {
     templateData?: TemplateData
   ) =>
     Effect.gen(function* () {
-      // Step 1: Create repository from template
-      const repoData = yield* createRepoFromTemplate(
-        accessToken,
-        data.templateOwner!,
-        data.templateRepo!,
-        data.name,
-        data.description || `Blog site: ${data.name}`
-      )
+      const repoData = yield* createRepoFromTemplate(accessToken, {
+        templateOwner: data.templateOwner!,
+        templateRepo: data.templateRepo!,
+        repoName: data.name,
+        description: data.description ?? `Blog site: ${data.name}`,
+      })
 
       const gitRepo: GitRepo = {
         id: repoData.id,
@@ -432,7 +336,6 @@ export const makeGitHubApiRepository = (config?: {
         defaultBranch: repoData.default_branch,
       }
 
-      // Step 2: Replace template placeholders if provided
       if (templateData) {
         yield* replaceTemplatePlaceholders(
           accessToken,
@@ -442,7 +345,6 @@ export const makeGitHubApiRepository = (config?: {
         )
       }
 
-      // Step 3: Enable GitHub Pages
       const pagesUrl = yield* enableGitHubPages(
         accessToken,
         gitRepo.fullName
@@ -455,7 +357,7 @@ export const makeGitHubApiRepository = (config?: {
             )
             return yield* new PagesDeploymentError({
               repoName: gitRepo.fullName,
-              reason: error instanceof Error ? error.message : 'Unknown error',
+              reason: error.message,
             })
           })
         )
@@ -467,7 +369,7 @@ export const makeGitHubApiRepository = (config?: {
         (error) =>
           new RepositoryCreationError({
             repoName: data.name,
-            reason: error instanceof Error ? error.message : 'Unknown error',
+            reason: error.message,
           })
       )
     ),
@@ -490,13 +392,11 @@ export const makeGitHubApiRepository = (config?: {
         return { deleted: false, reason: 'File not found' }
       }
 
-      yield* deleteFile(
-        accessToken,
-        repoFullName,
+      yield* deleteFile(accessToken, repoFullName, {
         filePath,
-        currentFile.sha,
-        `Delete article: ${articleSlug}`
-      )
+        sha: currentFile.sha,
+        message: `Delete article: ${articleSlug}`,
+      })
 
       return { deleted: true, filePath }
     }),
@@ -520,7 +420,6 @@ export const makeGitHubApiRepository = (config?: {
 
       const articles: ImportedArticle[] = []
 
-      // Process files sequentially to avoid rate limiting
       for (const file of markdownFiles) {
         yield* Effect.gen(function* () {
           const fileData = yield* getFileContent(
@@ -538,7 +437,9 @@ export const makeGitHubApiRepository = (config?: {
           }
         }).pipe(
           Effect.catchAll((error) =>
-            Effect.logError(`Failed to fetch ${file.path}:`, { error })
+            Effect.logError(`Failed to fetch ${file.path}:`, {
+              error,
+            })
           )
         )
       }
@@ -564,14 +465,12 @@ export const makeGitHubApiRepository = (config?: {
       const sha = existingFile ? existingFile.sha : undefined
       const message = `${sha ? 'Update' : 'Add'} article: ${articleSlug}`
 
-      const response = yield* updateFileContent(
-        accessToken,
-        repoFullName,
+      const response = yield* updateFileContent(accessToken, repoFullName, {
         filePath,
-        markdownContent,
+        content: markdownContent,
         message,
-        sha
-      )
+        sha,
+      })
       const validated = yield* assertFields(
         response,
         ['commit'],
@@ -618,7 +517,6 @@ export const makeGitHubApiRepository = (config?: {
         `/repos/${repoFullName}/pages`
       ).pipe(
         Effect.catchTag('GitProviderError', (error) => {
-          // 404 means Pages is not enabled
           if (error.status === 404) {
             return Effect.succeed(null)
           }
@@ -630,18 +528,20 @@ export const makeGitHubApiRepository = (config?: {
         return { enabled: false }
       }
 
-      const pagesData = yield* assertFields(
-        pagesInfo,
-        [],
-        `GET /repos/${repoFullName}/pages`
-      )
-
       return {
         enabled: true,
-        url: pagesData.html_url as string | undefined,
+        url: (pagesInfo as Record<string, unknown>).html_url as
+          | string
+          | undefined,
         source:
-          (pagesData.build_type as string | undefined) ||
-          (pagesData.source as { branch?: string } | undefined)?.branch,
+          ((pagesInfo as Record<string, unknown>).build_type as
+            | string
+            | undefined) ||
+          (
+            (pagesInfo as Record<string, unknown>).source as
+              | { branch?: string }
+              | undefined
+          )?.branch,
       }
     }),
 
@@ -656,11 +556,10 @@ export const makeGitHubApiRepository = (config?: {
 
       const overrideExisting = options?.overrideExistingFiles ?? false
       const templateRepo =
-        config?.templateRepo || 'Saul-Mirone/inland-template-basic'
+        config?.templateRepo ?? 'Saul-Mirone/inland-template-basic'
       const filesCreated: string[] = []
       const filesSkipped: string[] = []
 
-      // Files to inject from template
       const filesToInject = [
         '.github/workflows/deploy.yml',
         'build/index.js',
@@ -674,19 +573,10 @@ export const makeGitHubApiRepository = (config?: {
         'assets/script.js',
       ] as const
 
-      // Prepare placeholders for replacement
-      const placeholders = {
-        '{{SITE_NAME}}': templateData.siteName,
-        '{{SITE_DESCRIPTION}}': templateData.siteDescription,
-        '{{SITE_NAME_SLUG}}': templateData.siteNameSlug,
-        '{{SITE_AUTHOR}}': templateData.siteAuthor,
-        '{{GITHUB_USERNAME}}': templateData.platformUsername,
-      }
+      const placeholders = buildTemplatePlaceholders(templateData)
 
-      // Process each file
       for (const filePath of filesToInject) {
         const injectFileEffect = Effect.gen(function* () {
-          // Check if file already exists in user's repo
           const existingFile = yield* getFileOrNull(
             accessToken,
             repoFullName,
@@ -699,45 +589,35 @@ export const makeGitHubApiRepository = (config?: {
             return { skipped: true }
           }
 
-          // Fetch file from template repo
           const templateFile = yield* getFileContent(
             accessToken,
             templateRepo,
             filePath
           )
 
-          // Decode and replace placeholders
-          let content = Buffer.from(templateFile.content, 'base64').toString(
-            'utf-8'
+          const content = replacePlaceholders(
+            Buffer.from(templateFile.content, 'base64').toString('utf-8'),
+            placeholders
           )
 
-          for (const [placeholder, value] of Object.entries(placeholders)) {
-            content = content.replace(new RegExp(placeholder, 'g'), value)
-          }
-
-          // Create or update file in user's repo
           const sha = existingFile ? existingFile.sha : undefined
 
-          yield* updateFileContent(
-            accessToken,
-            repoFullName,
+          yield* updateFileContent(accessToken, repoFullName, {
             filePath,
             content,
-            `Add Inland CMS workflow: ${filePath}`,
-            sha
-          )
+            message: `Add Inland CMS workflow: ${filePath}`,
+            sha,
+          })
 
           filesCreated.push(filePath)
           yield* Effect.logInfo(`Injected file: ${filePath}`)
           return { skipped: false }
         })
 
-        // Run effect and catch errors for individual files
         yield* injectFileEffect.pipe(
           Effect.catchAll((error) =>
             Effect.gen(function* () {
               yield* Effect.logError(`Failed to inject ${filePath}:`, { error })
-              // Continue with other files even if one fails
               return { skipped: false, failed: true }
             })
           )

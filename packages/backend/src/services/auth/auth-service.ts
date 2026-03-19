@@ -1,11 +1,13 @@
 import { Context } from 'effect'
 
+import type { clearUserAuth } from './operations/clear-user-auth'
 import type { fetchUser } from './operations/fetch-user'
 import type { fetchUserEmail } from './operations/fetch-user-email'
 import type { getUserAuthToken } from './operations/get-user-auth-token'
 import type { processOAuth } from './operations/process-oauth'
 
 export interface AuthServiceInterface {
+  readonly clearUserAuth: typeof clearUserAuth
   readonly fetchUser: typeof fetchUser
   readonly fetchUserEmail: typeof fetchUserEmail
   readonly getUserAuthToken: typeof getUserAuthToken

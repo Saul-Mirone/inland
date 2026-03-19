@@ -59,6 +59,7 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
           Effect.catchTags({
             DuplicateSiteNameError: () =>
               httpError(409, 'A site with this name already exists'),
+            SiteCreationError: (e) => httpError(500, e.reason),
             SiteValidationError: (e) => httpError(400, e.message),
             AuthTokenError: () =>
               httpError(

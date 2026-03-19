@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import type { Article } from '@/model/articles-model'
 
+import { Button } from '@/components/ui/button'
 import { articlesModel } from '@/model/articles-model'
 import { ArticleService } from '@/services/article'
 import { runEffect } from '@/utils/effect-runtime'
@@ -21,7 +22,7 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
   const publishingId = useObservable(articlesModel.publishingId$)
 
   useEffect(() => {
-    runEffect(
+    void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.fetchArticles(siteId))
     )
   }, [siteId])
@@ -34,70 +35,88 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
     ) {
       return
     }
-    runEffect(
+    void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.deleteArticle(articleId))
     )
   }
 
   const handlePublish = (articleId: string) => {
-    runEffect(
+    void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.publishArticle(articleId))
     )
   }
 
-  if (loading) return <div>Loading articles...</div>
-  if (error) return <div>Error: {error}</div>
+  if (loading) {
+    return (
+      <div className="text-sm text-muted-foreground">Loading articles...</div>
+    )
+  }
+
+  if (error) {
+    return <div className="text-sm text-destructive">Error: {error}</div>
+  }
 
   return (
-    <div>
-      <h2>{siteId ? 'Site Articles' : 'All Articles'}</h2>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">
+        {siteId ? 'Site Articles' : 'All Articles'}
+      </h2>
       {articles.length === 0 ? (
-        <p>No articles yet. Create your first article!</p>
+        <p className="text-sm text-muted-foreground">
+          No articles yet. Create your first article!
+        </p>
       ) : (
-        <div>
+        <div className="space-y-4">
           {articles.map((article) => (
-            <div key={article.id}>
-              <h3>{article.title}</h3>
-              <p>Slug: {article.slug}</p>
-              <p>Status: {article.status}</p>
-              {!siteId && <p>Site: {article.site.name}</p>}
-              <p>Created: {new Date(article.createdAt).toLocaleDateString()}</p>
-              <p>Updated: {new Date(article.updatedAt).toLocaleDateString()}</p>
-              <div style={{ marginTop: '0.5rem' }}>
+            <div
+              key={article.id}
+              className="rounded-lg border border-border bg-background p-4"
+            >
+              <h3 className="text-base font-semibold">{article.title}</h3>
+              <p className="text-sm text-muted-foreground">
+                Slug: {article.slug}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Status: {article.status}
+              </p>
+              {!siteId && (
+                <p className="text-sm text-muted-foreground">
+                  Site: {article.site.name}
+                </p>
+              )}
+              <p className="text-sm text-muted-foreground">
+                Created: {new Date(article.createdAt).toLocaleDateString()}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Updated: {new Date(article.updatedAt).toLocaleDateString()}
+              </p>
+              <div className="mt-2 flex gap-2">
                 {onEditArticle && (
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={() => onEditArticle(article)}
-                    style={{ marginRight: '0.5rem' }}
                   >
                     Edit
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => handlePublish(article.id)}
                   disabled={publishingId === article.id}
-                  style={{
-                    marginRight: '0.5rem',
-                    backgroundColor:
-                      article.status === 'published' ? '#007bff' : '#28a745',
-                    color: 'white',
-                  }}
                 >
                   {publishingId === article.id
                     ? 'Publishing...'
                     : article.status === 'published'
                       ? 'Re-publish'
                       : 'Publish'}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
                   onClick={() => handleDelete(article.id)}
                   disabled={deletingId === article.id}
-                  style={{
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                  }}
                 >
                   {deletingId === article.id ? 'Deleting...' : 'Delete'}
-                </button>
+                </Button>
               </div>
             </div>
           ))}

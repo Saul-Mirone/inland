@@ -6,43 +6,25 @@ import {
   type PlatformUser,
   AuthProviderAPIError,
 } from '../auth-provider-repository'
+import {
+  githubFetch,
+  assertFields,
+  type GitHubUser,
+  type GitHubEmail,
+} from './github-utils'
 
-// GitHub-specific types
-interface GitHubUser {
-  readonly id: number
-  readonly login: string
-  readonly email: string | null
-  readonly avatar_url: string
-}
+const makeError = (message: string, status?: number) =>
+  new AuthProviderAPIError({ message, status })
 
-interface GitHubEmail {
-  readonly email: string
-  readonly primary: boolean
-  readonly verified: boolean
-}
+const makeGitHubApiRequest = (accessToken: string, endpoint: string) =>
+  githubFetch(accessToken, endpoint, makeError)
 
-// Runtime validation helpers
 const assertGitHubUser = (
   data: unknown
-): Effect.Effect<GitHubUser, AuthProviderAPIError> => {
-  if (typeof data !== 'object' || data === null) {
-    return Effect.fail(
-      new AuthProviderAPIError({
-        message: `Expected object from /user, got ${typeof data}`,
-      })
-    )
-  }
-  const obj = data as Record<string, unknown>
-  const missing = ['id', 'login', 'avatar_url'].filter((f) => !(f in obj))
-  if (missing.length > 0) {
-    return Effect.fail(
-      new AuthProviderAPIError({
-        message: `Missing fields [${missing.join(', ')}] in /user response`,
-      })
-    )
-  }
-  return Effect.succeed(obj as unknown as GitHubUser)
-}
+): Effect.Effect<GitHubUser, AuthProviderAPIError> =>
+  assertFields(data, ['id', 'login', 'avatar_url'], '/user', makeError).pipe(
+    Effect.map((obj) => obj as unknown as GitHubUser)
+  )
 
 const isGitHubEmail = (item: unknown): item is GitHubEmail =>
   typeof item === 'object' &&
@@ -51,43 +33,6 @@ const isGitHubEmail = (item: unknown): item is GitHubEmail =>
   'primary' in item &&
   'verified' in item
 
-// GitHub API helper
-const makeGitHubApiRequest = (accessToken: string, endpoint: string) =>
-  Effect.gen(function* () {
-    const response = yield* Effect.tryPromise({
-      try: () =>
-        fetch(`https://api.github.com${endpoint}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'User-Agent': 'Inland-CMS/1.0',
-            Accept: 'application/vnd.github.v3+json',
-          },
-        }),
-      catch: (error) =>
-        new AuthProviderAPIError({
-          message: error instanceof Error ? error.message : 'Network error',
-        }),
-    })
-
-    if (!response.ok) {
-      return yield* new AuthProviderAPIError({
-        message: `GitHub API error: ${response.status} ${response.statusText}`,
-        status: response.status,
-      })
-    }
-
-    const data = yield* Effect.tryPromise({
-      try: () => response.json(),
-      catch: () =>
-        new AuthProviderAPIError({
-          message: 'Failed to parse GitHub API response',
-        }),
-    })
-
-    return data
-  })
-
-// Convert GitHub user to platform user
 const convertGitHubUserToPlatformUser = (
   githubUser: GitHubUser
 ): PlatformUser => ({
@@ -97,7 +42,6 @@ const convertGitHubUserToPlatformUser = (
   avatarUrl: githubUser.avatar_url,
 })
 
-// GitHub auth provider implementation
 export const makeGitHubAuthRepository = (): AuthProviderRepositoryService => ({
   fetchUser: (accessToken: string) =>
     Effect.gen(function* () {
@@ -115,7 +59,7 @@ export const makeGitHubAuthRepository = (): AuthProviderRepositoryService => ({
       }
 
       const primaryEmail = emails.filter(isGitHubEmail).find((e) => e.primary)
-      return primaryEmail?.email || null
+      return primaryEmail?.email ?? null
     }).pipe(Effect.catchAll(() => Effect.succeed(null))),
 
   validateToken: (accessToken: string) =>
@@ -132,7 +76,6 @@ export const makeGitHubAuthRepository = (): AuthProviderRepositoryService => ({
     ),
 })
 
-// Layer for dependency injection
 export const GitHubAuthRepositoryLive = Layer.succeed(
   AuthProviderRepository,
   makeGitHubAuthRepository()

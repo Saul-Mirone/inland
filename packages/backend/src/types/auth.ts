@@ -8,20 +8,6 @@ export interface JWTPayload {
   exp?: number
 }
 
-export interface GitHubUser {
-  id: number
-  login: string
-  email: string | null
-  avatar_url: string
-}
-
-export interface GitHubEmail {
-  email: string
-  primary: boolean
-  verified: boolean
-  visibility: string | null
-}
-
 declare module 'fastify' {
   interface FastifyRequest {
     jwtPayload?: JWTPayload

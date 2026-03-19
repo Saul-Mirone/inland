@@ -1,6 +1,10 @@
 import { Data } from 'effect'
 
-import type { User, GitIntegration } from '../../../generated/prisma/client'
+export type {
+  CreateUserData,
+  CreateGitIntegrationData,
+  UserWithIntegrations,
+} from '../../repositories/user-repository'
 
 export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
   readonly userId: string
@@ -9,21 +13,3 @@ export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
 export class UserCreationError extends Data.TaggedError('UserCreationError')<{
   readonly reason: string
 }> {}
-
-export interface CreateUserData {
-  readonly username: string
-  readonly email: string | null
-  readonly avatarUrl: string | null
-}
-
-export interface CreateGitIntegrationData {
-  readonly userId: string
-  readonly platform: string
-  readonly platformUsername: string
-  readonly accessToken: string
-  readonly installationId?: string
-}
-
-export interface UserWithIntegrations extends User {
-  readonly gitIntegrations: GitIntegration[]
-}

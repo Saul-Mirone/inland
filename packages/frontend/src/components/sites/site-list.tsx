@@ -1,6 +1,7 @@
 import { Effect } from 'effect'
 import { useEffect } from 'react'
 
+import { Button } from '@/components/ui/button'
 import { sitesModel } from '@/model/sites-model'
 import { SiteService } from '@/services/site'
 import { runEffect } from '@/utils/effect-runtime'
@@ -12,7 +13,7 @@ export const SiteList = () => {
   const error = useObservable(sitesModel.error$)
 
   useEffect(() => {
-    runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()))
+    void runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()))
   }, [])
 
   const handleDelete = (siteId: string) => {
@@ -23,29 +24,59 @@ export const SiteList = () => {
     ) {
       return
     }
-    runEffect(Effect.flatMap(SiteService, (svc) => svc.deleteSite(siteId)))
+    void runEffect(Effect.flatMap(SiteService, (svc) => svc.deleteSite(siteId)))
   }
 
-  if (loading) return <div>Loading sites...</div>
-  if (error) return <div>Error: {error}</div>
+  if (loading) {
+    return <div className="text-sm text-muted-foreground">Loading sites...</div>
+  }
+
+  if (error) {
+    return <div className="text-sm text-destructive">Error: {error}</div>
+  }
 
   return (
-    <div>
-      <h2>Your Sites</h2>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Your Sites</h2>
       {sites.length === 0 ? (
-        <p>No sites yet. Create your first site!</p>
+        <p className="text-sm text-muted-foreground">
+          No sites yet. Create your first site!
+        </p>
       ) : (
-        <div>
+        <div className="grid gap-4">
           {sites.map((site) => (
-            <div key={site.id}>
-              <h3>{site.name}</h3>
-              <p>Repository: {site.gitRepo}</p>
-              <p>Platform: {site.platform}</p>
-              <p>Status: {site.deployStatus}</p>
-              <p>Articles: {site._count.articles}</p>
-              <p>Media files: {site._count.media}</p>
-              <p>Created: {new Date(site.createdAt).toLocaleDateString()}</p>
-              <button onClick={() => handleDelete(site.id)}>Delete Site</button>
+            <div
+              key={site.id}
+              className="space-y-1 rounded-lg border border-border p-4"
+            >
+              <h3 className="text-base font-semibold">{site.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                Repository: {site.gitRepo}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Platform: {site.platform}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Status: {site.deployStatus}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Articles: {site._count.articles}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Media files: {site._count.media}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Created: {new Date(site.createdAt).toLocaleDateString()}
+              </p>
+              <div className="pt-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDelete(site.id)}
+                >
+                  Delete Site
+                </Button>
+              </div>
             </div>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { Context, Layer } from 'effect'
+import { Context, Effect, Layer } from 'effect'
 
 export interface AppConfig {
   readonly jwtSecret: string
@@ -34,4 +34,7 @@ export function resolveConfig(): AppConfig {
   }
 }
 
-export const makeConfigService = Layer.succeed(ConfigService, resolveConfig())
+export const makeConfigService = Layer.effect(
+  ConfigService,
+  Effect.sync(() => resolveConfig())
+)

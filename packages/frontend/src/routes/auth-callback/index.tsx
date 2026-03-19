@@ -25,5 +25,9 @@ export function AuthCallback() {
     finishLogin().catch(console.error)
   }, [navigate])
 
-  return <div>Processing authentication...</div>
+  return (
+    <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      Processing authentication...
+    </div>
+  )
 }

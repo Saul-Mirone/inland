@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import { REFRESH_COOKIE_NAME } from '../../plugins/auth'
-import { UserRepository } from '../../repositories/user-repository'
+import { AuthService } from '../../services/auth'
 import { HttpError, runRouteEffect } from '../../utils/route-effect'
 
 export const logoutRoute = async (fastify: FastifyInstance) => {
@@ -17,8 +17,8 @@ export const logoutRoute = async (fastify: FastifyInstance) => {
       const refreshToken = request.cookies[REFRESH_COOKIE_NAME]
 
       const effect = Effect.gen(function* () {
-        const userRepo = yield* UserRepository
-        yield* userRepo.clearAuthToken(userId)
+        const authService = yield* AuthService
+        yield* authService.clearUserAuth(userId)
 
         yield* Effect.tryPromise({
           try: async () => {
@@ -26,7 +26,10 @@ export const logoutRoute = async (fastify: FastifyInstance) => {
             await fastify.clearRefreshSession(reply, refreshToken)
           },
           catch: () =>
-            new HttpError({ status: 500, message: 'Failed to clear session' }),
+            new HttpError({
+              status: 500,
+              message: 'Failed to clear session',
+            }),
         })
 
         return { message: 'Logged out successfully' }

@@ -39,7 +39,7 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
       title: data.title,
       slug: data.slug,
       content: data.content,
-      status: data.status || 'draft',
+      status: data.status ?? 'draft',
     }
     const article = yield* articleRepo.create(repoData).pipe(
       Effect.catchTag(

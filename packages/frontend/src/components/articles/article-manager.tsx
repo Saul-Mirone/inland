@@ -21,10 +21,10 @@ export const ArticleManager = () => {
   }
 
   return (
-    <div>
-      <h1>Article Management</h1>
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold">Article Management</h1>
 
-      <div style={{ marginBottom: '2rem' }}>
+      <div>
         <ArticleForm
           onArticleCreated={handleArticleCreated}
           editingArticle={editingArticle}

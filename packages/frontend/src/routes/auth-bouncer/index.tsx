@@ -15,7 +15,11 @@ export function AuthBouncer() {
   }, [])
 
   if (authState.status === 'loading') {
-    return <div>Checking session...</div>
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        Checking session...
+      </div>
+    )
   }
 
   return <Outlet />
