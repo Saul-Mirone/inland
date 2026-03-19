@@ -57,7 +57,7 @@ export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
         reply,
         getSiteArticles.pipe(
           Effect.catchTags({
-            SiteAccessError: () =>
+            SiteAccessDeniedError: () =>
               httpError(403, 'You do not have access to this site'),
           })
         ),

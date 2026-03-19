@@ -76,6 +76,7 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
           Effect.catchTags({
             SiteNotFoundError: () => httpError(404, 'Site not found'),
             SiteAccessDeniedError: () => httpError(403, 'Access denied'),
+            SiteUpdateError: (e) => httpError(500, e.reason),
             DuplicateSiteNameError: () =>
               httpError(409, 'A site with this name already exists'),
             SiteValidationError: (e) => httpError(400, e.message),

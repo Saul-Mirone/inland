@@ -13,6 +13,10 @@ export class ArticleCreationError extends Data.TaggedError(
   readonly reason: string
 }> {}
 
+export class ArticleUpdateError extends Data.TaggedError('ArticleUpdateError')<{
+  readonly reason: string
+}> {}
+
 export class ArticleAccessDeniedError extends Data.TaggedError(
   'ArticleAccessDeniedError'
 )<{
@@ -23,11 +27,6 @@ export class ArticleAccessDeniedError extends Data.TaggedError(
 export class DuplicateSlugError extends Data.TaggedError('DuplicateSlugError')<{
   readonly slug: string
   readonly siteId: string
-}> {}
-
-export class SiteAccessError extends Data.TaggedError('SiteAccessError')<{
-  readonly siteId: string
-  readonly userId: string
 }> {}
 
 export class ArticleValidationError extends Data.TaggedError(

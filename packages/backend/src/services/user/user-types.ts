@@ -7,7 +7,7 @@ export type {
 } from '../../repositories/user-repository'
 
 export class UserNotFoundError extends Data.TaggedError('UserNotFoundError')<{
-  readonly userId: string
+  readonly identifier: string
 }> {}
 
 export class UserCreationError extends Data.TaggedError('UserCreationError')<{

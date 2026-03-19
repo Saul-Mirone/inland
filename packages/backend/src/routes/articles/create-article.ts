@@ -58,7 +58,7 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
                 409,
                 'An article with this slug already exists in this site'
               ),
-            SiteAccessError: () =>
+            SiteAccessDeniedError: () =>
               httpError(403, 'You do not have access to this site'),
             ArticleCreationError: (e) =>
               httpError(500, `Failed to create article: ${e.reason}`),

@@ -26,9 +26,7 @@ const getCookieOptions = (secure: boolean, maxAge: number) => ({
 })
 
 const authPlugin = async (fastify: FastifyInstance) => {
-  const config = await fastify.runtime.runPromise(
-    Effect.map(ConfigService, (c) => c)
-  )
+  const config = await fastify.runtime.runPromise(ConfigService)
   const secureCookie = config.appUrl.startsWith('https://')
 
   await fastify.register(cookie)

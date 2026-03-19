@@ -79,6 +79,7 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
           Effect.catchTags({
             ArticleNotFoundError: () => httpError(404, 'Article not found'),
             ArticleAccessDeniedError: () => httpError(403, 'Access denied'),
+            ArticleUpdateError: (e) => httpError(500, e.reason),
             DuplicateSlugError: () =>
               httpError(
                 409,

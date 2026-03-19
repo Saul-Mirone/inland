@@ -7,7 +7,7 @@ import {
 import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import {
   ArticleNotFoundError,
-  ArticleCreationError,
+  ArticleUpdateError,
   ArticleAccessDeniedError,
   DuplicateSlugError,
   type UpdateArticleData,
@@ -42,7 +42,7 @@ export const updateArticle = (
         'RepositoryError',
         (
           error
-        ): Effect.Effect<never, DuplicateSlugError | ArticleCreationError> =>
+        ): Effect.Effect<never, DuplicateSlugError | ArticleUpdateError> =>
           isUniqueConstraintError(error)
             ? Effect.fail(
                 new DuplicateSlugError({
@@ -51,7 +51,7 @@ export const updateArticle = (
                 })
               )
             : Effect.fail(
-                new ArticleCreationError({
+                new ArticleUpdateError({
                   reason:
                     error.cause instanceof Error
                       ? error.cause.message

@@ -4,7 +4,7 @@ import type { PaginationOptions } from '../../../repositories/pagination'
 
 import { ArticleRepository } from '../../../repositories/article-repository'
 import { SiteRepository } from '../../../repositories/site-repository'
-import { SiteAccessError } from '../article-types'
+import { SiteAccessDeniedError } from '../../site/site-types'
 
 export const findSiteArticles = (
   siteId: string,
@@ -18,11 +18,11 @@ export const findSiteArticles = (
     const site = yield* siteRepo.findByIdWithUserId(siteId)
 
     if (!site) {
-      return yield* new SiteAccessError({ siteId, userId })
+      return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
     if (site.userId !== userId) {
-      return yield* new SiteAccessError({ siteId, userId })
+      return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
     return yield* articleRepo.findBySiteId(siteId, pagination)

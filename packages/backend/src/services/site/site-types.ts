@@ -8,6 +8,10 @@ export class SiteCreationError extends Data.TaggedError('SiteCreationError')<{
   readonly reason: string
 }> {}
 
+export class SiteUpdateError extends Data.TaggedError('SiteUpdateError')<{
+  readonly reason: string
+}> {}
+
 export class SiteAccessDeniedError extends Data.TaggedError(
   'SiteAccessDeniedError'
 )<{

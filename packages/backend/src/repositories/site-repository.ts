@@ -16,15 +16,6 @@ export interface SiteCreateData {
   readonly deployUrl?: string | null
 }
 
-export interface SiteWithUserId {
-  readonly id: string
-  readonly name: string
-  readonly userId: string
-  readonly gitRepo: string | null
-  readonly createdAt: Date
-  readonly updatedAt: Date
-}
-
 export interface SiteWithCounts extends Site {
   readonly _count: {
     readonly articles: number

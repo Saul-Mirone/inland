@@ -10,7 +10,7 @@ export const findUserByUsername = (username: string) =>
     const user = yield* userRepo.findByUsername(username)
 
     if (!user) {
-      return yield* new UserNotFoundError({ userId: username })
+      return yield* new UserNotFoundError({ identifier: username })
     }
 
     return user

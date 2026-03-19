@@ -174,21 +174,3 @@ export const schemaValidationPlugin = fp(schemaValidationPluginImpl, {
   name: 'schema-validation',
   fastify: '5.x',
 })
-
-// Convenience function for common validation patterns
-export const validateAndExtract = {
-  fromRequest: <T>(
-    request: FastifyRequest,
-    schema: S.Schema<T>,
-    field: 'body' | 'params' | 'querystring'
-  ): Effect.Effect<T, SchemaValidationError> => {
-    const data =
-      field === 'body'
-        ? request.body
-        : field === 'params'
-          ? request.params
-          : request.query
-
-    return validateWithSchema(schema, data, field)
-  },
-}

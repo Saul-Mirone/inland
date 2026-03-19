@@ -4,7 +4,7 @@ import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository'
 import {
   SiteNotFoundError,
-  SiteCreationError,
+  SiteUpdateError,
   SiteAccessDeniedError,
   DuplicateSiteNameError,
   type UpdateSiteData,
@@ -33,16 +33,16 @@ export const updateSite = (
         'RepositoryError',
         (
           error
-        ): Effect.Effect<never, DuplicateSiteNameError | SiteCreationError> =>
+        ): Effect.Effect<never, DuplicateSiteNameError | SiteUpdateError> =>
           isUniqueConstraintError(error)
             ? Effect.fail(
                 new DuplicateSiteNameError({
-                  name: data.name || '',
+                  name: data.name ?? '',
                   userId,
                 })
               )
             : Effect.fail(
-                new SiteCreationError({
+                new SiteUpdateError({
                   reason:
                     error.cause instanceof Error
                       ? error.cause.message

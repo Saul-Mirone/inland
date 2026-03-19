@@ -21,7 +21,7 @@ export const getSiteByIdRoute = async (fastify: FastifyInstance) => {
         }),
       ],
     },
-    async (request: TypedFastifyRequest<never, Schemas.SiteParam>, reply) => {
+    async (request: TypedFastifyRequest<unknown, Schemas.SiteParam>, reply) => {
       const userPayload = request.jwtPayload!
       const { id } = request.validatedParams!
 

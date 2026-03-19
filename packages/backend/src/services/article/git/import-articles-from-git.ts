@@ -7,7 +7,8 @@ import {
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
 import { SiteRepository } from '../../../repositories/site-repository'
 import { AuthService } from '../../auth'
-import { SiteAccessError, GitRepositoryError } from '../article-types'
+import { SiteAccessDeniedError } from '../../site/site-types'
+import { GitRepositoryError } from '../article-types'
 
 export const importArticlesFromGit = (siteId: string, userId: string) =>
   Effect.gen(function* () {
@@ -18,11 +19,11 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
     const site = yield* siteRepo.findByIdWithDetails(siteId)
 
     if (!site) {
-      return yield* new SiteAccessError({ siteId, userId })
+      return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
     if (site.userId !== userId) {
-      return yield* new SiteAccessError({ siteId, userId })
+      return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
     if (!site.gitRepo) {
