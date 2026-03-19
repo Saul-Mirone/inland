@@ -4,7 +4,7 @@ import { GitProviderRepository } from '../../../repositories/git-provider-reposi
 import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository'
 import { ArticleService } from '../../article/article-service'
-import * as AuthService from '../../auth-service'
+import { AuthService } from '../../auth'
 import {
   SiteCreationError,
   DuplicateSiteNameError,
@@ -16,9 +16,10 @@ export const createSite = (data: CreateSiteData) =>
     const siteRepo = yield* SiteRepository
     const gitProvider = yield* GitProviderRepository
 
-    const accessToken = yield* AuthService.getUserAuthToken(data.userId)
+    const authService = yield* AuthService
+    const accessToken = yield* authService.getUserAuthToken(data.userId)
 
-    const platformUser = yield* AuthService.fetchUser(accessToken)
+    const platformUser = yield* authService.fetchUser(accessToken)
 
     const gitRepo = yield* gitProvider.createRepositoryWithPages(
       accessToken,

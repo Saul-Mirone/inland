@@ -5,7 +5,7 @@ import {
   type ArticleUpdateData,
 } from '../../../repositories/article-repository'
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
-import * as AuthService from '../../auth-service'
+import { AuthService } from '../../auth'
 import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
@@ -61,7 +61,8 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
       })
     }
 
-    const accessToken = yield* AuthService.getUserAuthToken(userId)
+    const authService = yield* AuthService
+    const accessToken = yield* authService.getUserAuthToken(userId)
 
     const today = new Date().toISOString().split('T')[0]
     const excerpt = generateExcerpt(article.content)

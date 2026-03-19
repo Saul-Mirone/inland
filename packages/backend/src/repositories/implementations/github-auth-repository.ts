@@ -21,6 +21,36 @@ interface GitHubEmail {
   readonly verified: boolean
 }
 
+// Runtime validation helpers
+const assertGitHubUser = (
+  data: unknown
+): Effect.Effect<GitHubUser, AuthProviderAPIError> => {
+  if (typeof data !== 'object' || data === null) {
+    return Effect.fail(
+      new AuthProviderAPIError({
+        message: `Expected object from /user, got ${typeof data}`,
+      })
+    )
+  }
+  const obj = data as Record<string, unknown>
+  const missing = ['id', 'login', 'avatar_url'].filter((f) => !(f in obj))
+  if (missing.length > 0) {
+    return Effect.fail(
+      new AuthProviderAPIError({
+        message: `Missing fields [${missing.join(', ')}] in /user response`,
+      })
+    )
+  }
+  return Effect.succeed(obj as unknown as GitHubUser)
+}
+
+const isGitHubEmail = (item: unknown): item is GitHubEmail =>
+  typeof item === 'object' &&
+  item !== null &&
+  'email' in item &&
+  'primary' in item &&
+  'verified' in item
+
 // GitHub API helper
 const makeGitHubApiRequest = (accessToken: string, endpoint: string) =>
   Effect.gen(function* () {
@@ -71,8 +101,9 @@ const convertGitHubUserToPlatformUser = (
 export const makeGitHubAuthRepository = (): AuthProviderRepositoryService => ({
   fetchUser: (accessToken: string) =>
     Effect.gen(function* () {
-      const githubUser = yield* makeGitHubApiRequest(accessToken, '/user')
-      return convertGitHubUserToPlatformUser(githubUser as GitHubUser)
+      const data = yield* makeGitHubApiRequest(accessToken, '/user')
+      const githubUser = yield* assertGitHubUser(data)
+      return convertGitHubUserToPlatformUser(githubUser)
     }),
 
   fetchUserEmail: (accessToken: string) =>
@@ -83,8 +114,7 @@ export const makeGitHubAuthRepository = (): AuthProviderRepositoryService => ({
         return null
       }
 
-      const emailArray = emails as GitHubEmail[]
-      const primaryEmail = emailArray.find((e) => e.primary)
+      const primaryEmail = emails.filter(isGitHubEmail).find((e) => e.primary)
       return primaryEmail?.email || null
     }).pipe(Effect.catchAll(() => Effect.succeed(null))),
 

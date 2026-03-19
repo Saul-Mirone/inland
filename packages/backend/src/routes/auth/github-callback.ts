@@ -7,7 +7,12 @@ import {
   type TypedFastifyRequest,
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
-import * as AuthService from '../../services/auth-service'
+import {
+  AuthService,
+  GitHubTokenError,
+  TokenGenerationError,
+  generateJWTPayload,
+} from '../../services/auth'
 import { ConfigService } from '../../services/config-service'
 import { runRouteEffect } from '../../utils/route-effect'
 
@@ -26,7 +31,7 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
       try: () =>
         fastify.github.getAccessTokenFromAuthorizationCodeFlow(request),
       catch: (error) =>
-        new AuthService.GitHubTokenError({
+        new GitHubTokenError({
           message: 'Failed to get GitHub access token',
           cause: error,
         }),
@@ -57,16 +62,17 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
             `OAuth error: ${query.error} - ${query.error_description || 'No description'}`
           )
 
-          return yield* new AuthService.GitHubTokenError({
+          return yield* new GitHubTokenError({
             message: query.error_description || 'OAuth authorization denied',
           })
         }
 
         const { token } = yield* getGitHubToken(request)
 
-        const { user } = yield* AuthService.processOAuth(token.access_token)
+        const authService = yield* AuthService
+        const { user } = yield* authService.processOAuth(token.access_token)
 
-        const sessionPayload = AuthService.generateJWTPayload(user)
+        const sessionPayload = generateJWTPayload(user)
 
         yield* Effect.tryPromise({
           try: async () => {
@@ -74,7 +80,7 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
             await fastify.setAuthCookie(reply, sessionPayload)
           },
           catch: () =>
-            new AuthService.TokenGenerationError({
+            new TokenGenerationError({
               reason: 'Failed to set session cookies',
             }),
         })

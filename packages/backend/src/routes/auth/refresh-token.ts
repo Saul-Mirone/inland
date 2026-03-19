@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 
 import { Effect } from 'effect'
 
-import * as AuthService from '../../services/auth-service'
+import { TokenGenerationError, generateJWTPayload } from '../../services/auth'
 import { UserService } from '../../services/user'
 import { httpError, runRouteEffect } from '../../utils/route-effect'
 
@@ -19,7 +19,7 @@ export const refreshTokenRoute = async (fastify: FastifyInstance) => {
       const refreshSession = Effect.gen(function* () {
         const userService = yield* UserService
         const user = yield* userService.findUserById(userId)
-        const sessionPayload = AuthService.generateJWTPayload(user)
+        const sessionPayload = generateJWTPayload(user)
 
         yield* Effect.tryPromise({
           try: async () => {
@@ -28,7 +28,7 @@ export const refreshTokenRoute = async (fastify: FastifyInstance) => {
             await fastify.setAuthCookie(reply, sessionPayload)
           },
           catch: () =>
-            new AuthService.TokenGenerationError({
+            new TokenGenerationError({
               reason: 'Failed to refresh session cookies',
             }),
         })

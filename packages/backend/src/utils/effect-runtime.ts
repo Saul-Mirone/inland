@@ -10,6 +10,7 @@ import { PrismaArticleRepositoryLive } from '../repositories/implementations/pri
 import { PrismaSiteRepositoryLive } from '../repositories/implementations/prisma-site-repository'
 import { PrismaUserRepositoryLive } from '../repositories/implementations/prisma-user-repository'
 import { ArticleServiceLive } from '../services/article/article-service-live'
+import { AuthServiceLive } from '../services/auth/auth-service-live'
 import { makeConfigService } from '../services/config-service'
 import { makeDatabaseService } from '../services/database-service'
 import { makeRedisService } from '../services/redis-service'
@@ -44,6 +45,7 @@ export const createAppRuntime = (
     GitProviderLive.pipe(Layer.provide(ConfigLayer)),
     AuthProviderLive,
     ArticleServiceLive,
+    AuthServiceLive,
     SessionLayer,
     SiteServiceLive,
     UserServiceLive

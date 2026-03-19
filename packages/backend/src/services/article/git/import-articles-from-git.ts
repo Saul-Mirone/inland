@@ -6,7 +6,7 @@ import {
 } from '../../../repositories/article-repository'
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
 import { SiteRepository } from '../../../repositories/site-repository'
-import * as AuthService from '../../auth-service'
+import { AuthService } from '../../auth'
 import { SiteAccessError, GitRepositoryError } from '../article-types'
 
 export const importArticlesFromGit = (siteId: string, userId: string) =>
@@ -32,7 +32,8 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
       })
     }
 
-    const accessToken = yield* AuthService.getUserAuthToken(userId)
+    const authService = yield* AuthService
+    const accessToken = yield* authService.getUserAuthToken(userId)
 
     const repoInfo = yield* gitProvider.getRepositoryInfo(
       accessToken,

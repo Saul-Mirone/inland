@@ -3,6 +3,7 @@ import { Layer } from 'effect'
 import { PrismaArticleRepositoryLive } from '../../repositories/implementations/prisma-article-repository'
 import { PrismaSiteRepositoryLive } from '../../repositories/implementations/prisma-site-repository'
 import { PrismaUserRepositoryLive } from '../../repositories/implementations/prisma-user-repository'
+import { AuthServiceLive } from '../../services/auth/auth-service-live'
 import { makeConfigService } from '../../services/config-service'
 import { SessionServiceLive } from '../../services/session/session-service-live'
 import { SiteServiceLive } from '../../services/site/site-service-live'
@@ -35,6 +36,7 @@ export const TestRepositoryLayer = Layer.mergeAll(
   MockGitProviderLive,
   MockAuthProviderLive,
   MockArticleServiceLive,
+  AuthServiceLive,
   SessionLayer,
   SiteServiceLive,
   UserServiceLive

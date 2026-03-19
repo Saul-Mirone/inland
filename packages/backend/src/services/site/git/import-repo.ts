@@ -3,7 +3,7 @@ import { Effect } from 'effect'
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
 import { SiteRepository } from '../../../repositories/site-repository'
 import { ArticleService } from '../../article/article-service'
-import * as AuthService from '../../auth-service'
+import { AuthService } from '../../auth'
 import { DuplicateSiteNameError, type ImportRepoData } from '../site-types'
 
 export const importRepo = (data: ImportRepoData) =>
@@ -11,7 +11,8 @@ export const importRepo = (data: ImportRepoData) =>
     const siteRepo = yield* SiteRepository
     const gitProvider = yield* GitProviderRepository
 
-    const accessToken = yield* AuthService.getUserAuthToken(data.userId)
+    const authService = yield* AuthService
+    const accessToken = yield* authService.getUserAuthToken(data.userId)
 
     const repoInfo = yield* gitProvider.getRepositoryInfo(
       accessToken,
@@ -35,7 +36,7 @@ export const importRepo = (data: ImportRepoData) =>
       | { filesCreated: string[]; filesSkipped: string[] }
       | undefined
     if (data.setupWorkflow !== false) {
-      const platformUser = yield* AuthService.fetchUser(accessToken)
+      const platformUser = yield* authService.fetchUser(accessToken)
 
       workflowResult = yield* gitProvider.injectInlandWorkflow(
         accessToken,

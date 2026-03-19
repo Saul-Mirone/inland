@@ -2,7 +2,7 @@ import { Effect } from 'effect'
 
 import { ArticleRepository } from '../../../repositories/article-repository'
 import { GitProviderRepository } from '../../../repositories/git-provider-repository'
-import * as AuthService from '../../auth-service'
+import { AuthService } from '../../auth'
 import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
@@ -30,7 +30,8 @@ export const deleteArticleFromGit = (articleId: string, userId: string) =>
       }
     }
 
-    const accessToken = yield* AuthService.getUserAuthToken(userId)
+    const authService = yield* AuthService
+    const accessToken = yield* authService.getUserAuthToken(userId)
 
     const result = yield* gitProvider.deleteArticleFromRepo(
       accessToken,
