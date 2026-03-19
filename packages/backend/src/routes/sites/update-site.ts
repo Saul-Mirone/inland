@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { SiteService } from '../../services/site'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const updateSiteRoute = async (fastify: FastifyInstance) => {
   fastify.put(
@@ -69,22 +69,20 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
         return { site }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: updateSite,
-        errors: {
-          SiteNotFoundError: () => ({ status: 404, error: 'Site not found' }),
-          SiteAccessDeniedError: () => ({
-            status: 403,
-            error: 'Access denied',
-          }),
-          DuplicateSiteNameError: () => ({
-            status: 409,
-            error: 'A site with this name already exists',
-          }),
-          SiteValidationError: (e) => ({ status: 400, error: e.message }),
-        },
-        fallbackMessage: 'Failed to update site',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        updateSite.pipe(
+          Effect.catchTags({
+            SiteNotFoundError: () => httpError(404, 'Site not found'),
+            SiteAccessDeniedError: () => httpError(403, 'Access denied'),
+            DuplicateSiteNameError: () =>
+              httpError(409, 'A site with this name already exists'),
+            SiteValidationError: (e) => httpError(400, e.message),
+          })
+        ),
+        { fallbackMessage: 'Failed to update site' }
+      )
     }
   )
 }

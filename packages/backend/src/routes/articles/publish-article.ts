@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const publishArticleRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -40,25 +40,22 @@ export const publishArticleRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: publishArticle,
-        errors: {
-          ArticleNotFoundError: () => ({
-            status: 404,
-            error: 'Article not found',
-          }),
-          ArticleAccessDeniedError: () => ({
-            status: 403,
-            error: 'Access denied',
-          }),
-          AuthTokenError: () => ({
-            status: 401,
-            error:
-              'Authentication token is invalid. Please reconnect your account.',
-          }),
-        },
-        fallbackMessage: 'Failed to publish article',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        publishArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () => httpError(404, 'Article not found'),
+            ArticleAccessDeniedError: () => httpError(403, 'Access denied'),
+            AuthTokenError: () =>
+              httpError(
+                401,
+                'Authentication token is invalid. Please reconnect your account.'
+              ),
+          })
+        ),
+        { fallbackMessage: 'Failed to publish article' }
+      )
     }
   )
 }

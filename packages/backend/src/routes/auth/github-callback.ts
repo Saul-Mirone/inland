@@ -9,19 +9,15 @@ import {
 import * as Schemas from '../../schemas'
 import * as AuthService from '../../services/auth-service'
 import { ConfigService } from '../../services/config-service'
+import { runRouteEffect } from '../../utils/route-effect'
 
 export const githubCallbackRoute = async (fastify: FastifyInstance) => {
-  const getAppUrl = Effect.gen(function* () {
-    const config = yield* ConfigService
-    return config.appUrl
-  })
+  const appUrl = await fastify.runtime.runPromise(
+    Effect.map(ConfigService, (c) => c.appUrl)
+  )
 
-  const createErrorRedirect = (reason?: string) =>
-    Effect.gen(function* () {
-      const appUrl = yield* getAppUrl
-      const errorPath = reason ? `/auth/error?reason=${reason}` : '/auth/error'
-      return `${appUrl}${errorPath}`
-    })
+  const errorRedirect = (reason?: string) =>
+    `${appUrl}/auth/error${reason ? `?reason=${reason}` : ''}`
 
   const getGitHubToken = (
     request: TypedFastifyRequest<unknown, unknown, Schemas.GitHubCallbackQuery>
@@ -53,7 +49,7 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
       >,
       reply
     ) => {
-      const handleOAuthCallback = Effect.gen(function* () {
+      const effect = Effect.gen(function* () {
         const query = request.validatedQuery!
 
         if (query.error) {
@@ -61,14 +57,14 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
             `OAuth error: ${query.error} - ${query.error_description || 'No description'}`
           )
 
-          const redirectUrl = yield* createErrorRedirect('provider')
-          return reply.redirect(redirectUrl)
+          return yield* new AuthService.GitHubTokenError({
+            message: query.error_description || 'OAuth authorization denied',
+          })
         }
 
         const { token } = yield* getGitHubToken(request)
 
         const { user } = yield* AuthService.processOAuth(token.access_token)
-        const config = yield* ConfigService
 
         const sessionPayload = AuthService.generateJWTPayload(user)
 
@@ -83,33 +79,30 @@ export const githubCallbackRoute = async (fastify: FastifyInstance) => {
             }),
         })
 
-        const successUrl = `${config.appUrl}/auth/callback`
-        return reply.redirect(successUrl)
+        return `${appUrl}/auth/callback`
       })
 
-      return fastify.runtime.runPromise(
-        handleOAuthCallback.pipe(
+      return runRouteEffect(
+        fastify,
+        reply,
+        effect.pipe(
+          Effect.map((url) => {
+            reply.redirect(url)
+          }),
           Effect.catchTags({
             GitHubTokenError: () =>
-              Effect.gen(function* () {
-                const redirectUrl = yield* createErrorRedirect('provider')
-                return reply.redirect(redirectUrl)
-              }),
+              Effect.sync(() => reply.redirect(errorRedirect('provider'))),
             AuthProviderAPIError: () =>
-              Effect.gen(function* () {
-                const redirectUrl = yield* createErrorRedirect('provider')
-                return reply.redirect(redirectUrl)
-              }),
+              Effect.sync(() => reply.redirect(errorRedirect('provider'))),
+            TokenGenerationError: () =>
+              Effect.sync(() => reply.redirect(errorRedirect())),
           }),
-          Effect.matchEffect({
-            onFailure: (error) =>
-              Effect.gen(function* () {
-                yield* Effect.logError('OAuth callback failed', error)
-                const redirectUrl = yield* createErrorRedirect()
-                return reply.redirect(redirectUrl)
-              }),
-            onSuccess: (result) => Effect.succeed(result),
-          })
+          Effect.catchAll((error) =>
+            Effect.gen(function* () {
+              yield* Effect.logError('OAuth callback failed', error)
+              reply.redirect(errorRedirect())
+            })
+          )
         )
       )
     }

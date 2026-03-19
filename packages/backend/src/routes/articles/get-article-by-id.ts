@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const getArticleByIdRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -37,20 +37,17 @@ export const getArticleByIdRoute = async (fastify: FastifyInstance) => {
         return { article }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: getArticle,
-        errors: {
-          ArticleNotFoundError: () => ({
-            status: 404,
-            error: 'Article not found',
-          }),
-          ArticleAccessDeniedError: () => ({
-            status: 403,
-            error: 'Access denied',
-          }),
-        },
-        fallbackMessage: 'Failed to fetch article',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        getArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () => httpError(404, 'Article not found'),
+            ArticleAccessDeniedError: () => httpError(403, 'Access denied'),
+          })
+        ),
+        { fallbackMessage: 'Failed to fetch article' }
+      )
     }
   )
 }

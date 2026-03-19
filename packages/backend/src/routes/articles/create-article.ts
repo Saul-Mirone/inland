@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const createArticleRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -48,26 +48,28 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
         return { article }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: createArticle,
-        errors: {
-          DuplicateSlugError: () => ({
-            status: 409,
-            error: 'An article with this slug already exists in this site',
-          }),
-          SiteAccessError: () => ({
-            status: 403,
-            error: 'You do not have access to this site',
-          }),
-          ArticleCreationError: (e) => ({
-            status: 500,
-            error: `Failed to create article: ${e.reason}`,
-          }),
-          ArticleValidationError: (e) => ({ status: 400, error: e.message }),
-        },
-        fallbackMessage: 'Failed to create article',
-        successCode: 201,
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        createArticle.pipe(
+          Effect.catchTags({
+            DuplicateSlugError: () =>
+              httpError(
+                409,
+                'An article with this slug already exists in this site'
+              ),
+            SiteAccessError: () =>
+              httpError(403, 'You do not have access to this site'),
+            ArticleCreationError: (e) =>
+              httpError(500, `Failed to create article: ${e.reason}`),
+            ArticleValidationError: (e) => httpError(400, e.message),
+          })
+        ),
+        {
+          fallbackMessage: 'Failed to create article',
+          successCode: 201,
+        }
+      )
     }
   )
 }

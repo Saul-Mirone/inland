@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const updateArticleRoute = async (fastify: FastifyInstance) => {
   fastify.put(
@@ -72,25 +72,23 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
         return { article }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: updateArticle,
-        errors: {
-          ArticleNotFoundError: () => ({
-            status: 404,
-            error: 'Article not found',
-          }),
-          ArticleAccessDeniedError: () => ({
-            status: 403,
-            error: 'Access denied',
-          }),
-          DuplicateSlugError: () => ({
-            status: 409,
-            error: 'An article with this slug already exists in this site',
-          }),
-          ArticleValidationError: (e) => ({ status: 400, error: e.message }),
-        },
-        fallbackMessage: 'Failed to update article',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        updateArticle.pipe(
+          Effect.catchTags({
+            ArticleNotFoundError: () => httpError(404, 'Article not found'),
+            ArticleAccessDeniedError: () => httpError(403, 'Access denied'),
+            DuplicateSlugError: () =>
+              httpError(
+                409,
+                'An article with this slug already exists in this site'
+              ),
+            ArticleValidationError: (e) => httpError(400, e.message),
+          })
+        ),
+        { fallbackMessage: 'Failed to update article' }
+      )
     }
   )
 }

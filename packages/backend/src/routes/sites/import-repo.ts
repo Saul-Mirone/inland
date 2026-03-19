@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { SiteService } from '../../services/site'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const importRepoRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -52,27 +52,31 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
         return result
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: importRepoEffect,
-        errors: {
-          DuplicateSiteNameError: () => ({
-            status: 409,
-            error: 'A site with this name already exists',
-          }),
-          SiteValidationError: (e) => ({ status: 400, error: e.message }),
-          AuthTokenError: () => ({
-            status: 401,
-            error:
-              'Your connection has expired. Please reconnect your account.',
-          }),
-          GitProviderError: (e) => ({
-            status: 404,
-            error: `Repository not found or access denied: ${e.message}`,
-          }),
-        },
-        fallbackMessage: 'Failed to import repository',
-        successCode: 201,
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        importRepoEffect.pipe(
+          Effect.catchTags({
+            DuplicateSiteNameError: () =>
+              httpError(409, 'A site with this name already exists'),
+            SiteValidationError: (e) => httpError(400, e.message),
+            AuthTokenError: () =>
+              httpError(
+                401,
+                'Your connection has expired. Please reconnect your account.'
+              ),
+            GitProviderError: (e) =>
+              httpError(
+                404,
+                `Repository not found or access denied: ${e.message}`
+              ),
+          })
+        ),
+        {
+          fallbackMessage: 'Failed to import repository',
+          successCode: 201,
+        }
+      )
     }
   )
 }

@@ -9,7 +9,7 @@ import fastifyPlugin from 'fastify-plugin'
 
 import type { JWTPayload } from '../types/auth'
 
-import { resolveConfig } from '../services/config-service'
+import { ConfigService } from '../services/config-service'
 import { SessionService } from '../services/session'
 
 export const AUTH_COOKIE_NAME = 'inland_auth'
@@ -26,7 +26,9 @@ const getCookieOptions = (secure: boolean, maxAge: number) => ({
 })
 
 const authPlugin = async (fastify: FastifyInstance) => {
-  const config = resolveConfig()
+  const config = await fastify.runtime.runPromise(
+    Effect.map(ConfigService, (c) => c)
+  )
   const secureCookie = config.appUrl.startsWith('https://')
 
   await fastify.register(cookie)

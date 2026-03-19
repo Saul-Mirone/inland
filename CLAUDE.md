@@ -105,7 +105,7 @@ These rules apply to all Effect-TS code in both backend and frontend. They are d
 
 ### Architecture
 
-- **Route handlers must use `runRouteEffect()`** with declarative error mappings. Do not write manual `catchTags`/`matchEffect`/`runPromise` boilerplate in individual routes.
+- **Route handlers must use `runRouteEffect()`** for Effect-to-Fastify bridging. Map domain errors to `HttpError` via Effect's native `catchTags` + `httpError(status, message)` helper before passing the effect to `runRouteEffect()`. The wrapper handles success responses, `HttpError` → HTTP status, and fallback 500 for unhandled errors. Do not call `runtime.runPromise` or write `matchEffect` boilerplate directly in routes.
 - **Authorization checks belong in the service layer**, not in route handlers. Service methods that access owned resources should accept a `userId` parameter and verify ownership internally.
 - **Schema validation errors must stop request processing**. The `withSchemaValidation` preHandler throws `SchemaValidationError` — never silently send a reply and continue.
 - **Use `ConfigService` / `resolveConfig()`** for all environment variable access. Do not read `process.env` directly in business logic.
@@ -122,6 +122,28 @@ These rules apply to all Effect-TS code in both backend and frontend. They are d
   - `<name>-service-live.ts` — only layer wiring. Use `Layer.succeed(Tag, new Impl())` when there are no Effect DI dependencies, or `Layer.effect(Tag, Effect.gen(...))` to resolve dependencies and pass them to the constructor.
   - `index.ts` — barrel re-exports (Tag, interface types, Live layer).
 - **Use "service" naming**, not "controller". Frontend business logic modules are services (`SiteService`, `services/site/`), not controllers.
+
+## Code Style Rules
+
+These rules apply to all code in the repository.
+
+### Naming & Structure
+
+- **Meaningful, consistent names** — same concept = same name throughout. Variable names should be pronounceable and searchable.
+- **Single Responsibility** — each module/function has one reason to change.
+- **Depend on abstractions** — use DI tags and interfaces, not concrete implementations directly.
+
+### Code Quality
+
+- **No duplicated code** — similar code in multiple locations with the same calling context should be extracted.
+- **Avoid deep nesting** — max 3 levels of conditional nesting. Refactor with early returns or extraction.
+- **Short parameter lists** — more than 3-4 parameters suggests the need for an options object or restructuring.
+- **Self-documenting code** — comment only what the code cannot express through naming and structure. Remove comments that repeat what the code already says.
+
+### Cleanup
+
+- **No dead code** — remove unused variables, functions, imports, and commented-out code blocks.
+- **Fix typos** — in variable names, comments, and strings.
 
 ## Conventions
 

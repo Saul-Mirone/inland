@@ -3,7 +3,6 @@ import type { Effect } from 'effect'
 import { Context } from 'effect'
 
 import type { Article } from '../../generated/prisma/client'
-import type { DatabaseService } from '../services/database-service'
 import type { PaginatedResult, PaginationOptions } from './pagination'
 import type { RepositoryError } from './repository-error'
 
@@ -45,37 +44,27 @@ export interface ArticleListItem {
 export interface ArticleRepositoryService {
   readonly create: (
     data: ArticleCreateData
-  ) => Effect.Effect<ArticleWithSite, RepositoryError, DatabaseService>
+  ) => Effect.Effect<ArticleWithSite, RepositoryError>
   readonly findById: (
     id: string
-  ) => Effect.Effect<ArticleWithSite | null, RepositoryError, DatabaseService>
+  ) => Effect.Effect<ArticleWithSite | null, RepositoryError>
   readonly findBySiteIdAndSlug: (
     siteId: string,
     slug: string
-  ) => Effect.Effect<Article | null, RepositoryError, DatabaseService>
+  ) => Effect.Effect<Article | null, RepositoryError>
   readonly findBySiteId: (
     siteId: string,
     pagination?: PaginationOptions
-  ) => Effect.Effect<
-    PaginatedResult<ArticleListItem>,
-    RepositoryError,
-    DatabaseService
-  >
+  ) => Effect.Effect<PaginatedResult<ArticleListItem>, RepositoryError>
   readonly findByUserId: (
     userId: string,
     pagination?: PaginationOptions
-  ) => Effect.Effect<
-    PaginatedResult<ArticleWithSite>,
-    RepositoryError,
-    DatabaseService
-  >
+  ) => Effect.Effect<PaginatedResult<ArticleWithSite>, RepositoryError>
   readonly update: (
     id: string,
     data: ArticleUpdateData
-  ) => Effect.Effect<ArticleWithSite, RepositoryError, DatabaseService>
-  readonly delete: (
-    id: string
-  ) => Effect.Effect<Article, RepositoryError, DatabaseService>
+  ) => Effect.Effect<ArticleWithSite, RepositoryError>
+  readonly delete: (id: string) => Effect.Effect<Article, RepositoryError>
 }
 
 // Context tag for dependency injection

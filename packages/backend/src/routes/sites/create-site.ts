@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { SiteService } from '../../services/site'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const createSiteRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -40,27 +40,27 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
         return { site }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: createSite,
-        errors: {
-          AuthTokenError: () => ({
-            status: 401,
-            error:
-              'Your connection has expired. Please reconnect your account.',
-          }),
-          DuplicateSiteNameError: () => ({
-            status: 409,
-            error: 'A site with this name already exists',
-          }),
-          SiteCreationError: () => ({
-            status: 500,
-            error: 'Failed to create site',
-          }),
-          SiteValidationError: (e) => ({ status: 400, error: e.message }),
-        },
-        fallbackMessage: 'Failed to create site',
-        successCode: 201,
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        createSite.pipe(
+          Effect.catchTags({
+            AuthTokenError: () =>
+              httpError(
+                401,
+                'Your connection has expired. Please reconnect your account.'
+              ),
+            DuplicateSiteNameError: () =>
+              httpError(409, 'A site with this name already exists'),
+            SiteCreationError: () => httpError(500, 'Failed to create site'),
+            SiteValidationError: (e) => httpError(400, e.message),
+          })
+        ),
+        {
+          fallbackMessage: 'Failed to create site',
+          successCode: 201,
+        }
+      )
     }
   )
 }

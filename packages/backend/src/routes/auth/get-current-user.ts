@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import { Effect } from 'effect'
 
 import { UserService } from '../../services/user'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -33,16 +33,16 @@ export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: getUserInfo,
-        errors: {
-          UserNotFoundError: () => ({
-            status: 404,
-            error: 'User not found',
-          }),
-        },
-        fallbackMessage: 'Failed to fetch user info',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        getUserInfo.pipe(
+          Effect.catchTags({
+            UserNotFoundError: () => httpError(404, 'User not found'),
+          })
+        ),
+        { fallbackMessage: 'Failed to fetch user info' }
+      )
     }
   )
 }

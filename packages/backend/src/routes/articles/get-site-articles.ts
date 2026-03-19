@@ -8,7 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
   fastify.get(
@@ -52,16 +52,17 @@ export const getSiteArticlesRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: getSiteArticles,
-        errors: {
-          SiteAccessError: () => ({
-            status: 403,
-            error: 'You do not have access to this site',
-          }),
-        },
-        fallbackMessage: 'Failed to fetch articles',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        getSiteArticles.pipe(
+          Effect.catchTags({
+            SiteAccessError: () =>
+              httpError(403, 'You do not have access to this site'),
+          })
+        ),
+        { fallbackMessage: 'Failed to fetch articles' }
+      )
     }
   )
 }

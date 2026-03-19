@@ -15,6 +15,13 @@ import { TestRedisServiceLayer } from './mock-redis'
 
 const ConfigLayer = makeConfigService
 
+// Prisma repositories depend on DatabaseService
+const RepositoryLayer = Layer.mergeAll(
+  PrismaArticleRepositoryLive,
+  PrismaSiteRepositoryLive,
+  PrismaUserRepositoryLive
+).pipe(Layer.provide(TestDatabaseServiceLayer))
+
 // SessionServiceLive depends on RedisService + ConfigService
 const SessionLayer = SessionServiceLive.pipe(
   Layer.provide(Layer.merge(TestRedisServiceLayer, ConfigLayer))
@@ -22,12 +29,9 @@ const SessionLayer = SessionServiceLive.pipe(
 
 // Test layer that provides repositories with mock database, Git provider, and Auth provider
 export const TestRepositoryLayer = Layer.mergeAll(
-  TestDatabaseServiceLayer,
   TestRedisServiceLayer,
   ConfigLayer,
-  PrismaArticleRepositoryLive,
-  PrismaSiteRepositoryLive,
-  PrismaUserRepositoryLive,
+  RepositoryLayer,
   MockGitProviderLive,
   MockAuthProviderLive,
   MockArticleServiceLive,

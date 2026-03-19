@@ -45,8 +45,7 @@ export const getUserSitesRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: getUserSites,
+      return runRouteEffect(fastify, reply, getUserSites, {
         fallbackMessage: 'Failed to fetch sites',
       })
     }

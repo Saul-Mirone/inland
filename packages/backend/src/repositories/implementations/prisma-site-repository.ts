@@ -13,6 +13,7 @@ import {
   type SiteCreateData,
   type SiteUpdateData,
 } from '../site-repository'
+import { withDatabase } from '../with-database'
 
 // Individual atomic operations
 const findSiteById = (id: string) =>
@@ -230,18 +231,22 @@ const createSite = (data: SiteCreateData) =>
     })
   })
 
-// Repository implementation using atomic operations
+// Repository implementation — DatabaseService resolved at layer construction
 export const PrismaSiteRepositoryLive = Layer.effect(
   SiteRepository,
-  Effect.succeed({
-    findById: findSiteById,
-    findByIdWithUserId: findSiteByIdWithUserId,
-    findByIdWithDetails: findSiteByIdWithDetails,
-    findByUserId: findSitesByUserId,
-    findByUserIdWithCounts: findSitesByUserIdWithCounts,
-    findByIdWithFullDetails: findSiteByIdWithFullDetails,
-    update: updateSite,
-    delete: deleteSite,
-    create: createSite,
-  } satisfies SiteRepositoryService)
+  Effect.gen(function* () {
+    const bind = withDatabase(yield* DatabaseService)
+
+    return {
+      findById: bind(findSiteById),
+      findByIdWithUserId: bind(findSiteByIdWithUserId),
+      findByIdWithDetails: bind(findSiteByIdWithDetails),
+      findByUserId: bind(findSitesByUserId),
+      findByUserIdWithCounts: bind(findSitesByUserIdWithCounts),
+      findByIdWithFullDetails: bind(findSiteByIdWithFullDetails),
+      update: bind(updateSite),
+      delete: bind(deleteSite),
+      create: bind(createSite),
+    } satisfies SiteRepositoryService
+  })
 )

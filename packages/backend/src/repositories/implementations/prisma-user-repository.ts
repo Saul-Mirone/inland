@@ -8,6 +8,7 @@ import {
   type CreateUserData,
   type CreateGitIntegrationData,
 } from '../user-repository'
+import { withDatabase } from '../with-database'
 
 // Individual atomic operations
 const createUser = (data: CreateUserData) =>
@@ -163,16 +164,20 @@ const clearAuthToken = (userId: string) =>
     })
   })
 
-// Repository implementation using atomic operations
+// Repository implementation — DatabaseService resolved at layer construction
 export const PrismaUserRepositoryLive = Layer.effect(
   UserRepository,
-  Effect.succeed({
-    create: createUser,
-    findByUsername: findUserByUsername,
-    findById: findUserById,
-    upsert: upsertUser,
-    upsertGitIntegration: upsertGitIntegration,
-    getAuthToken: getAuthToken,
-    clearAuthToken: clearAuthToken,
-  } satisfies UserRepositoryService)
+  Effect.gen(function* () {
+    const bind = withDatabase(yield* DatabaseService)
+
+    return {
+      create: bind(createUser),
+      findByUsername: bind(findUserByUsername),
+      findById: bind(findUserById),
+      upsert: bind(upsertUser),
+      upsertGitIntegration: bind(upsertGitIntegration),
+      getAuthToken: bind(getAuthToken),
+      clearAuthToken: bind(clearAuthToken),
+    } satisfies UserRepositoryService
+  })
 )

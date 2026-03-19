@@ -3,7 +3,6 @@ import type { Effect } from 'effect'
 import { Context } from 'effect'
 
 import type { User, GitIntegration } from '../../generated/prisma/client'
-import type { DatabaseService } from '../services/database-service'
 import type { RepositoryError } from './repository-error'
 
 export interface CreateUserData {
@@ -27,29 +26,25 @@ export interface UserWithIntegrations extends User {
 export interface UserRepositoryService {
   readonly create: (
     data: CreateUserData
-  ) => Effect.Effect<User, RepositoryError, DatabaseService>
+  ) => Effect.Effect<User, RepositoryError>
   readonly findByUsername: (
     username: string
-  ) => Effect.Effect<User | null, RepositoryError, DatabaseService>
+  ) => Effect.Effect<User | null, RepositoryError>
   readonly findById: (
     userId: string
-  ) => Effect.Effect<
-    UserWithIntegrations | null,
-    RepositoryError,
-    DatabaseService
-  >
+  ) => Effect.Effect<UserWithIntegrations | null, RepositoryError>
   readonly upsert: (
     data: CreateUserData
-  ) => Effect.Effect<User, RepositoryError, DatabaseService>
+  ) => Effect.Effect<User, RepositoryError>
   readonly upsertGitIntegration: (
     data: CreateGitIntegrationData
-  ) => Effect.Effect<GitIntegration, RepositoryError, DatabaseService>
+  ) => Effect.Effect<GitIntegration, RepositoryError>
   readonly getAuthToken: (
     userId: string
-  ) => Effect.Effect<string | null, RepositoryError, DatabaseService>
+  ) => Effect.Effect<string | null, RepositoryError>
   readonly clearAuthToken: (
     userId: string
-  ) => Effect.Effect<void, RepositoryError, DatabaseService>
+  ) => Effect.Effect<void, RepositoryError>
 }
 
 export class UserRepository extends Context.Tag('UserRepository')<

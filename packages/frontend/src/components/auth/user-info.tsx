@@ -1,8 +1,8 @@
-import { authState$ } from '@/utils/auth'
+import { authModel } from '@/model/auth-model'
 import { useObservable } from '@/utils/use-observable'
 
 export const UserInfo = () => {
-  const authState = useObservable(authState$)
+  const authState = useObservable(authModel.authState$)
   const user = authState.user
 
   if (authState.status === 'loading') return <div>Loading user info...</div>

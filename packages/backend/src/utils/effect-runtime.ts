@@ -25,19 +25,23 @@ export const createAppRuntime = (
   const RedisLayer = makeRedisService(redisClient)
   const ConfigLayer = makeConfigService
 
+  // Prisma repositories depend on DatabaseService
+  const RepositoryLayer = Layer.mergeAll(
+    PrismaArticleRepositoryLive,
+    PrismaSiteRepositoryLive,
+    PrismaUserRepositoryLive
+  ).pipe(Layer.provide(DatabaseLayer))
+
   // SessionServiceLive depends on RedisService + ConfigService
   const SessionLayer = SessionServiceLive.pipe(
     Layer.provide(Layer.merge(RedisLayer, ConfigLayer))
   )
 
   const AppLayer = Layer.mergeAll(
-    DatabaseLayer,
     RedisLayer,
     ConfigLayer,
-    PrismaArticleRepositoryLive,
-    PrismaSiteRepositoryLive,
-    PrismaUserRepositoryLive,
-    GitProviderLive,
+    RepositoryLayer,
+    GitProviderLive.pipe(Layer.provide(ConfigLayer)),
     AuthProviderLive,
     ArticleServiceLive,
     SessionLayer,

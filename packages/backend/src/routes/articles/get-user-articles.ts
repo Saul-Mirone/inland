@@ -45,8 +45,7 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
         }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: getUserArticles,
+      return runRouteEffect(fastify, reply, getUserArticles, {
         fallbackMessage: 'Failed to fetch articles',
       })
     }

@@ -4,7 +4,7 @@ import { Effect } from 'effect'
 
 import * as AuthService from '../../services/auth-service'
 import { UserService } from '../../services/user'
-import { runRouteEffect } from '../../utils/route-effect'
+import { httpError, runRouteEffect } from '../../utils/route-effect'
 
 export const refreshTokenRoute = async (fastify: FastifyInstance) => {
   fastify.post(
@@ -36,20 +36,18 @@ export const refreshTokenRoute = async (fastify: FastifyInstance) => {
         return { message: 'Session refreshed' }
       })
 
-      return runRouteEffect(fastify, reply, {
-        effect: refreshSession,
-        errors: {
-          UserNotFoundError: () => ({
-            status: 401,
-            error: 'User not found',
-          }),
-          TokenGenerationError: () => ({
-            status: 500,
-            error: 'Failed to refresh session',
-          }),
-        },
-        fallbackMessage: 'Failed to refresh token',
-      })
+      return runRouteEffect(
+        fastify,
+        reply,
+        refreshSession.pipe(
+          Effect.catchTags({
+            UserNotFoundError: () => httpError(401, 'User not found'),
+            TokenGenerationError: () =>
+              httpError(500, 'Failed to refresh session'),
+          })
+        ),
+        { fallbackMessage: 'Failed to refresh token' }
+      )
     }
   )
 }

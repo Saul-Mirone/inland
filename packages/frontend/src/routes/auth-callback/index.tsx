@@ -1,14 +1,18 @@
+import { Effect } from 'effect'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 
-import { bootstrapAuth } from '@/utils/auth'
+import { AuthService } from '@/services/auth'
+import { runEffect } from '@/utils/effect-runtime'
 
 export function AuthCallback() {
   const navigate = useNavigate()
 
   useEffect(() => {
     const finishLogin = async () => {
-      const authState = await bootstrapAuth(true)
+      const authState = await runEffect(
+        Effect.flatMap(AuthService, (s) => s.bootstrap(true))
+      )
 
       if (authState.status === 'authenticated') {
         await navigate('/', { replace: true })

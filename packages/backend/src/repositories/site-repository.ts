@@ -3,7 +3,6 @@ import type { Effect } from 'effect'
 import { Context } from 'effect'
 
 import type { Site } from '../../generated/prisma/client'
-import type { DatabaseService } from '../services/database-service'
 import type { PaginatedResult, PaginationOptions } from './pagination'
 import type { RepositoryError } from './repository-error'
 
@@ -61,49 +60,36 @@ export interface SiteUpdateData {
 
 // Repository interface
 export interface SiteRepositoryService {
-  readonly findById: (
-    id: string
-  ) => Effect.Effect<Site | null, RepositoryError, DatabaseService>
+  readonly findById: (id: string) => Effect.Effect<Site | null, RepositoryError>
   readonly findByIdWithUserId: (
     id: string
-  ) => Effect.Effect<
-    { userId: string } | null,
-    RepositoryError,
-    DatabaseService
-  >
+  ) => Effect.Effect<{ userId: string } | null, RepositoryError>
   readonly findByIdWithDetails: (id: string) => Effect.Effect<
     {
       readonly id: string
       readonly gitRepo: string | null
       readonly userId: string
     } | null,
-    RepositoryError,
-    DatabaseService
+    RepositoryError
   >
   readonly findByUserId: (
     userId: string
-  ) => Effect.Effect<Site[], RepositoryError, DatabaseService>
+  ) => Effect.Effect<Site[], RepositoryError>
   readonly findByUserIdWithCounts: (
     userId: string,
     pagination?: PaginationOptions
-  ) => Effect.Effect<
-    PaginatedResult<SiteWithCounts>,
-    RepositoryError,
-    DatabaseService
-  >
+  ) => Effect.Effect<PaginatedResult<SiteWithCounts>, RepositoryError>
   readonly findByIdWithFullDetails: (
     id: string
-  ) => Effect.Effect<SiteWithDetails | null, RepositoryError, DatabaseService>
+  ) => Effect.Effect<SiteWithDetails | null, RepositoryError>
   readonly update: (
     id: string,
     data: SiteUpdateData
-  ) => Effect.Effect<Site, RepositoryError, DatabaseService>
-  readonly delete: (
-    id: string
-  ) => Effect.Effect<Site, RepositoryError, DatabaseService>
+  ) => Effect.Effect<Site, RepositoryError>
+  readonly delete: (id: string) => Effect.Effect<Site, RepositoryError>
   readonly create: (
     data: SiteCreateData
-  ) => Effect.Effect<Site, RepositoryError, DatabaseService>
+  ) => Effect.Effect<Site, RepositoryError>
 }
 
 // Context tag for dependency injection

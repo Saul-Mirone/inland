@@ -13,6 +13,7 @@ import {
   type PaginationOptions,
 } from '../pagination'
 import { RepositoryError } from '../repository-error'
+import { withDatabase } from '../with-database'
 
 // Individual atomic operations
 const createArticle = (data: ArticleCreateData) =>
@@ -212,16 +213,20 @@ const deleteArticle = (id: string) =>
     })
   })
 
-// Repository implementation using atomic operations
+// Repository implementation — DatabaseService resolved at layer construction
 export const PrismaArticleRepositoryLive = Layer.effect(
   ArticleRepository,
-  Effect.succeed({
-    create: createArticle,
-    findById: findArticleById,
-    findBySiteIdAndSlug: findArticleBySiteIdAndSlug,
-    findBySiteId: findArticlesBySiteId,
-    findByUserId: findArticlesByUserId,
-    update: updateArticle,
-    delete: deleteArticle,
-  } satisfies ArticleRepositoryService)
+  Effect.gen(function* () {
+    const bind = withDatabase(yield* DatabaseService)
+
+    return {
+      create: bind(createArticle),
+      findById: bind(findArticleById),
+      findBySiteIdAndSlug: bind(findArticleBySiteIdAndSlug),
+      findBySiteId: bind(findArticlesBySiteId),
+      findByUserId: bind(findArticlesByUserId),
+      update: bind(updateArticle),
+      delete: bind(deleteArticle),
+    } satisfies ArticleRepositoryService
+  })
 )
