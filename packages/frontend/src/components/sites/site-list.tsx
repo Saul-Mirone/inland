@@ -1,8 +1,8 @@
 import { Effect } from 'effect'
 import { useEffect } from 'react'
 
-import { SitesController } from '@/controller/sites'
 import { sitesModel } from '@/model/sites-model'
+import { SiteService } from '@/services/site'
 import { runEffect } from '@/utils/effect-runtime'
 import { useObservable } from '@/utils/use-observable'
 
@@ -12,7 +12,7 @@ export const SiteList = () => {
   const error = useObservable(sitesModel.error$)
 
   useEffect(() => {
-    runEffect(Effect.flatMap(SitesController, (ctrl) => ctrl.fetchSites()))
+    runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()))
   }, [])
 
   const handleDelete = (siteId: string) => {
@@ -23,9 +23,7 @@ export const SiteList = () => {
     ) {
       return
     }
-    runEffect(
-      Effect.flatMap(SitesController, (ctrl) => ctrl.deleteSite(siteId))
-    )
+    runEffect(Effect.flatMap(SiteService, (svc) => svc.deleteSite(siteId)))
   }
 
   if (loading) return <div>Loading sites...</div>

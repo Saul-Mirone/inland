@@ -1,31 +1,14 @@
 import { useState } from 'react'
 
+import type { Article } from '@/model/articles-model'
+
 import { ArticleForm } from './article-form'
 import { ArticleList } from './article-list'
 
-interface Article {
-  id: string
-  title: string
-  slug: string
-  content: string
-  status: 'draft' | 'published'
-  siteId: string
-  createdAt: string
-  updatedAt: string
-  site: {
-    id: string
-    name: string
-  }
-}
-
 export const ArticleManager = () => {
-  const [refreshKey, setRefreshKey] = useState(0)
   const [editingArticle, setEditingArticle] = useState<Article | null>(null)
 
   const handleArticleCreated = () => {
-    // Force refresh of the article list
-    setRefreshKey((prev) => prev + 1)
-    // Clear editing state
     setEditingArticle(null)
   }
 
@@ -50,7 +33,7 @@ export const ArticleManager = () => {
       </div>
 
       <div>
-        <ArticleList key={refreshKey} onEditArticle={handleEditArticle} />
+        <ArticleList onEditArticle={handleEditArticle} />
       </div>
     </div>
   )

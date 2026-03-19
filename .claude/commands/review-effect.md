@@ -30,13 +30,13 @@ Review all changed or newly added Effect-TS code in this repository for the foll
 12. **Schema validation that doesn't stop request processing** — `withSchemaValidation` must throw to halt processing, not silently reply.
 13. **Direct `process.env` reads in business logic** — Use `ConfigService` / `resolveConfig()` instead.
 14. **`console.log` / `console.error` in Effect code** — Use Effect's built-in logging (`Effect.log`, `Effect.logError`) or Fastify's logger.
-15. **Service-like module without a `Context.Tag`** — All service modules must follow the Tag pattern (class-based `Context.Tag` + interface + `ServiceLive` layer). Standalone exported functions without a Tag cannot be replaced or mocked via DI.
+15. **Service-like module without a `Context.Tag` or missing file separation** — All service modules must follow the 4-file convention: `service.ts` (interface + class-based `Context.Tag`), `service-impl.ts` (implementation class), `service-live.ts` (layer wiring only — `Layer.succeed` or `Layer.effect` instantiating the impl class), and `index.ts` (barrel). Implementation logic must not live in the live file. Standalone exported functions without a Tag cannot be replaced or mocked via DI.
 16. **Repository interface leaking infrastructure dependencies** — Repository methods must not expose `DatabaseService` (or similar infra tags) in their `R` channel. Return `Effect.Effect<T, RepositoryError>`, not `Effect.Effect<T, RepositoryError, DatabaseService>`. Resolve infra dependencies internally within the layer.
 17. **Duplicate type definitions across layers** — If a type (e.g., `CreateUserData`, `UserWithIntegrations`) is identical in both repository and service layers, it should be defined once and re-exported. Check for structural duplicates.
 
 ### Frontend
 
-18. **`runEffect` silently swallowing errors** — The top-level `runEffect` catches errors with `console.error` only. Controllers must always handle errors via `catchAll`/`catchTag`. Unhandled errors should surface to the UI (e.g., toast notification), not just log to console.
+18. **`runEffect` silently swallowing errors** — The top-level `runEffect` must surface unhandled errors to the UI via toast (sonner). Services must always handle expected errors via `catchAll`/`catchTag`; `runEffect` is the last-resort fallback, not a substitute for service-level error handling.
 
 ## Output Format
 

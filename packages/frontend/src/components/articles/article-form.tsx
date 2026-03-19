@@ -1,20 +1,13 @@
+import { Effect } from 'effect'
 import { useEffect, useState } from 'react'
 
-import { apiFetch } from '@/utils/api'
+import type { Article } from '@/model/articles-model'
 
-interface Site {
-  id: string
-  name: string
-}
-
-interface Article {
-  id: string
-  title: string
-  slug: string
-  content: string
-  status: 'draft' | 'published'
-  siteId: string
-}
+import { sitesModel } from '@/model/sites-model'
+import { ArticleService } from '@/services/article'
+import { SiteService } from '@/services/site'
+import { runEffect } from '@/utils/effect-runtime'
+import { useObservable } from '@/utils/use-observable'
 
 interface ArticleFormProps {
   onArticleCreated: () => void
@@ -27,7 +20,8 @@ export const ArticleForm = ({
   editingArticle,
   onCancelEdit,
 }: ArticleFormProps) => {
-  const [sites, setSites] = useState<Site[]>([])
+  const sites = useObservable(sitesModel.sites$)
+  const sitesLoading = useObservable(sitesModel.loading$)
   const [formData, setFormData] = useState({
     siteId: '',
     title: '',
@@ -37,9 +31,11 @@ export const ArticleForm = ({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  // Load editing article data when editingArticle changes
+  useEffect(() => {
+    runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()))
+  }, [])
+
   useEffect(() => {
     if (editingArticle) {
       setFormData({
@@ -60,32 +56,6 @@ export const ArticleForm = ({
     }
   }, [editingArticle])
 
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const response = await apiFetch('/sites')
-
-        if (response.status === 401) {
-          window.location.assign('/')
-          return
-        }
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch sites')
-        }
-
-        const data = await response.json()
-        setSites(data.sites)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchSites().catch(console.error)
-  }, [])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -98,33 +68,16 @@ export const ArticleForm = ({
     setError(null)
 
     try {
-      const isEditing = !!editingArticle
-      const response = await apiFetch(
-        isEditing ? `/articles/${editingArticle.id}` : '/articles',
-        {
-          method: isEditing ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        }
-      )
-
-      if (response.status === 401) {
-        window.location.assign('/')
-        return
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(
-          errorData.error ||
-            `Failed to ${isEditing ? 'update' : 'create'} article`
+      if (editingArticle) {
+        await runEffect(
+          Effect.flatMap(ArticleService, (svc) =>
+            svc.updateArticle(editingArticle.id, formData)
+          )
         )
-      }
-
-      // Reset form only if creating new article
-      if (!isEditing) {
+      } else {
+        await runEffect(
+          Effect.flatMap(ArticleService, (svc) => svc.createArticle(formData))
+        )
         setFormData({
           siteId: '',
           title: '',
@@ -135,8 +88,8 @@ export const ArticleForm = ({
       }
 
       onArticleCreated()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+    } catch {
+      setError('Failed to save article')
     } finally {
       setIsSubmitting(false)
     }
@@ -154,7 +107,7 @@ export const ArticleForm = ({
     }))
   }
 
-  if (loading) return <div>Loading sites...</div>
+  if (sitesLoading) return <div>Loading sites...</div>
 
   return (
     <form onSubmit={handleSubmit}>
@@ -192,7 +145,11 @@ export const ArticleForm = ({
           value={formData.title}
           onChange={handleInputChange}
           required
-          style={{ marginLeft: '0.5rem', padding: '0.25rem', width: '300px' }}
+          style={{
+            marginLeft: '0.5rem',
+            padding: '0.25rem',
+            width: '300px',
+          }}
         />
       </div>
 
@@ -205,7 +162,11 @@ export const ArticleForm = ({
           value={formData.slug}
           onChange={handleInputChange}
           placeholder="Leave empty to auto-generate"
-          style={{ marginLeft: '0.5rem', padding: '0.25rem', width: '300px' }}
+          style={{
+            marginLeft: '0.5rem',
+            padding: '0.25rem',
+            width: '300px',
+          }}
         />
       </div>
 
@@ -246,7 +207,10 @@ export const ArticleForm = ({
         <button
           type="submit"
           disabled={isSubmitting}
-          style={{ padding: '0.5rem 1rem', marginRight: '0.5rem' }}
+          style={{
+            padding: '0.5rem 1rem',
+            marginRight: '0.5rem',
+          }}
         >
           {isSubmitting
             ? editingArticle

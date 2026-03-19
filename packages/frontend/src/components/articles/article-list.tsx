@@ -1,21 +1,12 @@
-import { useEffect, useState } from 'react'
+import { Effect } from 'effect'
+import { useEffect } from 'react'
 
-import { apiFetch } from '@/utils/api'
+import type { Article } from '@/model/articles-model'
 
-interface Article {
-  id: string
-  title: string
-  slug: string
-  content: string
-  status: 'draft' | 'published'
-  siteId: string
-  createdAt: string
-  updatedAt: string
-  site: {
-    id: string
-    name: string
-  }
-}
+import { articlesModel } from '@/model/articles-model'
+import { ArticleService } from '@/services/article'
+import { runEffect } from '@/utils/effect-runtime'
+import { useObservable } from '@/utils/use-observable'
 
 interface ArticleListProps {
   siteId?: string
@@ -23,41 +14,19 @@ interface ArticleListProps {
 }
 
 export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
-  const [articles, setArticles] = useState<Article[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [publishingId, setPublishingId] = useState<string | null>(null)
+  const articles = useObservable(articlesModel.articles$)
+  const loading = useObservable(articlesModel.loading$)
+  const error = useObservable(articlesModel.error$)
+  const deletingId = useObservable(articlesModel.deletingId$)
+  const publishingId = useObservable(articlesModel.publishingId$)
 
   useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        const response = await apiFetch(
-          siteId ? `/sites/${siteId}/articles` : '/articles'
-        )
-
-        if (response.status === 401) {
-          window.location.assign('/')
-          return
-        }
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch articles')
-        }
-
-        const data = await response.json()
-        setArticles(data.articles)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchArticles().catch(console.error)
+    runEffect(
+      Effect.flatMap(ArticleService, (svc) => svc.fetchArticles(siteId))
+    )
   }, [siteId])
 
-  const deleteArticle = async (articleId: string) => {
+  const handleDelete = (articleId: string) => {
     if (
       !confirm(
         'Are you sure you want to delete this article? This action cannot be undone.'
@@ -65,86 +34,15 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
     ) {
       return
     }
-
-    setDeletingId(articleId)
-
-    try {
-      const response = await apiFetch(`/articles/${articleId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.status === 401) {
-        window.location.assign('/')
-        return
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete article')
-      }
-
-      const result = await response.json()
-
-      // Remove the article from the list
-      setArticles((prevArticles) =>
-        prevArticles.filter((article) => article.id !== articleId)
-      )
-
-      // Show detailed success message
-      let message = 'Article deleted successfully from database'
-      if (result.hasGitHubRepo) {
-        if (result.gitHubDeleted) {
-          message += ' and GitHub repository'
-        } else if (result.gitHubError) {
-          message += `, but failed to delete from GitHub: ${result.gitHubError}`
-        } else {
-          message += ', file was not found in GitHub repository'
-        }
-      }
-      alert(message)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setDeletingId(null)
-    }
+    runEffect(
+      Effect.flatMap(ArticleService, (svc) => svc.deleteArticle(articleId))
+    )
   }
 
-  const publishArticle = async (articleId: string) => {
-    setPublishingId(articleId)
-
-    try {
-      const response = await apiFetch(`/articles/${articleId}/publish`, {
-        method: 'POST',
-      })
-
-      if (response.status === 401) {
-        window.location.assign('/')
-        return
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to publish article')
-      }
-
-      const result = await response.json()
-
-      // Update the article status in the list
-      setArticles((prevArticles) =>
-        prevArticles.map((article) =>
-          article.id === articleId
-            ? { ...article, status: 'published' as const }
-            : article
-        )
-      )
-
-      const action = result.wasUpdate ? 'updated' : 'published'
-      alert(`Article ${action} successfully! File: ${result.filePath}`)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-    } finally {
-      setPublishingId(null)
-    }
+  const handlePublish = (articleId: string) => {
+    runEffect(
+      Effect.flatMap(ArticleService, (svc) => svc.publishArticle(articleId))
+    )
   }
 
   if (loading) return <div>Loading articles...</div>
@@ -175,7 +73,7 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
                   </button>
                 )}
                 <button
-                  onClick={() => publishArticle(article.id)}
+                  onClick={() => handlePublish(article.id)}
                   disabled={publishingId === article.id}
                   style={{
                     marginRight: '0.5rem',
@@ -191,9 +89,12 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
                       : 'Publish'}
                 </button>
                 <button
-                  onClick={() => deleteArticle(article.id)}
+                  onClick={() => handleDelete(article.id)}
                   disabled={deletingId === article.id}
-                  style={{ backgroundColor: '#dc3545', color: 'white' }}
+                  style={{
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                  }}
                 >
                   {deletingId === article.id ? 'Deleting...' : 'Delete'}
                 </button>

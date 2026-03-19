@@ -1,7 +1,7 @@
 import { Effect } from 'effect'
 import { useState } from 'react'
 
-import { SitesController } from '@/controller/sites'
+import { SiteService } from '@/services/site'
 import { runEffect } from '@/utils/effect-runtime'
 
 export const CreateSite = () => {
@@ -13,7 +13,7 @@ export const CreateSite = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!name.trim()) {
@@ -24,25 +24,29 @@ export const CreateSite = () => {
     setLoading(true)
     setError(null)
 
-    runEffect(
-      Effect.flatMap(SitesController, (ctrl) =>
-        ctrl.createSite({
-          name: name.trim(),
-          description: description.trim() || undefined,
-          author: author.trim() || undefined,
-          templateOwner,
-          templateRepo,
-        })
+    try {
+      await runEffect(
+        Effect.flatMap(SiteService, (svc) =>
+          svc.createSite({
+            name: name.trim(),
+            description: description.trim() || undefined,
+            author: author.trim() || undefined,
+            templateOwner,
+            templateRepo,
+          })
+        )
       )
-    )
 
-    // Reset form
-    setName('')
-    setDescription('')
-    setAuthor('')
-    setTemplateOwner('Saul-Mirone')
-    setTemplateRepo('inland-template-basic')
-    setLoading(false)
+      setName('')
+      setDescription('')
+      setAuthor('')
+      setTemplateOwner('Saul-Mirone')
+      setTemplateRepo('inland-template-basic')
+    } catch {
+      setError('Failed to create site')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -149,7 +153,11 @@ export const CreateSite = () => {
             </label>
           </div>
           <div
-            style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}
+            style={{
+              fontSize: '0.9rem',
+              color: '#666',
+              marginTop: '0.5rem',
+            }}
           >
             Default: Saul-Mirone/inland-template-basic (official Inland blog
             template)

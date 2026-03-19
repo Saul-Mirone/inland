@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Inland is a markdown-based documentation/CMS management system that connects to GitHub. It is a Yarn 4 workspaces monorepo with three packages:
 
 - **`@inland/backend`** (`packages/backend`) — Fastify 5 REST API with Effect-TS service layers, Prisma 7 (PostgreSQL), Redis sessions, GitHub OAuth
-- **`@inland/frontend`** (`packages/frontend`) — React 19 SPA with Vite 8, Tailwind CSS 4, shadcn/ui, Effect-TS controllers, RxJS state management
+- **`@inland/frontend`** (`packages/frontend`) — React 19 SPA with Vite 8, Tailwind CSS 4, shadcn/ui, Effect-TS services, RxJS state management
 - **`@inland/dev`** (`packages/dev`) — Internal dev tooling (tsconfig codegen, workspace utilities)
 
 ## Common Commands
@@ -51,8 +51,12 @@ Request validation uses Effect `Schema` via a `withSchemaValidation` Fastify pre
 
 ### Frontend (Effect + RxJS Pattern)
 
-- **Models** (`src/models/`) — `BehaviorSubject` instances holding state, exposed as Effect `Context.Tag` services
-- **Services** (`src/services/`) — Effect-based business logic orchestrating API calls and model updates. Follow the same Tag pattern as backend services (`Context.Tag` + interface + `ServiceLive` layer). API calls should be encapsulated within service implementations directly, not delegated to a separate API client layer. Note: the current codebase uses `controller/` with a separate `ApiClient` — new code should use `services/` and inline API calls instead.
+- **Models** (`src/model/`) — `BehaviorSubject` instances holding state, exposed as Effect `Context.Tag` services
+- **Services** (`src/services/`) — Effect-based business logic orchestrating API calls and model updates. Follow the same Tag pattern as backend services (`Context.Tag` + interface + `ServiceLive` layer). Each service directory separates interface from implementation:
+  - `service-name.ts` — interface + `Context.Tag` definition
+  - `service-name-live.ts` — implementation + `ServiceLive` layer
+  - `index.ts` — barrel re-exports
+- **API Client** (`src/services/api/`) — Shared `ApiClient` service (Tag + Live layer) providing typed HTTP methods (`get`, `post`, `put`, `del`) with automatic token refresh and error mapping. Other services depend on `ApiClient` via Effect DI.
 - **React bridge** — `useObservable()` hook wraps `useSyncExternalStore` to subscribe to BehaviorSubjects
 
 ### Testing Patterns
@@ -111,7 +115,13 @@ These rules apply to all Effect-TS code in both backend and frontend. They are d
 
 ### Frontend
 
-- **Frontend `runEffect` must not silently swallow errors**. Controllers should always handle errors via `catchAll`/`catchTag`. The top-level `runEffect` should surface unhandled errors to the UI (e.g., via a toast/notification), not just `console.error`.
+- **Frontend `runEffect` must not silently swallow errors**. Services should always handle errors via `catchAll`/`catchTag`. The top-level `runEffect` should surface unhandled errors to the UI (e.g., via a toast/notification), not just `console.error`.
+- **Frontend services follow a 4-file convention** inside `services/<name>/`:
+  - `<name>-service.ts` — interface + `Context.Tag` definition. No implementation logic.
+  - `<name>-service-impl.ts` — `class XxxServiceImpl implements XxxServiceInterface`. All business logic lives here. Constructor receives dependencies (model, api, etc.) and methods are arrow-function properties returning `Effect.Effect`. Use `Effect.gen(this, function* () { ... })` to bind `this` in generators.
+  - `<name>-service-live.ts` — only layer wiring. Use `Layer.succeed(Tag, new Impl())` when there are no Effect DI dependencies, or `Layer.effect(Tag, Effect.gen(...))` to resolve dependencies and pass them to the constructor.
+  - `index.ts` — barrel re-exports (Tag, interface types, Live layer).
+- **Use "service" naming**, not "controller". Frontend business logic modules are services (`SiteService`, `services/site/`), not controllers.
 
 ## Conventions
 

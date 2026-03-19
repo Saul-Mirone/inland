@@ -1,6 +1,7 @@
 import { BehaviorSubject } from 'rxjs'
 
-import { apiFetch, buildApiUrl } from './api'
+import { buildApiUrl } from '@/services/api'
+import { apiFetch } from '@/services/api/api-fetch'
 
 export interface AuthUser {
   id: string

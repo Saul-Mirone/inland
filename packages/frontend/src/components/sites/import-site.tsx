@@ -1,7 +1,7 @@
 import { Effect } from 'effect'
 import { useState } from 'react'
 
-import { SitesController } from '@/controller/sites'
+import { SiteService } from '@/services/site'
 import { runEffect } from '@/utils/effect-runtime'
 
 export const ImportSite = () => {
@@ -15,7 +15,7 @@ export const ImportSite = () => {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!name.trim()) {
@@ -37,29 +37,37 @@ export const ImportSite = () => {
     setError(null)
     setSuccess(null)
 
-    runEffect(
-      Effect.flatMap(SitesController, (ctrl) =>
-        ctrl.importSite({
-          name: name.trim(),
-          gitRepoFullName: gitRepoFullName.trim(),
-          description: description.trim() || undefined,
-          setupWorkflow,
-          enablePages,
-          overrideExistingFiles,
-        })
+    try {
+      const result = await runEffect(
+        Effect.flatMap(SiteService, (svc) =>
+          svc.importSite({
+            name: name.trim(),
+            gitRepoFullName: gitRepoFullName.trim(),
+            description: description.trim() || undefined,
+            setupWorkflow,
+            enablePages,
+            overrideExistingFiles,
+          })
+        )
       )
-    )
 
-    setSuccess('Import started successfully!')
+      const articlesMsg =
+        result?.articlesImported !== undefined
+          ? ` (${result.articlesImported} articles imported)`
+          : ''
+      setSuccess(`Import completed successfully!${articlesMsg}`)
 
-    // Clear form
-    setName('')
-    setGitRepoFullName('')
-    setDescription('')
-    setSetupWorkflow(true)
-    setEnablePages(true)
-    setOverrideExistingFiles(false)
-    setLoading(false)
+      setName('')
+      setGitRepoFullName('')
+      setDescription('')
+      setSetupWorkflow(true)
+      setEnablePages(true)
+      setOverrideExistingFiles(false)
+    } catch {
+      setError('Failed to import repository')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -177,7 +185,11 @@ export const ImportSite = () => {
           </div>
 
           <div
-            style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}
+            style={{
+              fontSize: '0.9rem',
+              color: '#666',
+              marginTop: '0.5rem',
+            }}
           >
             By default, the workflow will be set up and Pages will be enabled.
             Existing files will be skipped unless you check the override option.
