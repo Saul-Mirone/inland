@@ -9,6 +9,7 @@ import { SitesModelLive } from '@/model/sites-model'
 import { ApiClientLive } from '@/services/api'
 import { ArticleServiceLive } from '@/services/article'
 import { AuthServiceLive } from '@/services/auth'
+import { NavigationServiceLive } from '@/services/navigation'
 import { SiteServiceLive } from '@/services/site'
 
 const MainLayer = Layer.mergeAll(
@@ -19,6 +20,7 @@ const MainLayer = Layer.mergeAll(
   Layer.provideMerge(
     Layer.mergeAll(
       ApiClientLive,
+      NavigationServiceLive,
       SitesModelLive,
       ArticlesModelLive,
       AuthModelLive

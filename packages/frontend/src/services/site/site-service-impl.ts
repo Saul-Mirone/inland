@@ -6,6 +6,7 @@ import type {
   SiteWithCounts,
 } from '@/model/sites-model'
 import type { ApiClientService, ApiError } from '@/services/api'
+import type { NavigationServiceInterface } from '@/services/navigation'
 
 import type {
   CreateSiteData,
@@ -24,7 +25,8 @@ interface FetchSitesResponse {
 export class SiteServiceImpl implements SiteServiceInterface {
   constructor(
     private readonly model: SitesModelService,
-    private readonly api: ApiClientService
+    private readonly api: ApiClientService,
+    private readonly nav: NavigationServiceInterface
   ) {}
 
   private pushError(error: ApiError): void {
@@ -32,9 +34,7 @@ export class SiteServiceImpl implements SiteServiceInterface {
     this.model.error$.next(error.message)
     const { redirectUrl } = error
     if (redirectUrl) {
-      setTimeout(() => {
-        window.location.href = redirectUrl
-      }, 3000)
+      this.nav.navigateDelayed(redirectUrl, 3000)
     }
   }
 

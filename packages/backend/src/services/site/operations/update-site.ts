@@ -9,6 +9,7 @@ import {
   DuplicateSiteNameError,
   type UpdateSiteData,
 } from '../site-types'
+import { validateSiteName, validateGitRepo } from '../site-validation'
 
 export const updateSite = (
   siteId: string,
@@ -28,7 +29,22 @@ export const updateSite = (
       return yield* new SiteAccessDeniedError({ siteId, userId })
     }
 
-    const updatedSite = yield* siteRepo.update(siteId, data).pipe(
+    const validatedData: UpdateSiteData = {
+      ...(data.name !== undefined && {
+        name: yield* validateSiteName(data.name),
+      }),
+      ...(data.gitRepo !== undefined && {
+        gitRepo: yield* validateGitRepo(data.gitRepo),
+      }),
+      ...(data.platform !== undefined && {
+        platform: data.platform,
+      }),
+      ...(data.deployStatus !== undefined && {
+        deployStatus: data.deployStatus,
+      }),
+    }
+
+    const updatedSite = yield* siteRepo.update(siteId, validatedData).pipe(
       Effect.catchTag(
         'RepositoryError',
         (

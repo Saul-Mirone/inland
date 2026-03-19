@@ -12,6 +12,7 @@ import {
   DuplicateSlugError,
   type UpdateArticleData,
 } from '../article-types'
+import { validateTitle, validateSlug } from '../article-validation'
 
 export const updateArticle = (
   articleId: string,
@@ -32,8 +33,12 @@ export const updateArticle = (
     }
 
     const repoData: ArticleUpdateData = {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.slug !== undefined && { slug: data.slug }),
+      ...(data.title !== undefined && {
+        title: yield* validateTitle(data.title),
+      }),
+      ...(data.slug !== undefined && {
+        slug: yield* validateSlug(data.slug),
+      }),
       ...(data.content !== undefined && { content: data.content }),
       ...(data.status !== undefined && { status: data.status }),
     }

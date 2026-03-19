@@ -79,7 +79,7 @@ describe('SiteService', () => {
       // Mock data
       const mockUpdatedSite = mockSite({
         id: 'site-1',
-        name: 'Updated Site Name',
+        name: 'updated-site-name',
         gitRepo: 'user/updated-repo',
         deployUrl: 'https://updated.com',
       })
@@ -90,7 +90,7 @@ describe('SiteService', () => {
 
       // Test data
       const updateData = {
-        name: 'Updated Site Name',
+        name: 'updated-site-name',
         gitRepo: 'user/updated-repo',
       }
 
@@ -108,7 +108,7 @@ describe('SiteService', () => {
       expect(mockPrisma.site.update).toHaveBeenCalledWith({
         where: { id: 'site-1' },
         data: {
-          name: 'Updated Site Name',
+          name: 'updated-site-name',
           gitRepo: 'user/updated-repo',
         },
       })

@@ -2,6 +2,7 @@ import { Effect } from 'effect'
 
 import type { AuthModelService, AuthState, AuthUser } from '@/model/auth-model'
 import type { ApiClientService } from '@/services/api'
+import type { NavigationServiceInterface } from '@/services/navigation'
 
 import type { AuthServiceInterface } from './auth-service'
 
@@ -14,7 +15,8 @@ const anonymousState: AuthState = {
 export class AuthServiceImpl implements AuthServiceInterface {
   constructor(
     private readonly model: AuthModelService,
-    private readonly api: ApiClientService
+    private readonly api: ApiClientService,
+    private readonly nav: NavigationServiceInterface
   ) {}
 
   private setAuthState(state: AuthState): AuthState {
@@ -62,7 +64,7 @@ export class AuthServiceImpl implements AuthServiceInterface {
 
   login = (): Effect.Effect<void> =>
     Effect.sync(() => {
-      window.location.assign(this.api.buildUrl('/auth/github'))
+      this.nav.navigate(this.api.buildUrl('/auth/github'))
     })
 
   logout = (): Effect.Effect<void> =>
@@ -71,6 +73,6 @@ export class AuthServiceImpl implements AuthServiceInterface {
         .post('/auth/logout')
         .pipe(Effect.catchAll(() => Effect.void))
       this.clearState()
-      window.location.assign('/')
+      this.nav.navigate('/')
     })
 }

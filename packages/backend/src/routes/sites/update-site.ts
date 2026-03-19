@@ -30,49 +30,20 @@ export const updateSiteRoute = async (fastify: FastifyInstance) => {
       const { id } = request.validatedParams!
       const updateData = request.validatedBody!
 
-      const updateSite = Effect.gen(function* () {
+      const effect = Effect.gen(function* () {
         const siteService = yield* SiteService
-
-        const validatedData: {
-          name?: string
-          gitRepo?: string
-          platform?: string
-          deployStatus?: string
-        } = {}
-
-        if (updateData.name !== undefined) {
-          validatedData.name = yield* siteService.validateSiteName(
-            updateData.name
-          )
-        }
-
-        if (updateData.gitRepo !== undefined) {
-          validatedData.gitRepo = yield* siteService.validateGitRepo(
-            updateData.gitRepo
-          )
-        }
-
-        if (updateData.platform !== undefined) {
-          validatedData.platform = updateData.platform
-        }
-
-        if (updateData.deployStatus !== undefined) {
-          validatedData.deployStatus = updateData.deployStatus
-        }
-
         const site = yield* siteService.updateSite(
           id,
           userPayload.userId,
-          validatedData
+          updateData
         )
-
         return { site }
       })
 
       return runRouteEffect(
         fastify,
         reply,
-        updateSite.pipe(
+        effect.pipe(
           Effect.catchTags({
             SiteNotFoundError: () => httpError(404, 'Site not found'),
             SiteAccessDeniedError: () => httpError(403, 'Access denied'),

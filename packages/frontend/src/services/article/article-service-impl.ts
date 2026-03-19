@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 import type { Article, ArticlesModelService } from '@/model/articles-model'
 import type { ApiClientService, ApiError } from '@/services/api'
+import type { NavigationServiceInterface } from '@/services/navigation'
 
 import type {
   ArticleServiceInterface,
@@ -28,7 +29,8 @@ interface PublishArticleResponse {
 export class ArticleServiceImpl implements ArticleServiceInterface {
   constructor(
     private readonly model: ArticlesModelService,
-    private readonly api: ApiClientService
+    private readonly api: ApiClientService,
+    private readonly nav: NavigationServiceInterface
   ) {}
 
   private pushError(error: ApiError): void {
@@ -36,9 +38,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
     this.model.error$.next(error.message)
     const { redirectUrl } = error
     if (redirectUrl) {
-      setTimeout(() => {
-        window.location.href = redirectUrl
-      }, 3000)
+      this.nav.navigateDelayed(redirectUrl, 3000)
     }
   }
 

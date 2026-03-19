@@ -33,49 +33,20 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
       const { id } = request.validatedParams!
       const updateData = request.validatedBody!
 
-      const updateArticle = Effect.gen(function* () {
+      const effect = Effect.gen(function* () {
         const articleService = yield* ArticleService
-
-        const validatedData: {
-          title?: string
-          slug?: string
-          content?: string
-          status?: 'draft' | 'published'
-        } = {}
-
-        if (updateData.title !== undefined) {
-          validatedData.title = yield* articleService.validateTitle(
-            updateData.title
-          )
-        }
-
-        if (updateData.slug !== undefined) {
-          validatedData.slug = yield* articleService.validateSlug(
-            updateData.slug
-          )
-        }
-
-        if (updateData.content !== undefined) {
-          validatedData.content = updateData.content
-        }
-
-        if (updateData.status !== undefined) {
-          validatedData.status = updateData.status
-        }
-
         const article = yield* articleService.updateArticle(
           id,
           userPayload.userId,
-          validatedData
+          updateData
         )
-
         return { article }
       })
 
       return runRouteEffect(
         fastify,
         reply,
-        updateArticle.pipe(
+        effect.pipe(
           Effect.catchTags({
             ArticleNotFoundError: () => httpError(404, 'Article not found'),
             ArticleAccessDeniedError: () => httpError(403, 'Access denied'),
