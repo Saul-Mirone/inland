@@ -8,6 +8,8 @@ import type {
 import type { ApiClientService, ApiError } from '@/services/api'
 import type { NavigationServiceInterface } from '@/services/navigation'
 
+import { pushServiceError } from '@/services/shared/push-error'
+
 import type {
   CreateSiteData,
   ImportSiteData,
@@ -30,12 +32,7 @@ export class SiteServiceImpl implements SiteServiceInterface {
   ) {}
 
   private pushError(error: ApiError): void {
-    this.model.loading$.next(false)
-    this.model.error$.next(error.message)
-    const { redirectUrl } = error
-    if (redirectUrl) {
-      this.nav.navigateDelayed(redirectUrl, 3000)
-    }
+    pushServiceError(this.model, this.nav, error)
   }
 
   fetchSites = (page = 1, limit = 20): Effect.Effect<void> =>

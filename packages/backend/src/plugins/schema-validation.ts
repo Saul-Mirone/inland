@@ -53,56 +53,35 @@ export interface SchemaValidationConfig {
   headers?: S.Schema<any>
 }
 
-// Pre-handler factory for route-level validation using Effect-TS with type inference
+const VALIDATION_FIELDS = [
+  { configKey: 'body', requestData: 'body', resultKey: 'validatedBody' },
+  { configKey: 'params', requestData: 'params', resultKey: 'validatedParams' },
+  {
+    configKey: 'querystring',
+    requestData: 'query',
+    resultKey: 'validatedQuery',
+  },
+  {
+    configKey: 'headers',
+    requestData: 'headers',
+    resultKey: 'validatedHeaders',
+  },
+] as const
+
 export const withSchemaValidation = (config: SchemaValidationConfig) => {
   return async (request: FastifyRequest): Promise<void> => {
     const validateAllFields = Effect.gen(function* () {
-      // Validate body
-      if (config.body) {
-        const validatedBody = yield* validateWithSchema(
-          config.body,
-          request.body,
-          'body'
-        )
-        ;(
-          request as FastifyRequest & { validatedBody: unknown }
-        ).validatedBody = validatedBody
-      }
-
-      // Validate params
-      if (config.params) {
-        const validatedParams = yield* validateWithSchema(
-          config.params,
-          request.params,
-          'params'
-        )
-        ;(
-          request as FastifyRequest & { validatedParams: unknown }
-        ).validatedParams = validatedParams
-      }
-
-      // Validate querystring
-      if (config.querystring) {
-        const validatedQuery = yield* validateWithSchema(
-          config.querystring,
-          request.query,
-          'querystring'
-        )
-        ;(
-          request as FastifyRequest & { validatedQuery: unknown }
-        ).validatedQuery = validatedQuery
-      }
-
-      // Validate headers
-      if (config.headers) {
-        const validatedHeaders = yield* validateWithSchema(
-          config.headers,
-          request.headers,
-          'headers'
-        )
-        ;(
-          request as FastifyRequest & { validatedHeaders: unknown }
-        ).validatedHeaders = validatedHeaders
+      for (const { configKey, requestData, resultKey } of VALIDATION_FIELDS) {
+        const schema = config[configKey]
+        if (schema) {
+          const validated = yield* validateWithSchema(
+            schema,
+            request[requestData],
+            configKey
+          )
+          ;(request as unknown as Record<string, unknown>)[resultKey] =
+            validated
+        }
       }
     })
 

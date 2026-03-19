@@ -5,6 +5,8 @@ import type { Article, ArticlesModelService } from '@/model/articles-model'
 import type { ApiClientService, ApiError } from '@/services/api'
 import type { NavigationServiceInterface } from '@/services/navigation'
 
+import { pushServiceError } from '@/services/shared/push-error'
+
 import type {
   ArticleServiceInterface,
   CreateArticleData,
@@ -34,12 +36,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
   ) {}
 
   private pushError(error: ApiError): void {
-    this.model.loading$.next(false)
-    this.model.error$.next(error.message)
-    const { redirectUrl } = error
-    if (redirectUrl) {
-      this.nav.navigateDelayed(redirectUrl, 3000)
-    }
+    pushServiceError(this.model, this.nav, error)
   }
 
   fetchArticles = (siteId?: string): Effect.Effect<void> =>

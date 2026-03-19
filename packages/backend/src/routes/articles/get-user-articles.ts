@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { ArticleService } from '../../services/article'
+import { toPaginatedResponse } from '../../utils/pagination-response'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
@@ -34,15 +35,7 @@ export const getUserArticlesRoute = async (fastify: FastifyInstance) => {
           userPayload.userId,
           { page, limit }
         )
-        return {
-          articles: result.items,
-          pagination: {
-            page: result.page,
-            limit: result.limit,
-            total: result.total,
-            totalPages: result.totalPages,
-          },
-        }
+        return toPaginatedResponse('articles', result)
       })
 
       return runRouteEffect(fastify, reply, getUserArticles, {

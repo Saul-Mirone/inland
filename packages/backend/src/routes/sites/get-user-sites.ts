@@ -8,6 +8,7 @@ import {
 } from '../../plugins/schema-validation'
 import * as Schemas from '../../schemas'
 import { SiteService } from '../../services/site'
+import { toPaginatedResponse } from '../../utils/pagination-response'
 import { runRouteEffect } from '../../utils/route-effect'
 
 export const getUserSitesRoute = async (fastify: FastifyInstance) => {
@@ -34,15 +35,7 @@ export const getUserSitesRoute = async (fastify: FastifyInstance) => {
           page,
           limit,
         })
-        return {
-          sites: result.items,
-          pagination: {
-            page: result.page,
-            limit: result.limit,
-            total: result.total,
-            totalPages: result.totalPages,
-          },
-        }
+        return toPaginatedResponse('sites', result)
       })
 
       return runRouteEffect(fastify, reply, getUserSites, {
