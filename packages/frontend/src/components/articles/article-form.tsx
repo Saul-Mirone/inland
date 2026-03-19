@@ -61,7 +61,7 @@ export const ArticleForm = ({
     }
   }, [editingArticle])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!formData.siteId || !formData.title || !formData.content) {

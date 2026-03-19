@@ -28,8 +28,12 @@ export class ApiClientImpl implements ApiClientService {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
           const message =
-            (errorData as Record<string, string>).error ||
-            `Request failed with status ${response.status}`
+            typeof errorData === 'object' &&
+            errorData !== null &&
+            'error' in errorData &&
+            typeof (errorData as Record<string, unknown>).error === 'string'
+              ? ((errorData as Record<string, string>).error as string)
+              : `Request failed with status ${response.status}`
 
           let redirectUrl: string | undefined
           if (response.status === 401) {
@@ -43,8 +47,11 @@ export class ApiClientImpl implements ApiClientService {
           })
         }
 
-        if (response.status === 204) {
-          return undefined as unknown as T
+        if (
+          response.status === 204 ||
+          response.headers.get('content-length') === '0'
+        ) {
+          return {} as T
         }
 
         return (await response.json()) as T

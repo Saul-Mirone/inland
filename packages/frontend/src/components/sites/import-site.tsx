@@ -33,7 +33,7 @@ export const ImportSite = () => {
         [field]: e.target.checked,
       }))
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!form.name.trim()) {

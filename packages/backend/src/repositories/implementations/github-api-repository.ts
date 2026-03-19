@@ -320,9 +320,16 @@ export const makeGitHubApiRepository = (config?: {
     templateData?: TemplateData
   ) =>
     Effect.gen(function* () {
+      if (!data.templateOwner || !data.templateRepo) {
+        return yield* new GitProviderError({
+          message:
+            'templateOwner and templateRepo are required to create a repository',
+        })
+      }
+
       const repoData = yield* createRepoFromTemplate(accessToken, {
-        templateOwner: data.templateOwner!,
-        templateRepo: data.templateRepo!,
+        templateOwner: data.templateOwner,
+        templateRepo: data.templateRepo,
         repoName: data.name,
         description: data.description ?? `Blog site: ${data.name}`,
       })
@@ -349,7 +356,7 @@ export const makeGitHubApiRepository = (config?: {
         accessToken,
         gitRepo.fullName
       ).pipe(
-        Effect.catchAll((error) =>
+        Effect.catchAll((error: GitProviderError) =>
           Effect.gen(function* () {
             yield* Effect.logError(
               `Failed to enable GitHub Pages for ${gitRepo.fullName}`,
