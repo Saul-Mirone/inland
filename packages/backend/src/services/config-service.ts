@@ -1,6 +1,9 @@
 import { Context, Effect, Layer } from 'effect'
 
 export interface AppConfig {
+  readonly port: number
+  readonly nodeEnv: string
+  readonly databaseUrl: string
   readonly jwtSecret: string
   readonly sessionSecret: string
   readonly githubClientId: string
@@ -19,6 +22,9 @@ export class ConfigService extends Context.Tag('ConfigService')<
 
 export function resolveConfig(): AppConfig {
   return {
+    port: Number(process.env.PORT) || 3001,
+    nodeEnv: process.env.NODE_ENV || 'development',
+    databaseUrl: process.env.DATABASE_URL || '',
     jwtSecret: process.env.JWT_SECRET || 'fallback-secret-for-development',
     sessionSecret: process.env.SESSION_SECRET || 'fallback-session-secret',
     githubClientId: process.env.GITHUB_CLIENT_ID || '',

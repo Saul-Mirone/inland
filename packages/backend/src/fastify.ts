@@ -8,44 +8,29 @@ import { schemaValidationPlugin } from './plugins/schema-validation'
 import { articleRoutes } from './routes/articles'
 import { authRoutes } from './routes/auth'
 import { siteRoutes } from './routes/sites'
+import { resolveConfig } from './services/config-service'
 
 export const fastify = Fastify({
   logger: true,
 })
 
-// Register database plugin
 await fastify.register(prismaPlugin)
-
-// Register Redis plugin
 await fastify.register(fastifyRedisPlugin)
-
-// Register Effect runtime plugin (depends on database + redis)
 await fastify.register(runtimePlugin)
-
-// Register authentication plugin
 await fastify.register(fastifyAuthPlugin)
-
-// Register schema validation plugin
 await fastify.register(schemaValidationPlugin)
 
-// Register CORS plugin
 await fastify.register(import('@fastify/cors'), {
-  origin: process.env.APP_URL || 'http://localhost:3000',
+  origin: resolveConfig().appUrl,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 })
 
-// Register auth routes
 await fastify.register(authRoutes)
-
-// Register site management routes
 await fastify.register(siteRoutes)
-
-// Register article management routes
 await fastify.register(articleRoutes)
 
-// Routes
 fastify.get('/', async () => {
   return { message: 'Inland CMS Backend with Effect-TS!' }
 })
@@ -54,7 +39,6 @@ fastify.get('/health', async () => {
   return { status: 'ok', timestamp: new Date().toISOString() }
 })
 
-// Database health check route
 fastify.get('/health/db', async (_, reply) => {
   try {
     await fastify.prisma.$queryRaw`SELECT 1`

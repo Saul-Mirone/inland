@@ -9,6 +9,7 @@ export interface ApiClientService {
   readonly post: <T>(path: string, body?: unknown) => Effect.Effect<T, ApiError>
   readonly put: <T>(path: string, body?: unknown) => Effect.Effect<T, ApiError>
   readonly del: <T>(path: string) => Effect.Effect<T, ApiError>
+  readonly buildUrl: (path: string) => string
 }
 
 export class ApiClient extends Context.Tag('ApiClient')<

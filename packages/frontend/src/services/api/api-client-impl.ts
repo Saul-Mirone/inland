@@ -3,9 +3,65 @@ import { Effect } from 'effect'
 import type { ApiClientService } from './api-client'
 
 import { ApiError } from './api-error'
-import { apiFetch } from './api-fetch'
 
 export class ApiClientImpl implements ApiClientService {
+  private readonly baseUrl: string
+  private refreshPromise: Promise<boolean> | null = null
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl
+  }
+
+  buildUrl(path: string): string {
+    return `${this.baseUrl}${path}`
+  }
+
+  private sendRequest(path: string, init: RequestInit): Promise<Response> {
+    const headers = new Headers(init.headers)
+    return fetch(this.buildUrl(path), {
+      ...init,
+      headers,
+      credentials: 'include',
+    })
+  }
+
+  private async refreshAccessToken(): Promise<boolean> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = (async () => {
+        try {
+          const response = await this.sendRequest('/auth/refresh', {
+            method: 'POST',
+          })
+          return response.ok
+        } catch {
+          return false
+        } finally {
+          this.refreshPromise = null
+        }
+      })()
+    }
+    return this.refreshPromise
+  }
+
+  private async apiFetch(
+    path: string,
+    init: RequestInit = {}
+  ): Promise<Response> {
+    const response = await this.sendRequest(path, init)
+
+    const skipRefresh = path === '/auth/refresh' || path === '/auth/logout'
+    if (response.status !== 401 || skipRefresh) {
+      return response
+    }
+
+    const refreshed = await this.refreshAccessToken()
+    if (!refreshed) {
+      return response
+    }
+
+    return this.sendRequest(path, init)
+  }
+
   private request<T>(
     method: string,
     path: string,
@@ -19,7 +75,7 @@ export class ApiClientImpl implements ApiClientService {
           headers['Content-Type'] = 'application/json'
         }
 
-        const response = await apiFetch(path, {
+        const response = await this.apiFetch(path, {
           method,
           headers,
           body: body !== undefined ? JSON.stringify(body) : undefined,

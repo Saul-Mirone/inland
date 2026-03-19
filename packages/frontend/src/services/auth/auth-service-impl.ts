@@ -3,8 +3,6 @@ import { Effect } from 'effect'
 import type { AuthModelService, AuthState, AuthUser } from '@/model/auth-model'
 import type { ApiClientService } from '@/services/api'
 
-import { buildApiUrl } from '@/services/api'
-
 import type { AuthServiceInterface } from './auth-service'
 
 const anonymousState: AuthState = {
@@ -64,7 +62,7 @@ export class AuthServiceImpl implements AuthServiceInterface {
 
   login = (): Effect.Effect<void> =>
     Effect.sync(() => {
-      window.location.assign(buildApiUrl('/auth/github'))
+      window.location.assign(this.api.buildUrl('/auth/github'))
     })
 
   logout = (): Effect.Effect<void> =>

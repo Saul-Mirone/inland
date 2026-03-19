@@ -1,13 +1,13 @@
 // oxlint-disable-next-line import/no-unassigned-import
 import 'dotenv/config'
 import { fastify } from './fastify'
+import { resolveConfig } from './services/config-service'
 
-// Start server
 const start = async () => {
   try {
-    const port = Number(process.env.PORT) || 3001
-    await fastify.listen({ port, host: '0.0.0.0' })
-    fastify.log.info(`Server is running on http://localhost:${port}`)
+    const config = resolveConfig()
+    await fastify.listen({ port: config.port, host: '0.0.0.0' })
+    fastify.log.info(`Server is running on http://localhost:${config.port}`)
   } catch (err) {
     fastify.log.error(err)
     process.exit(1)
