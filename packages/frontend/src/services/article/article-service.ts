@@ -2,7 +2,7 @@ import type { Effect } from 'effect'
 
 import { Context } from 'effect'
 
-export interface CreateArticleData {
+export interface ArticleData {
   siteId: string
   title: string
   slug?: string
@@ -10,13 +10,8 @@ export interface CreateArticleData {
   status: 'draft' | 'published'
 }
 
-export interface UpdateArticleData {
-  siteId: string
-  title: string
-  slug?: string
-  content: string
-  status: 'draft' | 'published'
-}
+export type CreateArticleData = ArticleData
+export type UpdateArticleData = ArticleData
 
 export interface ArticleServiceInterface {
   readonly fetchArticles: (siteId?: string) => Effect.Effect<void>
