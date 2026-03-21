@@ -35,6 +35,15 @@ export class SiteServiceImpl implements SiteServiceInterface {
     pushServiceError(this.model, this.nav, error);
   }
 
+  bootstrap = (): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      yield* this.fetchSites();
+      const sites = this.model.sites$.getValue();
+      if (sites.length > 0 && this.model.selectedSiteId$.getValue() === null) {
+        this.model.selectedSiteId$.next(sites[0].id);
+      }
+    });
+
   fetchSites = (page = 1, limit = 20): Effect.Effect<void> =>
     Effect.gen(this, function* () {
       this.model.loading$.next(true);

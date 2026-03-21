@@ -122,6 +122,7 @@ These rules apply to all Effect-TS code in both backend and frontend. They are d
   - `<name>-service-live.ts` — only layer wiring. Use `Layer.succeed(Tag, new Impl())` when there are no Effect DI dependencies, or `Layer.effect(Tag, Effect.gen(...))` to resolve dependencies and pass them to the constructor.
   - `index.ts` — barrel re-exports (Tag, interface types, Live layer).
 - **Use "service" naming**, not "controller". Frontend business logic modules are services (`SiteService`, `services/site/`), not controllers.
+- **No `useEffect` in new component code** (shadcn/ui components excluded). Side effects (data fetching, subscriptions, auto-selection) belong in the service layer, not in React components. Use service `bootstrap()` methods triggered from layout-level bootstrapping (e.g., `AuthBouncer`) instead.
 
 ## Code Style Rules
 

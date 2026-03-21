@@ -43,6 +43,7 @@
     "vitest": "^4.0.0"
   },
   "devDependencies": {
+    "eslint-plugin-react-hooks": "^7.0.1",
     "oxfmt": "^0.41.0"
   },
   "lint-staged": {

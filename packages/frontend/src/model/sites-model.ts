@@ -23,6 +23,7 @@ export interface PaginationMeta {
 
 export interface SitesModelService {
   readonly sites$: BehaviorSubject<SiteWithCounts[]>;
+  readonly selectedSiteId$: BehaviorSubject<string | null>;
   readonly loading$: BehaviorSubject<boolean>;
   readonly error$: BehaviorSubject<string | null>;
   readonly pagination$: BehaviorSubject<PaginationMeta | null>;
@@ -31,6 +32,7 @@ export interface SitesModelService {
 // Singleton instance shared between Effect DI and React
 const instance: SitesModelService = {
   sites$: new BehaviorSubject<SiteWithCounts[]>([]),
+  selectedSiteId$: new BehaviorSubject<string | null>(null),
   loading$: new BehaviorSubject(false),
   error$: new BehaviorSubject<string | null>(null),
   pagination$: new BehaviorSubject<PaginationMeta | null>(null),

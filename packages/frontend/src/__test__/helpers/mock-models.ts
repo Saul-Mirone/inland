@@ -65,6 +65,7 @@ export const MockAuthModelLive = Layer.succeed(AuthModel, mockAuthModel);
 
 export const mockSitesModel: SitesModelService = {
   sites$: new BehaviorSubject<SiteWithCounts[]>([]),
+  selectedSiteId$: new BehaviorSubject<string | null>(null),
   loading$: new BehaviorSubject(false),
   error$: new BehaviorSubject<string | null>(null),
   pagination$: new BehaviorSubject<PaginationMeta | null>(null),
@@ -72,6 +73,7 @@ export const mockSitesModel: SitesModelService = {
 
 export const resetMockSitesModel = () => {
   mockSitesModel.sites$.next([]);
+  mockSitesModel.selectedSiteId$.next(null);
   mockSitesModel.loading$.next(false);
   mockSitesModel.error$.next(null);
   mockSitesModel.pagination$.next(null);

@@ -3,13 +3,17 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { Toaster } from 'sonner';
 
+import { TooltipProvider } from '@/components/ui/tooltip';
+
 import { AppRouter } from './router';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AppRouter />
-      <Toaster richColors />
+      <TooltipProvider>
+        <AppRouter />
+        <Toaster richColors />
+      </TooltipProvider>
     </BrowserRouter>
   </StrictMode>
 );
