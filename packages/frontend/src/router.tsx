@@ -1,7 +1,6 @@
 import { Route, Routes } from 'react-router';
 
 import { AppLayout } from './components/layout/app-layout';
-import { ArticlesPage } from './routes/articles';
 import { ArticleEditPage } from './routes/articles/article-edit';
 import { ArticleGuard } from './routes/articles/article-guard';
 import { AuthBouncer } from './routes/auth-bouncer';
@@ -16,7 +15,6 @@ export const AppRouter = () => (
       <Route element={<Home />}>
         <Route element={<AppLayout />}>
           <Route index element={<Welcome />} />
-          <Route path="articles" element={<ArticlesPage />} />
           <Route path="articles/:id" element={<ArticleGuard />}>
             <Route index element={<ArticleEditPage />} />
           </Route>

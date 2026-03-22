@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { articlesModel } from '@/model/articles-model';
 import { ArticleService } from '@/services/article';
 import { runEffect } from '@/utils/effect-runtime';
+import { fireAndForget } from '@/utils/fire-and-forget';
 import { useObservable } from '@/utils/use-observable';
 
 export function ArticleEditPage() {
@@ -47,7 +48,7 @@ export function ArticleEditPage() {
     }
     void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.deleteCurrentArticle())
-    ).then(() => navigate('/articles'));
+    ).then(() => fireAndForget(navigate('/')));
   };
 
   const handlePublish = () => {
@@ -134,14 +135,9 @@ export function ArticleEditPage() {
           />
         </div>
 
-        <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={editing.saving}>
-            {editing.saving ? 'Saving...' : 'Save'}
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/articles')}>
-            Back to list
-          </Button>
-        </div>
+        <Button onClick={handleSave} disabled={editing.saving}>
+          {editing.saving ? 'Saving...' : 'Save'}
+        </Button>
       </div>
     </div>
   );
