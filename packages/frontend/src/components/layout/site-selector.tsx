@@ -42,7 +42,7 @@ export function SiteSelector() {
                 />
               }
             >
-              <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <Globe className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
