@@ -7,15 +7,15 @@ import { ArticleGuard } from './routes/articles/article-guard';
 import { AuthBouncer } from './routes/auth-bouncer';
 import { AuthCallback } from './routes/auth-callback';
 import { AuthError } from './routes/auth-error';
-import { Dashboard } from './routes/dashboard';
 import { Home } from './routes/home';
+import { Welcome } from './routes/welcome';
 
 export const AppRouter = () => (
   <Routes>
     <Route element={<AuthBouncer />}>
       <Route element={<Home />}>
         <Route element={<AppLayout />}>
-          <Route index element={<Dashboard />} />
+          <Route index element={<Welcome />} />
           <Route path="articles" element={<ArticlesPage />} />
           <Route path="articles/:id" element={<ArticleGuard />}>
             <Route index element={<ArticleEditPage />} />

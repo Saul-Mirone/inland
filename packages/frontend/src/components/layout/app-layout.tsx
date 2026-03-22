@@ -18,8 +18,8 @@ export function AppLayout() {
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4!" />
         </header>
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-4xl">
+        <div className="flex flex-1 overflow-y-auto p-6">
+          <div className="mx-auto flex max-w-4xl flex-1 flex-col">
             <Outlet />
           </div>
         </div>

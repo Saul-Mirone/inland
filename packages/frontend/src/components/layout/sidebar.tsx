@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { FileText, LayoutDashboard, LogOut, Plus } from 'lucide-react';
+import { FileText, LogOut, Plus } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
 import {
@@ -18,7 +18,6 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
   SidebarRail,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { articlesModel } from '@/model/articles-model';
 import { authModel } from '@/model/auth-model';
@@ -30,8 +29,6 @@ import { fireAndForget } from '@/utils/fire-and-forget';
 import { useObservable } from '@/utils/use-observable';
 
 import { SiteSelector } from './site-selector';
-
-const navItems = [{ path: '/', label: 'Dashboard', icon: LayoutDashboard }];
 
 export function AppSidebar() {
   const location = useLocation();
@@ -48,34 +45,6 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => {
-                const isActive =
-                  item.path === '/'
-                    ? location.pathname === '/'
-                    : location.pathname.startsWith(item.path);
-
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      tooltip={item.label}
-                      render={<Link to={item.path} />}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
         <SidebarGroup>
           <SidebarGroupLabel>Articles</SidebarGroupLabel>
           <SidebarGroupAction
