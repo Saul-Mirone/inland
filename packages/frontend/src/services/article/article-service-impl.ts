@@ -1,7 +1,11 @@
 import { Effect } from 'effect';
 import { toast } from 'sonner';
 
-import type { Article, ArticlesModelService } from '@/model/articles-model';
+import type {
+  Article,
+  ArticlesModelService,
+  EditingState,
+} from '@/model/articles-model';
 import type { ApiClientService, ApiError } from '@/services/api';
 import type { NavigationServiceInterface } from '@/services/navigation';
 
@@ -38,6 +42,104 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
   private pushError(error: ApiError): void {
     pushServiceError(this.model, this.nav, error);
   }
+
+  openArticle = (id: string): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      this.model.loading$.next(true);
+      this.model.error$.next(null);
+
+      const data = yield* this.api.get<{ article: Article }>(`/articles/${id}`);
+
+      this.model.currentArticle$.next(data.article);
+      this.model.editing$.next({
+        title: data.article.title,
+        slug: data.article.slug,
+        content: data.article.content,
+        status: data.article.status,
+        saving: false,
+      });
+      this.model.loading$.next(false);
+    }).pipe(
+      Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
+    );
+
+  updateEditField = <K extends keyof EditingState>(
+    field: K,
+    value: EditingState[K]
+  ): Effect.Effect<void> =>
+    Effect.sync(() => {
+      const current = this.model.editing$.getValue();
+      this.model.editing$.next({ ...current, [field]: value });
+    });
+
+  saveCurrentArticle = (): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      const article = this.model.currentArticle$.getValue();
+      if (!article) return;
+
+      const editing = this.model.editing$.getValue();
+      this.model.editing$.next({ ...editing, saving: true });
+
+      yield* this.updateArticle(article.id, {
+        siteId: article.siteId,
+        title: editing.title,
+        slug: editing.slug,
+        content: editing.content,
+        status: editing.status,
+      });
+
+      this.model.editing$.next({ ...editing, saving: false });
+    });
+
+  deleteCurrentArticle = (): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      const article = this.model.currentArticle$.getValue();
+      if (!article) return;
+      yield* this.deleteArticle(article.id);
+      this.model.currentArticle$.next(null);
+    });
+
+  publishCurrentArticle = (): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      const article = this.model.currentArticle$.getValue();
+      if (!article) return;
+      yield* this.publishArticle(article.id);
+      this.model.editing$.next({
+        ...this.model.editing$.getValue(),
+        status: 'published',
+      });
+    });
+
+  quickCreate = (siteId: string): Effect.Effect<string> =>
+    Effect.gen(this, function* () {
+      const existing = this.model.articles$.getValue();
+      const untitledCount = existing.filter((a) =>
+        a.title.startsWith('Untitled')
+      ).length;
+      const title =
+        untitledCount === 0 ? 'Untitled' : `Untitled ${untitledCount + 1}`;
+
+      const result = yield* this.api.post<{ article: Article }>('/articles', {
+        siteId,
+        title,
+        content: '',
+        status: 'draft' as const,
+      });
+
+      this.model.articles$.next([
+        result.article,
+        ...this.model.articles$.getValue(),
+      ]);
+
+      return result.article.id;
+    }).pipe(
+      Effect.catchAll((error) =>
+        Effect.sync(() => {
+          this.pushError(error);
+          return '';
+        })
+      )
+    );
 
   fetchArticles = (siteId?: string): Effect.Effect<void> =>
     Effect.gen(this, function* () {

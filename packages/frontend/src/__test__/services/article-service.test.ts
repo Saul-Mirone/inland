@@ -236,4 +236,310 @@ describe('ArticleService', () => {
       expect(mockArticlesModel.publishingId$.getValue()).toBe(null);
     });
   });
+
+  describe('openArticle', () => {
+    it('should fetch article and populate editing state', async () => {
+      const article = mockArticle({
+        id: 'a1',
+        title: 'Hello',
+        slug: 'hello',
+        content: 'World',
+        status: 'published',
+      });
+      mockApi.get.mockReturnValue(apiSuccess({ article }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.openArticle('a1');
+        })
+      );
+
+      expect(mockApi.get).toHaveBeenCalledWith('/articles/a1');
+      expect(mockArticlesModel.currentArticle$.getValue()).toEqual(article);
+      const editing = mockArticlesModel.editing$.getValue();
+      expect(editing.title).toBe('Hello');
+      expect(editing.slug).toBe('hello');
+      expect(editing.content).toBe('World');
+      expect(editing.status).toBe('published');
+      expect(editing.saving).toBe(false);
+      expect(mockArticlesModel.loading$.getValue()).toBe(false);
+    });
+
+    it('should set loading state during fetch', async () => {
+      const loadingStates: boolean[] = [];
+      mockApi.get.mockImplementation(() => {
+        loadingStates.push(mockArticlesModel.loading$.getValue());
+        return apiSuccess({ article: mockArticle() });
+      });
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.openArticle('a1');
+        })
+      );
+
+      expect(loadingStates[0]).toBe(true);
+      expect(mockArticlesModel.loading$.getValue()).toBe(false);
+    });
+
+    it('should handle API errors', async () => {
+      mockApi.get.mockReturnValue(apiError(404, 'Not found'));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.openArticle('missing');
+        })
+      );
+
+      expect(mockArticlesModel.error$.getValue()).toBe('Not found');
+    });
+  });
+
+  describe('quickCreate', () => {
+    it('should create article and return id', async () => {
+      const article = mockArticle({ id: 'new-1', title: 'Untitled' });
+      mockApi.post.mockReturnValue(apiSuccess({ article }));
+
+      const id = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          return yield* service.quickCreate('site-1');
+        })
+      );
+
+      expect(id).toBe('new-1');
+      expect(mockApi.post).toHaveBeenCalledWith('/articles', {
+        siteId: 'site-1',
+        title: 'Untitled',
+        content: '',
+        status: 'draft',
+      });
+    });
+
+    it('should prepend new article to articles list', async () => {
+      const existing = mockArticle({ id: 'old', title: 'Old' });
+      mockArticlesModel.articles$.next([existing]);
+
+      const created = mockArticle({ id: 'new-1', title: 'Untitled' });
+      mockApi.post.mockReturnValue(apiSuccess({ article: created }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.quickCreate('site-1');
+        })
+      );
+
+      const articles = mockArticlesModel.articles$.getValue();
+      expect(articles).toHaveLength(2);
+      expect(articles[0].id).toBe('new-1');
+      expect(articles[1].id).toBe('old');
+    });
+
+    it('should increment title when Untitled exists', async () => {
+      mockArticlesModel.articles$.next([mockArticle({ title: 'Untitled' })]);
+
+      const created = mockArticle({ id: 'new-2', title: 'Untitled 2' });
+      mockApi.post.mockReturnValue(apiSuccess({ article: created }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.quickCreate('site-1');
+        })
+      );
+
+      expect(mockApi.post).toHaveBeenCalledWith('/articles', {
+        siteId: 'site-1',
+        title: 'Untitled 2',
+        content: '',
+        status: 'draft',
+      });
+    });
+
+    it('should return empty string on error', async () => {
+      mockApi.post.mockReturnValue(apiError(500, 'Server error'));
+
+      const id = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          return yield* service.quickCreate('site-1');
+        })
+      );
+
+      expect(id).toBe('');
+      expect(mockArticlesModel.error$.getValue()).toBe('Server error');
+    });
+  });
+
+  describe('updateEditField', () => {
+    it('should update a single field in editing state', async () => {
+      mockArticlesModel.editing$.next({
+        title: 'Old',
+        slug: 'old',
+        content: '',
+        status: 'draft',
+        saving: false,
+      });
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.updateEditField('title', 'New Title');
+        })
+      );
+
+      const editing = mockArticlesModel.editing$.getValue();
+      expect(editing.title).toBe('New Title');
+      expect(editing.slug).toBe('old');
+    });
+  });
+
+  describe('saveCurrentArticle', () => {
+    it('should save using editing state and current article id', async () => {
+      const article = mockArticle({ id: 'a1', siteId: 'site-1' });
+      mockArticlesModel.currentArticle$.next(article);
+      mockArticlesModel.editing$.next({
+        title: 'Updated Title',
+        slug: 'updated-slug',
+        content: 'Updated content',
+        status: 'published',
+        saving: false,
+      });
+      mockApi.put.mockReturnValue(apiSuccess({}));
+      mockApi.get.mockReturnValue(apiSuccess({ articles: [] }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.saveCurrentArticle();
+        })
+      );
+
+      expect(mockApi.put).toHaveBeenCalledWith('/articles/a1', {
+        siteId: 'site-1',
+        title: 'Updated Title',
+        slug: 'updated-slug',
+        content: 'Updated content',
+        status: 'published',
+      });
+    });
+
+    it('should set saving flag during save', async () => {
+      mockArticlesModel.currentArticle$.next(mockArticle({ id: 'a1' }));
+      mockArticlesModel.editing$.next({
+        title: 'T',
+        slug: 's',
+        content: 'C',
+        status: 'draft',
+        saving: false,
+      });
+
+      const savingStates: boolean[] = [];
+      mockApi.put.mockImplementation(() => {
+        savingStates.push(mockArticlesModel.editing$.getValue().saving);
+        return apiSuccess({});
+      });
+      mockApi.get.mockReturnValue(apiSuccess({ articles: [] }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.saveCurrentArticle();
+        })
+      );
+
+      expect(savingStates[0]).toBe(true);
+      expect(mockArticlesModel.editing$.getValue().saving).toBe(false);
+    });
+
+    it('should do nothing when no current article', async () => {
+      mockArticlesModel.currentArticle$.next(null);
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.saveCurrentArticle();
+        })
+      );
+
+      expect(mockApi.put).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteCurrentArticle', () => {
+    it('should delete current article and clear it from model', async () => {
+      const article = mockArticle({ id: 'a1' });
+      mockArticlesModel.currentArticle$.next(article);
+      mockArticlesModel.articles$.next([article]);
+      mockApi.del.mockReturnValue(apiSuccess({ hasGitHubRepo: false }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.deleteCurrentArticle();
+        })
+      );
+
+      expect(mockApi.del).toHaveBeenCalledWith('/articles/a1');
+      expect(mockArticlesModel.currentArticle$.getValue()).toBe(null);
+    });
+
+    it('should do nothing when no current article', async () => {
+      mockArticlesModel.currentArticle$.next(null);
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.deleteCurrentArticle();
+        })
+      );
+
+      expect(mockApi.del).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('publishCurrentArticle', () => {
+    it('should publish current article and update editing status', async () => {
+      const article = mockArticle({ id: 'a1', status: 'draft' });
+      mockArticlesModel.currentArticle$.next(article);
+      mockArticlesModel.articles$.next([article]);
+      mockArticlesModel.editing$.next({
+        title: 'T',
+        slug: 's',
+        content: 'C',
+        status: 'draft',
+        saving: false,
+      });
+      mockApi.post.mockReturnValue(
+        apiSuccess({ wasUpdate: false, filePath: 'posts/t.md' })
+      );
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.publishCurrentArticle();
+        })
+      );
+
+      expect(mockApi.post).toHaveBeenCalledWith('/articles/a1/publish');
+      expect(mockArticlesModel.editing$.getValue().status).toBe('published');
+    });
+
+    it('should do nothing when no current article', async () => {
+      mockArticlesModel.currentArticle$.next(null);
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.publishCurrentArticle();
+        })
+      );
+
+      expect(mockApi.post).not.toHaveBeenCalled();
+    });
+  });
 });

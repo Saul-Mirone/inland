@@ -1,5 +1,4 @@
 import { Effect } from 'effect';
-import { useEffect } from 'react';
 
 import type { Article } from '@/model/articles-model';
 
@@ -10,22 +9,15 @@ import { runEffect } from '@/utils/effect-runtime';
 import { useObservable } from '@/utils/use-observable';
 
 interface ArticleListProps {
-  siteId?: string;
   onEditArticle?: (article: Article) => void;
 }
 
-export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
+export const ArticleList = ({ onEditArticle }: ArticleListProps) => {
   const articles = useObservable(articlesModel.articles$);
   const loading = useObservable(articlesModel.loading$);
   const error = useObservable(articlesModel.error$);
   const deletingId = useObservable(articlesModel.deletingId$);
   const publishingId = useObservable(articlesModel.publishingId$);
-
-  useEffect(() => {
-    void runEffect(
-      Effect.flatMap(ArticleService, (svc) => svc.fetchArticles(siteId))
-    );
-  }, [siteId]);
 
   const handleDelete = (articleId: string) => {
     if (
@@ -58,9 +50,7 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">
-        {siteId ? 'Site Articles' : 'All Articles'}
-      </h2>
+      <h2 className="text-xl font-semibold">Articles</h2>
       {articles.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No articles yet. Create your first article!
@@ -79,7 +69,7 @@ export const ArticleList = ({ siteId, onEditArticle }: ArticleListProps) => {
               <p className="text-sm text-muted-foreground">
                 Status: {article.status}
               </p>
-              {!siteId && (
+              {article.site && (
                 <p className="text-sm text-muted-foreground">
                   Site: {article.site.name}
                 </p>

@@ -16,8 +16,26 @@ export interface Article {
   };
 }
 
+export interface EditingState {
+  title: string;
+  slug: string;
+  content: string;
+  status: 'draft' | 'published';
+  saving: boolean;
+}
+
+const INITIAL_EDITING: EditingState = {
+  title: '',
+  slug: '',
+  content: '',
+  status: 'draft',
+  saving: false,
+};
+
 export interface ArticlesModelService {
   readonly articles$: BehaviorSubject<Article[]>;
+  readonly currentArticle$: BehaviorSubject<Article | null>;
+  readonly editing$: BehaviorSubject<EditingState>;
   readonly loading$: BehaviorSubject<boolean>;
   readonly error$: BehaviorSubject<string | null>;
   readonly deletingId$: BehaviorSubject<string | null>;
@@ -26,6 +44,8 @@ export interface ArticlesModelService {
 
 const instance: ArticlesModelService = {
   articles$: new BehaviorSubject<Article[]>([]),
+  currentArticle$: new BehaviorSubject<Article | null>(null),
+  editing$: new BehaviorSubject<EditingState>(INITIAL_EDITING),
   loading$: new BehaviorSubject(false),
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),

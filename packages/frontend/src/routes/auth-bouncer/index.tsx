@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router';
 
 import { authModel } from '@/model/auth-model';
+import { sitesModel } from '@/model/sites-model';
+import { ArticleService } from '@/services/article';
 import { AuthService } from '@/services/auth';
 import { SiteService } from '@/services/site';
 import { runEffect } from '@/utils/effect-runtime';
@@ -19,6 +21,11 @@ export function AuthBouncer() {
         if (result.status === 'authenticated') {
           const site = yield* SiteService;
           yield* site.bootstrap();
+          const selectedSiteId = sitesModel.selectedSiteId$.getValue();
+          if (selectedSiteId) {
+            const article = yield* ArticleService;
+            yield* article.fetchArticles(selectedSiteId);
+          }
         }
       })
     );

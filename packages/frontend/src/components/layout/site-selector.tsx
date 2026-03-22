@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import { ChevronsUpDown, Globe, Plus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -18,6 +19,8 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { sitesModel } from '@/model/sites-model';
+import { ArticleService } from '@/services/article';
+import { runEffect } from '@/utils/effect-runtime';
 import { useObservable } from '@/utils/use-observable';
 
 export function SiteSelector() {
@@ -72,6 +75,11 @@ export function SiteSelector() {
                     key={site.id}
                     onClick={() => {
                       sitesModel.selectedSiteId$.next(site.id);
+                      void runEffect(
+                        Effect.flatMap(ArticleService, (svc) =>
+                          svc.fetchArticles(site.id)
+                        )
+                      );
                     }}
                     className="gap-2 p-2"
                   >

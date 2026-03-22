@@ -5,6 +5,7 @@ import {
   ArticlesModel,
   type Article,
   type ArticlesModelService,
+  type EditingState,
 } from '@/model/articles-model';
 import {
   AuthModel,
@@ -22,6 +23,14 @@ import {
 
 export const mockArticlesModel: ArticlesModelService = {
   articles$: new BehaviorSubject<Article[]>([]),
+  currentArticle$: new BehaviorSubject<Article | null>(null),
+  editing$: new BehaviorSubject<EditingState>({
+    title: '',
+    slug: '',
+    content: '',
+    status: 'draft',
+    saving: false,
+  }),
   loading$: new BehaviorSubject(false),
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),
@@ -30,6 +39,14 @@ export const mockArticlesModel: ArticlesModelService = {
 
 export const resetMockArticlesModel = () => {
   mockArticlesModel.articles$.next([]);
+  mockArticlesModel.currentArticle$.next(null);
+  mockArticlesModel.editing$.next({
+    title: '',
+    slug: '',
+    content: '',
+    status: 'draft',
+    saving: false,
+  });
   mockArticlesModel.loading$.next(false);
   mockArticlesModel.error$.next(null);
   mockArticlesModel.deletingId$.next(null);
