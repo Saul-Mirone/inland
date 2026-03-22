@@ -9,7 +9,7 @@ import { useObservable } from '@/utils/use-observable';
 export function ArticleGuard() {
   const { id } = useParams<{ id: string }>();
   const currentArticle = useObservable(articlesModel.currentArticle$);
-  const loading = useObservable(articlesModel.loading$);
+  const loading = useObservable(articlesModel.articleLoading$);
 
   const needsLoad = id && currentArticle?.id !== id && !loading;
 

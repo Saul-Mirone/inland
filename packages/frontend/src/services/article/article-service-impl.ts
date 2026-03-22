@@ -45,7 +45,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
 
   openArticle = (id: string): Effect.Effect<void> =>
     Effect.gen(this, function* () {
-      this.model.loading$.next(true);
+      this.model.articleLoading$.next(true);
       this.model.error$.next(null);
 
       const data = yield* this.api.get<{ article: Article }>(`/articles/${id}`);
@@ -58,7 +58,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         status: data.article.status,
         saving: false,
       });
-      this.model.loading$.next(false);
+      this.model.articleLoading$.next(false);
     }).pipe(
       Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
     );

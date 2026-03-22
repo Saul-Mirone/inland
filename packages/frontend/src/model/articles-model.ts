@@ -37,6 +37,7 @@ export interface ArticlesModelService {
   readonly currentArticle$: BehaviorSubject<Article | null>;
   readonly editing$: BehaviorSubject<EditingState>;
   readonly loading$: BehaviorSubject<boolean>;
+  readonly articleLoading$: BehaviorSubject<boolean>;
   readonly error$: BehaviorSubject<string | null>;
   readonly deletingId$: BehaviorSubject<string | null>;
   readonly publishingId$: BehaviorSubject<string | null>;
@@ -47,6 +48,7 @@ const instance: ArticlesModelService = {
   currentArticle$: new BehaviorSubject<Article | null>(null),
   editing$: new BehaviorSubject<EditingState>(INITIAL_EDITING),
   loading$: new BehaviorSubject(false),
+  articleLoading$: new BehaviorSubject(false),
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),
   publishingId$: new BehaviorSubject<string | null>(null),

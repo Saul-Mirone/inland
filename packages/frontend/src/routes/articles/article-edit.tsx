@@ -20,7 +20,7 @@ export function ArticleEditPage() {
   const navigate = useNavigate();
   const currentArticle = useObservable(articlesModel.currentArticle$);
   const editing = useObservable(articlesModel.editing$);
-  const loading = useObservable(articlesModel.loading$);
+  const loading = useObservable(articlesModel.articleLoading$);
 
   const updateField = <K extends keyof typeof editing>(
     field: K,

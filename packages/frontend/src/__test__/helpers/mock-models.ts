@@ -32,6 +32,7 @@ export const mockArticlesModel: ArticlesModelService = {
     saving: false,
   }),
   loading$: new BehaviorSubject(false),
+  articleLoading$: new BehaviorSubject(false),
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),
   publishingId$: new BehaviorSubject<string | null>(null),
@@ -48,6 +49,7 @@ export const resetMockArticlesModel = () => {
     saving: false,
   });
   mockArticlesModel.loading$.next(false);
+  mockArticlesModel.articleLoading$.next(false);
   mockArticlesModel.error$.next(null);
   mockArticlesModel.deletingId$.next(null);
   mockArticlesModel.publishingId$.next(null);

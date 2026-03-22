@@ -263,13 +263,13 @@ describe('ArticleService', () => {
       expect(editing.content).toBe('World');
       expect(editing.status).toBe('published');
       expect(editing.saving).toBe(false);
-      expect(mockArticlesModel.loading$.getValue()).toBe(false);
+      expect(mockArticlesModel.articleLoading$.getValue()).toBe(false);
     });
 
-    it('should set loading state during fetch', async () => {
+    it('should set articleLoading state during fetch', async () => {
       const loadingStates: boolean[] = [];
       mockApi.get.mockImplementation(() => {
-        loadingStates.push(mockArticlesModel.loading$.getValue());
+        loadingStates.push(mockArticlesModel.articleLoading$.getValue());
         return apiSuccess({ article: mockArticle() });
       });
 
@@ -281,7 +281,7 @@ describe('ArticleService', () => {
       );
 
       expect(loadingStates[0]).toBe(true);
-      expect(mockArticlesModel.loading$.getValue()).toBe(false);
+      expect(mockArticlesModel.articleLoading$.getValue()).toBe(false);
     });
 
     it('should handle API errors', async () => {
