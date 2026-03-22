@@ -4,6 +4,7 @@ import { Outlet, useParams } from 'react-router';
 import { articlesModel } from '@/model/articles-model';
 import { ArticleService } from '@/services/article';
 import { runEffect } from '@/utils/effect-runtime';
+import { logger } from '@/utils/logger';
 import { useObservable } from '@/utils/use-observable';
 
 export function ArticleGuard() {
@@ -14,9 +15,11 @@ export function ArticleGuard() {
   const needsLoad = id && currentArticle?.id !== id && !loading;
 
   if (needsLoad) {
-    void runEffect(
+    runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.openArticle(id))
-    );
+    ).catch((error) => {
+      logger.error(error);
+    });
 
     return (
       <div className="text-sm text-muted-foreground">Loading article...</div>

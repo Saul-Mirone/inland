@@ -52,7 +52,10 @@ export function CreateSiteForm({ onSuccess }: { onSuccess: () => void }) {
           onSuccess();
           return undefined;
         },
-        () => undefined
+        () => {
+          setError('Failed to create site');
+          return undefined;
+        }
       )
       .finally(() => setLoading(false));
   };

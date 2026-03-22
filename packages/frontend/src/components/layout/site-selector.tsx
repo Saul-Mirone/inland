@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/sidebar';
 import { sitesModel } from '@/model/sites-model';
 import { ArticleService } from '@/services/article';
+import { SiteService } from '@/services/site';
 import { runEffect } from '@/utils/effect-runtime';
 import { useObservable } from '@/utils/use-observable';
 
@@ -74,11 +75,13 @@ export function SiteSelector() {
                   <DropdownMenuItem
                     key={site.id}
                     onClick={() => {
-                      sitesModel.selectedSiteId$.next(site.id);
                       void runEffect(
-                        Effect.flatMap(ArticleService, (svc) =>
-                          svc.fetchArticles(site.id)
-                        )
+                        Effect.gen(function* () {
+                          const siteSvc = yield* SiteService;
+                          yield* siteSvc.selectSite(site.id);
+                          const articleSvc = yield* ArticleService;
+                          yield* articleSvc.fetchArticles(site.id);
+                        })
                       );
                     }}
                     className="gap-2 p-2"

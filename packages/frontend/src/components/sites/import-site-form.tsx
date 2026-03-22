@@ -74,7 +74,10 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
           onSuccess();
           return undefined;
         },
-        () => undefined
+        () => {
+          setError('Failed to import repository');
+          return undefined;
+        }
       )
       .finally(() => setLoading(false));
   };

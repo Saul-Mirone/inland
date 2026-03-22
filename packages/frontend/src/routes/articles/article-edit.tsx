@@ -108,9 +108,11 @@ export function ArticleEditPage() {
           </label>
           <Select
             value={editing.status}
-            onValueChange={(v) =>
-              updateField('status', v as 'draft' | 'published')
-            }
+            onValueChange={(v) => {
+              if (v === 'draft' || v === 'published') {
+                updateField('status', v);
+              }
+            }}
           >
             <SelectTrigger className="w-40">
               <SelectValue />
