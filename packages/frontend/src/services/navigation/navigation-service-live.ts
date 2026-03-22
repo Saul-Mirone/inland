@@ -1,14 +1,9 @@
 import { Layer } from 'effect';
 
 import { NavigationService } from './navigation-service';
+import { NavigationServiceImpl } from './navigation-service-impl';
 
-export const NavigationServiceLive = Layer.succeed(NavigationService, {
-  navigate: (url: string) => {
-    window.location.assign(url);
-  },
-  navigateDelayed: (url: string, delayMs: number) => {
-    setTimeout(() => {
-      window.location.href = url;
-    }, delayMs);
-  },
-});
+export const NavigationServiceLive = Layer.succeed(
+  NavigationService,
+  new NavigationServiceImpl()
+);

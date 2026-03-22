@@ -1,5 +1,4 @@
 import { Effect } from 'effect';
-import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { sitesModel } from '@/model/sites-model';
@@ -11,10 +10,6 @@ export const SiteList = () => {
   const sites = useObservable(sitesModel.sites$);
   const loading = useObservable(sitesModel.loading$);
   const error = useObservable(sitesModel.error$);
-
-  useEffect(() => {
-    void runEffect(Effect.flatMap(SiteService, (svc) => svc.fetchSites()));
-  }, []);
 
   const handleDelete = (siteId: string) => {
     if (

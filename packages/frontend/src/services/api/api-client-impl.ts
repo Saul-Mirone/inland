@@ -4,6 +4,19 @@ import type { ApiClientService } from './api-client';
 
 import { ApiError } from './api-error';
 
+function isErrorResponse(data: unknown): data is { error: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'error' in data &&
+    typeof (data as { error: unknown }).error === 'string'
+  );
+}
+
+function extractErrorMessage(data: unknown): string | undefined {
+  return isErrorResponse(data) ? data.error : undefined;
+}
+
 export class ApiClientImpl implements ApiClientService {
   private readonly baseUrl: string;
   private refreshPromise: Promise<boolean> | null = null;
@@ -82,24 +95,15 @@ export class ApiClientImpl implements ApiClientService {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          const errorData: unknown = await response.json().catch(() => ({}));
           const message =
-            typeof errorData === 'object' &&
-            errorData !== null &&
-            'error' in errorData &&
-            typeof (errorData as Record<string, unknown>).error === 'string'
-              ? ((errorData as Record<string, string>).error as string)
-              : `Request failed with status ${response.status}`;
-
-          let redirectUrl: string | undefined;
-          if (response.status === 401) {
-            redirectUrl = '/';
-          }
+            extractErrorMessage(errorData) ??
+            `Request failed with status ${response.status}`;
 
           throw new ApiError({
             status: response.status,
             message,
-            redirectUrl,
+            redirectUrl: response.status === 401 ? '/' : undefined,
           });
         }
 
@@ -107,10 +111,10 @@ export class ApiClientImpl implements ApiClientService {
           response.status === 204 ||
           response.headers.get('content-length') === '0'
         ) {
-          return {} as T;
+          return undefined as T;
         }
 
-        return (await response.json()) as T;
+        return await response.json();
       },
       catch: (error) => {
         if (error instanceof ApiError) return error;
