@@ -27,9 +27,9 @@ await fastify.register(import('@fastify/cors'), {
   allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
-await fastify.register(authRoutes);
-await fastify.register(siteRoutes);
-await fastify.register(articleRoutes);
+await fastify.register(authRoutes, { prefix: '/api' });
+await fastify.register(siteRoutes, { prefix: '/api' });
+await fastify.register(articleRoutes, { prefix: '/api' });
 
 fastify.get('/', async () => {
   return { message: 'Inland CMS Backend with Effect-TS!' };

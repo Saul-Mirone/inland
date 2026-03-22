@@ -44,7 +44,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
         tokenPath: '/login/oauth/access_token',
       },
     },
-    startRedirectPath: '/auth/github',
+    startRedirectPath: '/api/auth/github',
     callbackUri: config.authCallbackUrl,
     scope: ['user:email', 'public_repo', 'workflow'],
   });

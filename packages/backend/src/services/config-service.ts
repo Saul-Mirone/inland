@@ -31,7 +31,7 @@ export function resolveConfig(): AppConfig {
     githubClientSecret: process.env.GITHUB_CLIENT_SECRET || '',
     authCallbackUrl:
       process.env.AUTH_CALLBACK_URL ||
-      'http://localhost:3001/auth/github/callback',
+      'http://localhost:3001/api/auth/github/callback',
     appUrl: process.env.APP_URL || 'http://localhost:3000',
     apiUrl: process.env.API_URL || 'http://localhost:3001',
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6381',
