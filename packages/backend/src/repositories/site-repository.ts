@@ -9,6 +9,7 @@ import type { RepositoryError } from './repository-error';
 // Domain types for Site operations
 export interface SiteCreateData {
   readonly name: string;
+  readonly displayName?: string | null;
   readonly userId: string;
   readonly gitRepo?: string | null;
   readonly platform?: string;
@@ -44,6 +45,7 @@ export interface SiteWithDetails extends Site {
 
 export interface SiteUpdateData {
   readonly name?: string;
+  readonly displayName?: string;
   readonly gitRepo?: string;
   readonly platform?: string;
   readonly deployStatus?: string;

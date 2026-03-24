@@ -10,7 +10,7 @@ import {
   SiteCreationError,
   type ImportRepoData,
 } from '../site-types';
-import { generateSlug } from '../site-utils';
+import { generateSlug, resolveDisplayName } from '../site-utils';
 
 export const importRepo = (data: ImportRepoData) =>
   Effect.gen(function* () {
@@ -48,7 +48,7 @@ export const importRepo = (data: ImportRepoData) =>
         accessToken,
         data.gitRepoFullName,
         {
-          siteName: data.name,
+          siteName: resolveDisplayName(data),
           siteDescription: data.description || `Blog site: ${data.name}`,
           siteNameSlug: generateSlug(data.name),
           siteAuthor: platformUser.displayName || platformUser.username,
@@ -91,6 +91,7 @@ export const importRepo = (data: ImportRepoData) =>
     const site = yield* siteRepo.create({
       userId: data.userId,
       name: data.name,
+      displayName: data.displayName,
       gitRepo: data.gitRepoFullName,
       platform: data.platform || 'github',
       deployStatus: pagesUrl ? 'deployed' : 'pending',

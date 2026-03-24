@@ -35,6 +35,10 @@ export function SiteSelector() {
   const navigate = useNavigate();
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId);
+  const siteLabel =
+    selectedSite?.displayName ??
+    selectedSite?.name ??
+    (loading ? 'Loading...' : 'No sites');
 
   const handleDeleteSite = async (
     e: React.MouseEvent,
@@ -92,9 +96,7 @@ export function SiteSelector() {
                 <Globe className="size-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">
-                  {selectedSite?.name ?? (loading ? 'Loading...' : 'No sites')}
-                </span>
+                <span className="truncate font-medium">{siteLabel}</span>
                 {selectedSite && (
                   <span className="truncate text-xs">
                     {selectedSite.gitRepo}
@@ -131,11 +133,19 @@ export function SiteSelector() {
                     <div className="flex size-6 items-center justify-center rounded-md border">
                       <Globe className="size-4" />
                     </div>
-                    <span className="flex-1 truncate">{site.name}</span>
+                    <span className="flex-1 truncate">
+                      {site.displayName ?? site.name}
+                    </span>
                     <button
                       type="button"
                       className="ml-auto hidden size-6 items-center justify-center rounded-md text-muted-foreground hover:text-destructive group-hover:flex"
-                      onClick={(e) => handleDeleteSite(e, site.id, site.name)}
+                      onClick={(e) =>
+                        handleDeleteSite(
+                          e,
+                          site.id,
+                          site.displayName ?? site.name
+                        )
+                      }
                     >
                       <Trash2 className="size-3.5" />
                     </button>

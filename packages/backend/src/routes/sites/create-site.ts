@@ -23,7 +23,7 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
     },
     async (request: TypedFastifyRequest<Schemas.CreateSiteData>, reply) => {
       const userPayload = request.jwtPayload!;
-      const { name, description, author } = request.validatedBody!;
+      const { name, displayName, description, author } = request.validatedBody!;
 
       const createSite = Effect.gen(function* () {
         const siteService = yield* SiteService;
@@ -33,6 +33,7 @@ export const createSiteRoute = async (fastify: FastifyInstance) => {
         const site = yield* siteService.createSite({
           userId: userPayload.userId,
           name: validName,
+          displayName,
           description,
           author,
         });

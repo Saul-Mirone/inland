@@ -6,6 +6,7 @@ import { Context } from 'effect';
 
 export interface CreateSiteData {
   name: string;
+  displayName?: string;
   description?: string;
   author?: string;
   templateOwner: string;
@@ -14,6 +15,7 @@ export interface CreateSiteData {
 
 export interface ImportSiteData {
   name: string;
+  displayName?: string;
   gitRepoFullName: string;
   description?: string;
   setupWorkflow: boolean;

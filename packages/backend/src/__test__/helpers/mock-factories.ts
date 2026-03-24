@@ -22,6 +22,7 @@ export const mockSite = (overrides: Partial<Site> = {}): Site => ({
   id: 'site-1',
   userId: 'user-1',
   name: 'Test Site',
+  displayName: null,
   gitRepo: 'testuser/test-repo',
   platform: 'github',
   deployStatus: 'deployed',

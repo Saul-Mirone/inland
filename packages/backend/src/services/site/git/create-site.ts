@@ -10,7 +10,7 @@ import {
   DuplicateSiteNameError,
   type CreateSiteData,
 } from '../site-types';
-import { generateSlug } from '../site-utils';
+import { generateSlug, resolveDisplayName } from '../site-utils';
 
 export const createSite = (data: CreateSiteData) =>
   Effect.gen(function* () {
@@ -31,7 +31,7 @@ export const createSite = (data: CreateSiteData) =>
         templateRepo: data.templateRepo || 'inland-template-basic',
       },
       {
-        siteName: data.name,
+        siteName: resolveDisplayName(data),
         siteDescription: data.description || `Blog site: ${data.name}`,
         siteNameSlug: generateSlug(data.name),
         siteAuthor:
@@ -44,6 +44,7 @@ export const createSite = (data: CreateSiteData) =>
       .create({
         userId: data.userId,
         name: data.name,
+        displayName: data.displayName,
         gitRepo: gitRepo.fullName,
         platform: 'github',
         deployStatus: 'deployed',

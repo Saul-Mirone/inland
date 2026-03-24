@@ -186,6 +186,9 @@ const updateSite = (id: string, data: SiteUpdateData) =>
           where: { id },
           data: {
             ...(data.name !== undefined && { name: data.name }),
+            ...(data.displayName !== undefined && {
+              displayName: data.displayName,
+            }),
             ...(data.gitRepo !== undefined && { gitRepo: data.gitRepo }),
             ...(data.platform !== undefined && { platform: data.platform }),
             ...(data.deployStatus !== undefined && {
@@ -219,6 +222,7 @@ const createSite = (data: SiteCreateData) =>
         prisma.site.create({
           data: {
             name: data.name,
+            displayName: data.displayName,
             userId: data.userId,
             gitRepo: data.gitRepo || '',
             platform: data.platform || 'github',

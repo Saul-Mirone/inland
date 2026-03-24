@@ -13,6 +13,7 @@ export const SiteStatus = S.Literal(
 
 export const CreateSiteData = S.Struct({
   name: S.String.pipe(S.minLength(1), S.maxLength(100)),
+  displayName: S.optional(S.String.pipe(S.maxLength(200))),
   description: S.optional(S.String.pipe(S.maxLength(500))),
   author: S.optional(S.String.pipe(S.maxLength(100))),
   templateOwner: S.optional(S.String),
@@ -21,6 +22,7 @@ export const CreateSiteData = S.Struct({
 
 export const ImportRepoData = S.Struct({
   name: S.String.pipe(S.minLength(1), S.maxLength(100)),
+  displayName: S.optional(S.String.pipe(S.maxLength(200))),
   gitRepoFullName: S.String.pipe(
     S.pattern(/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/)
   ),
@@ -33,6 +35,7 @@ export const ImportRepoData = S.Struct({
 
 export const UpdateSiteData = S.Struct({
   name: S.optional(S.String.pipe(S.minLength(1), S.maxLength(100))),
+  displayName: S.optional(S.String.pipe(S.maxLength(200))),
   gitRepo: S.optional(S.String.pipe(S.minLength(1))),
   platform: S.optional(GitPlatform),
   deployStatus: S.optional(SiteStatus),

@@ -4,6 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 export interface SiteWithCounts {
   id: string;
   name: string;
+  displayName?: string | null;
   gitRepo: string;
   platform: string;
   deployStatus: string;

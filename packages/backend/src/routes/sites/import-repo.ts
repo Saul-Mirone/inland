@@ -25,6 +25,7 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
       const userPayload = request.jwtPayload!;
       const {
         name,
+        displayName,
         gitRepoFullName,
         platform,
         setupWorkflow,
@@ -41,6 +42,7 @@ export const importRepoRoute = async (fastify: FastifyInstance) => {
         const result = yield* siteService.importRepo({
           userId: userPayload.userId,
           name: validName,
+          displayName,
           gitRepoFullName,
           platform,
           setupWorkflow,

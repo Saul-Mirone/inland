@@ -33,6 +33,9 @@ export const updateSite = (
       ...(data.name !== undefined && {
         name: yield* validateSiteName(data.name),
       }),
+      ...(data.displayName !== undefined && {
+        displayName: data.displayName,
+      }),
       ...(data.gitRepo !== undefined && {
         gitRepo: yield* validateGitRepo(data.gitRepo),
       }),

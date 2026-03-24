@@ -8,6 +8,7 @@ import { runEffect } from '@/utils/effect-runtime';
 
 const initialFormState = {
   name: '',
+  displayName: '',
   description: '',
   author: '',
   templateOwner: 'Saul-Mirone',
@@ -39,6 +40,7 @@ export function CreateSiteForm({ onSuccess }: { onSuccess: () => void }) {
       Effect.flatMap(SiteService, (svc) =>
         svc.createSite({
           name: form.name.trim(),
+          displayName: form.displayName.trim() || undefined,
           description: form.description.trim() || undefined,
           author: form.author.trim() || undefined,
           templateOwner: form.templateOwner,
@@ -64,7 +66,7 @@ export function CreateSiteForm({ onSuccess }: { onSuccess: () => void }) {
     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
       <div className="space-y-1.5">
         <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Site Name
+          Repository Name
           <Input
             type="text"
             value={form.name}
@@ -72,6 +74,24 @@ export function CreateSiteForm({ onSuccess }: { onSuccess: () => void }) {
             placeholder="my-blog"
             disabled={loading}
           />
+          <span className="text-xs text-muted-foreground">
+            Used as the GitHub repository name
+          </span>
+        </label>
+      </div>
+      <div className="space-y-1.5">
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          Display Name
+          <Input
+            type="text"
+            value={form.displayName}
+            onChange={updateField('displayName')}
+            placeholder="My Awesome Blog"
+            disabled={loading}
+          />
+          <span className="text-xs text-muted-foreground">
+            Shown as the site title. Defaults to repository name if empty.
+          </span>
         </label>
       </div>
       <div className="space-y-1.5">
