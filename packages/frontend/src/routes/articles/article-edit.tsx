@@ -126,7 +126,7 @@ export function ArticleEditPage() {
                 }
               }}
             >
-              <SelectTrigger className="h-auto w-auto gap-1 border-none bg-transparent p-0 text-sm shadow-none focus:ring-0">
+              <SelectTrigger className="h-auto w-auto gap-1 border-none bg-transparent p-0 text-sm shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
