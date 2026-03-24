@@ -24,7 +24,7 @@ export interface EditingState {
   saving: boolean;
 }
 
-const INITIAL_EDITING: EditingState = {
+export const INITIAL_EDITING: EditingState = {
   title: '',
   slug: '',
   content: '',

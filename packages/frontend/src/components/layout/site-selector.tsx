@@ -1,7 +1,9 @@
 import { Effect } from 'effect';
-import { ChevronsUpDown, Globe, Plus } from 'lucide-react';
+import { ChevronsUpDown, Globe, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
+import { confirm } from '@/components/confirm-dialog';
 import { CreateSiteDialog } from '@/components/sites/create-site-dialog';
 import {
   DropdownMenu,
@@ -30,8 +32,48 @@ export function SiteSelector() {
   const loading = useObservable(sitesModel.loading$);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { isMobile } = useSidebar();
+  const navigate = useNavigate();
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId);
+
+  const handleDeleteSite = async (
+    e: React.MouseEvent,
+    siteId: string,
+    siteName: string
+  ) => {
+    e.stopPropagation();
+    const confirmed = await confirm({
+      title: 'Delete site',
+      description: `Are you sure you want to delete "${siteName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      confirmVariant: 'destructive',
+    });
+    if (!confirmed) return;
+
+    const isSelected = siteId === selectedSiteId;
+
+    void runEffect(
+      Effect.gen(function* () {
+        const siteSvc = yield* SiteService;
+        const articleSvc = yield* ArticleService;
+
+        if (isSelected) {
+          yield* articleSvc.clearArticles();
+          void navigate('/');
+        }
+
+        yield* siteSvc.deleteSite(siteId);
+
+        if (isSelected) {
+          const remaining = sitesModel.sites$.getValue();
+          if (remaining.length > 0) {
+            yield* siteSvc.selectSite(remaining[0].id);
+            yield* articleSvc.fetchArticles(remaining[0].id);
+          }
+        }
+      })
+    );
+  };
 
   return (
     <>
@@ -84,12 +126,19 @@ export function SiteSelector() {
                         })
                       );
                     }}
-                    className="gap-2 p-2"
+                    className="group gap-2 p-2"
                   >
                     <div className="flex size-6 items-center justify-center rounded-md border">
                       <Globe className="size-4" />
                     </div>
-                    {site.name}
+                    <span className="flex-1 truncate">{site.name}</span>
+                    <button
+                      type="button"
+                      className="ml-auto hidden size-6 items-center justify-center rounded-md text-muted-foreground hover:text-destructive group-hover:flex"
+                      onClick={(e) => handleDeleteSite(e, site.id, site.name)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuGroup>

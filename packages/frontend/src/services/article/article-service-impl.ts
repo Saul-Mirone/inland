@@ -9,6 +9,7 @@ import type {
 import type { ApiClientService, ApiError } from '@/services/api';
 import type { NavigationServiceInterface } from '@/services/navigation';
 
+import { INITIAL_EDITING } from '@/model/articles-model';
 import { pushServiceError } from '@/services/shared/push-error';
 
 import type {
@@ -159,6 +160,13 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         })
       )
     );
+
+  clearArticles = (): Effect.Effect<void> =>
+    Effect.sync(() => {
+      this.model.articles$.next([]);
+      this.model.currentArticle$.next(null);
+      this.model.editing$.next(INITIAL_EDITING);
+    });
 
   fetchArticles = (siteId?: string): Effect.Effect<void> =>
     Effect.gen(this, function* () {
