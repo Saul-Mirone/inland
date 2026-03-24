@@ -97,7 +97,7 @@ export function CreateSiteForm({ onSuccess }: { onSuccess: () => void }) {
             disabled={loading}
           />
           <span className="text-xs text-muted-foreground">
-            Defaults to your GitHub username
+            Defaults to your GitHub display name
           </span>
         </label>
       </div>

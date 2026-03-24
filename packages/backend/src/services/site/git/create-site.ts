@@ -34,7 +34,8 @@ export const createSite = (data: CreateSiteData) =>
         siteName: data.name,
         siteDescription: data.description || `Blog site: ${data.name}`,
         siteNameSlug: generateSlug(data.name),
-        siteAuthor: data.author || platformUser.username,
+        siteAuthor:
+          data.author || platformUser.displayName || platformUser.username,
         platformUsername: platformUser.username,
       }
     );

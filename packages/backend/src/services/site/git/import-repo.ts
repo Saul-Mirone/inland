@@ -51,7 +51,7 @@ export const importRepo = (data: ImportRepoData) =>
           siteName: data.name,
           siteDescription: data.description || `Blog site: ${data.name}`,
           siteNameSlug: generateSlug(data.name),
-          siteAuthor: platformUser.username,
+          siteAuthor: platformUser.displayName || platformUser.username,
           platformUsername: platformUser.username,
         },
         { overrideExistingFiles: data.overrideExistingFiles }
