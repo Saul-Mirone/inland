@@ -25,11 +25,12 @@ const ModelLayer = Layer.mergeAll(
   EditorModelLive
 );
 
-const ServiceLayer = Layer.mergeAll(
-  SiteServiceLive,
+const BaseServiceLayer = Layer.mergeAll(
   ArticleServiceLive,
   AuthServiceLive
 ).pipe(Layer.provideMerge(ModelLayer));
+
+const ServiceLayer = SiteServiceLive.pipe(Layer.provideMerge(BaseServiceLayer));
 
 const MainLayer = EditorServiceLive.pipe(Layer.provideMerge(ServiceLayer));
 

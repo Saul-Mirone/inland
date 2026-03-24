@@ -161,17 +161,19 @@ export function AppSidebar() {
                 {user.avatarUrl ? (
                   <img
                     src={user.avatarUrl}
-                    alt={user.username}
+                    alt={user.displayName ?? user.username}
                     className="size-6 rounded-full"
                   />
                 ) : (
                   <div className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium">
-                    {user.username.charAt(0).toUpperCase()}
+                    {(user.displayName ?? user.username)
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
                 )}
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-medium">
-                    {user.username}
+                    {user.displayName ?? user.username}
                   </span>
                   {user.email && (
                     <span className="truncate text-xs text-sidebar-foreground/60">

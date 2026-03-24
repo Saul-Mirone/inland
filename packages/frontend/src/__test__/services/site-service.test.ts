@@ -137,15 +137,15 @@ describe('SiteService', () => {
   });
 
   describe('createSite', () => {
-    it('should create site and refetch', async () => {
-      mockApi.post.mockReturnValue(apiSuccess({}));
+    it('should create site, refetch, select, and fetch articles', async () => {
+      mockApi.post.mockReturnValue(apiSuccess({ site: { id: 'new-site-1' } }));
       mockApi.get.mockReturnValue(
         apiSuccess({
-          sites: [],
-          total: 0,
+          sites: [mockSite({ id: 'new-site-1', name: 'New Site' })],
+          total: 1,
           page: 1,
           limit: 20,
-          totalPages: 0,
+          totalPages: 1,
         })
       );
 
@@ -163,20 +163,26 @@ describe('SiteService', () => {
       );
 
       expect(mockApi.post).toHaveBeenCalledWith('/sites', data);
-      expect(mockApi.get).toHaveBeenCalled();
+      expect(mockSitesModel.selectedSiteId$.getValue()).toBe('new-site-1');
+      expect(mockApi.get).toHaveBeenCalledWith('/sites?page=1&limit=20');
     });
   });
 
   describe('importSite', () => {
-    it('should import site and return result', async () => {
-      mockApi.post.mockReturnValue(apiSuccess({ articlesImported: 5 }));
+    it('should import site, select, and return result', async () => {
+      mockApi.post.mockReturnValue(
+        apiSuccess({
+          site: { id: 'imported-1' },
+          articlesImported: 5,
+        })
+      );
       mockApi.get.mockReturnValue(
         apiSuccess({
-          sites: [],
-          total: 0,
+          sites: [mockSite({ id: 'imported-1', name: 'Imported Site' })],
+          total: 1,
           page: 1,
           limit: 20,
-          totalPages: 0,
+          totalPages: 1,
         })
       );
 
@@ -195,8 +201,12 @@ describe('SiteService', () => {
         })
       );
 
-      expect(result).toEqual({ articlesImported: 5 });
+      expect(result).toEqual({
+        site: { id: 'imported-1' },
+        articlesImported: 5,
+      });
       expect(mockApi.post).toHaveBeenCalledWith('/sites/import', data);
+      expect(mockSitesModel.selectedSiteId$.getValue()).toBe('imported-1');
     });
 
     it('should return undefined on error', async () => {

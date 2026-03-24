@@ -10,6 +10,7 @@ const now = new Date();
 export const mockUser = (overrides: Partial<User> = {}): User => ({
   id: 'user-1',
   username: 'testuser',
+  displayName: 'Test User',
   email: 'test@example.com',
   avatarUrl: 'https://example.com/avatar.png',
   createdAt: now,

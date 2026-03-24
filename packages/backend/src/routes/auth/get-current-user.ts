@@ -22,6 +22,7 @@ export const getCurrentUserRoute = async (fastify: FastifyInstance) => {
           user: {
             id: user.id,
             username: user.username,
+            displayName: user.displayName,
             email: user.email,
             avatarUrl: user.avatarUrl,
             createdAt: user.createdAt,

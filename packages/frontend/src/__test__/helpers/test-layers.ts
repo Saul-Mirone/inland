@@ -27,5 +27,7 @@ export const AuthTestLayer = AuthServiceLive.pipe(
 
 // Site service test layer
 export const SiteTestLayer = SiteServiceLive.pipe(
-  Layer.provide(Layer.mergeAll(MockSitesModelLive, SharedDeps))
+  Layer.provide(
+    Layer.mergeAll(MockSitesModelLive, ArticleTestLayer, SharedDeps)
+  )
 );

@@ -19,6 +19,7 @@ const createUser = (data: CreateUserData) =>
         prisma.user.create({
           data: {
             username: data.username,
+            displayName: data.displayName,
             email: data.email,
             avatarUrl: data.avatarUrl,
           },
@@ -68,11 +69,13 @@ const upsertUser = (data: CreateUserData) =>
         prisma.user.upsert({
           where: { username: data.username },
           update: {
+            displayName: data.displayName,
             email: data.email,
             avatarUrl: data.avatarUrl,
           },
           create: {
             username: data.username,
+            displayName: data.displayName,
             email: data.email,
             avatarUrl: data.avatarUrl,
           },

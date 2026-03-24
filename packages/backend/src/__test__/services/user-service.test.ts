@@ -19,6 +19,7 @@ describe('UserService', () => {
       const mockUser = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
         createdAt: new Date(),
@@ -31,6 +32,7 @@ describe('UserService', () => {
       // Test data
       const userData = {
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
       };
@@ -45,6 +47,7 @@ describe('UserService', () => {
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: {
           username: 'testuser',
+          displayName: 'Test User',
           email: 'test@example.com',
           avatarUrl: 'https://example.com/avatar.jpg',
         },
@@ -58,6 +61,7 @@ describe('UserService', () => {
       // Test data
       const userData = {
         username: 'testuser',
+        displayName: null,
         email: 'test@example.com',
         avatarUrl: null,
       };
@@ -77,6 +81,7 @@ describe('UserService', () => {
       const mockUser = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
         createdAt: new Date(),
@@ -117,6 +122,7 @@ describe('UserService', () => {
       const mockUserWithIntegrations = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
         createdAt: new Date(),
@@ -166,6 +172,7 @@ describe('UserService', () => {
       const mockUser = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'updated@example.com',
         avatarUrl: 'https://example.com/new-avatar.jpg',
         createdAt: new Date(),
@@ -178,6 +185,7 @@ describe('UserService', () => {
       // Test data
       const userData = {
         username: 'testuser',
+        displayName: 'Test User',
         email: 'updated@example.com',
         avatarUrl: 'https://example.com/new-avatar.jpg',
       };
@@ -192,11 +200,13 @@ describe('UserService', () => {
       expect(mockPrisma.user.upsert).toHaveBeenCalledWith({
         where: { username: 'testuser' },
         update: {
+          displayName: 'Test User',
           email: 'updated@example.com',
           avatarUrl: 'https://example.com/new-avatar.jpg',
         },
         create: {
           username: 'testuser',
+          displayName: 'Test User',
           email: 'updated@example.com',
           avatarUrl: 'https://example.com/new-avatar.jpg',
         },

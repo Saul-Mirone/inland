@@ -135,6 +135,7 @@ export interface GitHubFileContentResponse {
 export interface GitHubUser {
   readonly id: number;
   readonly login: string;
+  readonly name: string | null;
   readonly email: string | null;
   readonly avatar_url: string;
 }

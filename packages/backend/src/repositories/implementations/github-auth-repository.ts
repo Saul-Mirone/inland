@@ -39,6 +39,7 @@ const convertGitHubUserToPlatformUser = (
 ): PlatformUser => ({
   id: githubUser.id,
   username: githubUser.login,
+  displayName: githubUser.name,
   email: githubUser.email,
   avatarUrl: githubUser.avatar_url,
 });

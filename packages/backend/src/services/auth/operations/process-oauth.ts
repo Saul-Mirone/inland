@@ -16,6 +16,7 @@ export const processOAuth = (accessToken: string) =>
 
     const user = yield* userService.upsertUser({
       username: platformUser.username,
+      displayName: platformUser.displayName,
       email,
       avatarUrl: platformUser.avatarUrl,
     });

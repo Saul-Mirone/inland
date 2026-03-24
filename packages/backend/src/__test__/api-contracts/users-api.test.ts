@@ -19,6 +19,7 @@ describe('Users API Contract Tests', () => {
       const mockUserWithIntegrations = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
         createdAt: new Date(),
@@ -65,6 +66,7 @@ describe('Users API Contract Tests', () => {
       const mockUserWithoutIntegrations = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
         createdAt: new Date(),
@@ -100,6 +102,7 @@ describe('Users API Contract Tests', () => {
       const mockUser = {
         id: 'user-1',
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
         createdAt: new Date(),
@@ -112,6 +115,7 @@ describe('Users API Contract Tests', () => {
       // Test data
       const userData = {
         username: 'testuser',
+        displayName: 'Test User',
         email: 'test@example.com',
         avatarUrl: 'https://example.com/avatar.jpg',
       };

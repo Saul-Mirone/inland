@@ -4,6 +4,7 @@ import { BehaviorSubject } from 'rxjs';
 export interface AuthUser {
   id: string;
   username: string;
+  displayName: string | null;
   email: string | null;
   avatarUrl: string | null;
   createdAt: string;

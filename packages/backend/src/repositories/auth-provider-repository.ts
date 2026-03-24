@@ -4,6 +4,7 @@ import { Context, Data, type Effect } from 'effect';
 export interface PlatformUser {
   readonly id: string | number;
   readonly username: string;
+  readonly displayName: string | null;
   readonly email: string | null;
   readonly avatarUrl: string;
 }

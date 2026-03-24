@@ -6,6 +6,7 @@ import type {
   SiteWithCounts,
 } from '@/model/sites-model';
 import type { ApiClientService, ApiError } from '@/services/api';
+import type { ArticleServiceInterface } from '@/services/article';
 import type { NavigationServiceInterface } from '@/services/navigation';
 
 import { pushServiceError } from '@/services/shared/push-error';
@@ -28,7 +29,8 @@ export class SiteServiceImpl implements SiteServiceInterface {
   constructor(
     private readonly model: SitesModelService,
     private readonly api: ApiClientService,
-    private readonly nav: NavigationServiceInterface
+    private readonly nav: NavigationServiceInterface,
+    private readonly articleService: ArticleServiceInterface
   ) {}
 
   private pushError(error: ApiError): void {
@@ -87,8 +89,13 @@ export class SiteServiceImpl implements SiteServiceInterface {
 
   createSite = (data: CreateSiteData): Effect.Effect<void> =>
     Effect.gen(this, function* () {
-      yield* this.api.post('/sites', data);
+      const result = yield* this.api.post<{ site: { id: string } }>(
+        '/sites',
+        data
+      );
       yield* this.fetchSites();
+      this.model.selectedSiteId$.next(result.site.id);
+      yield* this.articleService.fetchArticles(result.site.id);
     }).pipe(
       Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
     );
@@ -98,9 +105,12 @@ export class SiteServiceImpl implements SiteServiceInterface {
   ): Effect.Effect<{ articlesImported?: number } | undefined> =>
     Effect.gen(this, function* () {
       const result = yield* this.api.post<{
+        site: { id: string };
         articlesImported?: number;
       }>('/sites/import', data);
       yield* this.fetchSites();
+      this.model.selectedSiteId$.next(result.site.id);
+      yield* this.articleService.fetchArticles(result.site.id);
       return result;
     }).pipe(
       Effect.catchAll((error) =>

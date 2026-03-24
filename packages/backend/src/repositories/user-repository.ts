@@ -7,6 +7,7 @@ import type { RepositoryError } from './repository-error';
 
 export interface CreateUserData {
   readonly username: string;
+  readonly displayName: string | null;
   readonly email: string | null;
   readonly avatarUrl: string | null;
 }

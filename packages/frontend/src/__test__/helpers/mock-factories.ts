@@ -31,6 +31,7 @@ export const mockSite = (
 export const mockUser = (overrides?: Partial<AuthUser>): AuthUser => ({
   id: 'user-1',
   username: 'testuser',
+  displayName: 'Test User',
   email: 'test@example.com',
   avatarUrl: null,
   createdAt: '2026-01-01T00:00:00Z',

@@ -12,10 +12,11 @@ datasource db {
 
 // User model
 model User {
-  id        String   @id @default(cuid())
-  username  String   @unique
-  email     String?
-  avatarUrl String?  @map("avatar_url")
+  id          String   @id @default(cuid())
+  username    String   @unique
+  displayName String?  @map("display_name")
+  email       String?
+  avatarUrl   String?  @map("avatar_url")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

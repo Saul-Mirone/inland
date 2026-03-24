@@ -12,6 +12,7 @@ export const makeMockAuthProvider = (): AuthProviderRepositoryService => ({
     Effect.succeed({
       id: 12345,
       username: 'testuser',
+      displayName: 'Test User',
       email: 'test@example.com',
       avatarUrl: 'https://github.com/images/test-avatar.jpg',
     } as PlatformUser),
