@@ -80,7 +80,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
       const editing = this.model.editing$.getValue();
       this.model.editing$.next({ ...editing, saving: true });
 
-      yield* this.updateArticle(article.id, {
+      yield* this.api.put(`/articles/${article.id}`, {
         siteId: article.siteId,
         title: editing.title,
         slug: editing.slug,
@@ -88,8 +88,26 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         status: editing.status,
       });
 
-      this.model.editing$.next({ ...editing, saving: false });
-    });
+      this.model.articles$.next(
+        this.model.articles$
+          .getValue()
+          .map((a) =>
+            a.id === article.id
+              ? {
+                  ...a,
+                  title: editing.title,
+                  slug: editing.slug,
+                  status: editing.status,
+                }
+              : a
+          )
+      );
+
+      const current = this.model.editing$.getValue();
+      this.model.editing$.next({ ...current, saving: false });
+    }).pipe(
+      Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
+    );
 
   deleteCurrentArticle = (): Effect.Effect<void> =>
     Effect.gen(this, function* () {

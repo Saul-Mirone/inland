@@ -5,28 +5,31 @@ import { toast } from 'sonner';
 
 import { ArticlesModelLive } from '@/model/articles-model';
 import { AuthModelLive } from '@/model/auth-model';
+import { EditorModelLive } from '@/model/editor-model';
 import { SitesModelLive } from '@/model/sites-model';
 import { ApiClientLive } from '@/services/api';
 import { ArticleServiceLive } from '@/services/article';
 import { AuthServiceLive } from '@/services/auth';
+import { EditorServiceLive } from '@/services/editor';
 import { NavigationServiceLive } from '@/services/navigation';
 import { SiteServiceLive } from '@/services/site';
 
-const MainLayer = Layer.mergeAll(
+const ModelLayer = Layer.mergeAll(
+  ApiClientLive,
+  NavigationServiceLive,
+  SitesModelLive,
+  ArticlesModelLive,
+  AuthModelLive,
+  EditorModelLive
+);
+
+const ServiceLayer = Layer.mergeAll(
   SiteServiceLive,
   ArticleServiceLive,
   AuthServiceLive
-).pipe(
-  Layer.provideMerge(
-    Layer.mergeAll(
-      ApiClientLive,
-      NavigationServiceLive,
-      SitesModelLive,
-      ArticlesModelLive,
-      AuthModelLive
-    )
-  )
-);
+).pipe(Layer.provideMerge(ModelLayer));
+
+const MainLayer = EditorServiceLive.pipe(Layer.provideMerge(ServiceLayer));
 
 export const runtime = ManagedRuntime.make(MainLayer);
 

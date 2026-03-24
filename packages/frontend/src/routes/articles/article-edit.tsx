@@ -1,6 +1,7 @@
 import { Effect } from 'effect';
 import { useNavigate } from 'react-router';
 
+import { MarkdownEditor } from '@/components/editor/markdown-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { articlesModel } from '@/model/articles-model';
 import { ArticleService } from '@/services/article';
 import { runEffect } from '@/utils/effect-runtime';
@@ -29,12 +29,6 @@ export function ArticleEditPage() {
   ) => {
     void runEffect(
       Effect.flatMap(ArticleService, (svc) => svc.updateEditField(field, value))
-    );
-  };
-
-  const handleSave = () => {
-    void runEffect(
-      Effect.flatMap(ArticleService, (svc) => svc.saveCurrentArticle())
     );
   };
 
@@ -125,21 +119,9 @@ export function ArticleEditPage() {
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="content" className="text-sm font-medium">
-            Content
-          </label>
-          <Textarea
-            id="content"
-            value={editing.content}
-            onChange={(e) => updateField('content', e.target.value)}
-            rows={16}
-            placeholder="Write your article content..."
-          />
+          <label className="text-sm font-medium">Content</label>
+          <MarkdownEditor />
         </div>
-
-        <Button onClick={handleSave} disabled={editing.saving}>
-          {editing.saving ? 'Saving...' : 'Save'}
-        </Button>
       </div>
     </div>
   );

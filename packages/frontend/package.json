@@ -11,6 +11,9 @@
   "dependencies": {
     "@base-ui/react": "^1.2.0",
     "@fontsource-variable/geist": "^5.2.8",
+    "@milkdown/crepe": "^7.19.2",
+    "@milkdown/kit": "^7.19.2",
+    "@milkdown/react": "^7.19.2",
     "@tailwindcss/vite": "^4.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
