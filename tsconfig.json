@@ -34,7 +34,8 @@
     "isolatedModules": true,
 
     // Composite
-    "composite": true
+    "composite": true,
+    "types": ["*"]
   },
   "include": [],
   "files": [],
