@@ -18,6 +18,12 @@ import {
   type SitesModelService,
   type SiteWithCounts,
 } from '@/model/sites-model';
+import {
+  ThemeModel,
+  type EffectiveTheme,
+  type Theme,
+  type ThemeModelService,
+} from '@/model/theme-model';
 
 // ── Articles Model ──────────────────────────────────────────────────
 
@@ -79,6 +85,20 @@ export const resetMockAuthModel = () => {
 };
 
 export const MockAuthModelLive = Layer.succeed(AuthModel, mockAuthModel);
+
+// ── Theme Model ─────────────────────────────────────────────────────
+
+export const mockThemeModel: ThemeModelService = {
+  theme$: new BehaviorSubject<Theme>('system'),
+  effectiveTheme$: new BehaviorSubject<EffectiveTheme>('light'),
+};
+
+export const resetMockThemeModel = () => {
+  mockThemeModel.theme$.next('system');
+  mockThemeModel.effectiveTheme$.next('light');
+};
+
+export const MockThemeModelLive = Layer.succeed(ThemeModel, mockThemeModel);
 
 // ── Sites Model ─────────────────────────────────────────────────────
 

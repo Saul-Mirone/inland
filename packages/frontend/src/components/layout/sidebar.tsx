@@ -44,6 +44,10 @@ const DROPDOWN_CLOSE_DELAY = 150;
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const authState = useObservable(authModel.authState$);
+  const articles = useObservable(articlesModel.articles$);
+  const articlesLoading = useObservable(articlesModel.loading$);
+  const user = authState.user;
 
   const handleDeleteArticle = (articleId: string, title: string) => {
     setTimeout(async () => {
@@ -62,10 +66,6 @@ export function AppSidebar() {
       }
     }, DROPDOWN_CLOSE_DELAY);
   };
-  const authState = useObservable(authModel.authState$);
-  const articles = useObservable(articlesModel.articles$);
-  const articlesLoading = useObservable(articlesModel.loading$);
-  const user = authState.user;
 
   return (
     <Sidebar collapsible="icon">
@@ -157,42 +157,50 @@ export function AppSidebar() {
         {user && (
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" render={<div />}>
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.displayName ?? user.username}
-                    className="size-6 rounded-full"
-                  />
-                ) : (
-                  <div className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium">
-                    {(user.displayName ?? user.username)
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
-                )}
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-medium">
-                    {user.displayName ?? user.username}
-                  </span>
-                  {user.email && (
-                    <span className="truncate text-xs text-sidebar-foreground/60">
-                      {user.email}
-                    </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<SidebarMenuButton size="lg" />}>
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.displayName ?? user.username}
+                      className="size-6 rounded-full"
+                    />
+                  ) : (
+                    <div className="flex size-6 items-center justify-center rounded-full bg-sidebar-accent text-xs font-medium">
+                      {(user.displayName ?? user.username)
+                        .charAt(0)
+                        .toUpperCase()}
+                    </div>
                   )}
-                </div>
-              </SidebarMenuButton>
-              <SidebarMenuAction
-                onClick={() => {
-                  void runEffect(
-                    Effect.flatMap(AuthService, (s) => s.logout())
-                  );
-                }}
-                className="top-2.5 hover:text-destructive"
-                title="Logout"
-              >
-                <LogOut />
-              </SidebarMenuAction>
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate text-sm font-medium">
+                      {user.displayName ?? user.username}
+                    </span>
+                    {user.email && (
+                      <span className="truncate text-xs text-sidebar-foreground/60">
+                        {user.email}
+                      </span>
+                    )}
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  align="start"
+                  className="w-[--radix-dropdown-menu-trigger-width]"
+                >
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => {
+                      void runEffect(
+                        Effect.flatMap(AuthService, (s) => s.logout())
+                      );
+                    }}
+                  >
+                    <LogOut />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SidebarMenuItem>
           </SidebarMenu>
         )}

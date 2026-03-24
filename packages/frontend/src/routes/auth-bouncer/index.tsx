@@ -7,6 +7,7 @@ import { sitesModel } from '@/model/sites-model';
 import { ArticleService } from '@/services/article';
 import { AuthService } from '@/services/auth';
 import { SiteService } from '@/services/site';
+import { ThemeService } from '@/services/theme';
 import { runEffect } from '@/utils/effect-runtime';
 import { useObservable } from '@/utils/use-observable';
 
@@ -16,6 +17,9 @@ export function AuthBouncer() {
   useEffect(() => {
     void runEffect(
       Effect.gen(function* () {
+        const theme = yield* ThemeService;
+        yield* theme.bootstrap();
+
         const auth = yield* AuthService;
         const result = yield* auth.bootstrap();
         if (result.status === 'authenticated') {

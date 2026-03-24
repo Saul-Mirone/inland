@@ -7,6 +7,21 @@
     <link href="./style.css" rel="stylesheet" />
   </head>
   <body>
+    <!--
+      FOUC prevention: must run as a synchronous inline script before
+      first paint. Module scripts (main.tsx) are deferred, so ThemeService
+      bootstrap runs too late. Keep logic in sync with ThemeServiceImpl.
+    -->
+    <script>
+      (function () {
+        var t = localStorage.getItem('inland-theme');
+        var dark =
+          t === 'dark' ||
+          (t !== 'light' &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.classList.add('dark');
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

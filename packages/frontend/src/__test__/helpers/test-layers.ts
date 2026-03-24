@@ -3,12 +3,14 @@ import { Layer } from 'effect';
 import { ArticleServiceLive } from '@/services/article';
 import { AuthServiceLive } from '@/services/auth';
 import { SiteServiceLive } from '@/services/site';
+import { ThemeServiceLive } from '@/services/theme';
 
 import { MockApiClientLive } from './mock-api-client';
 import {
   MockArticlesModelLive,
   MockAuthModelLive,
   MockSitesModelLive,
+  MockThemeModelLive,
 } from './mock-models';
 import { MockNavigationLive } from './mock-navigation';
 
@@ -30,4 +32,9 @@ export const SiteTestLayer = SiteServiceLive.pipe(
   Layer.provide(
     Layer.mergeAll(MockSitesModelLive, ArticleTestLayer, SharedDeps)
   )
+);
+
+// Theme service test layer
+export const ThemeTestLayer = ThemeServiceLive.pipe(
+  Layer.provide(MockThemeModelLive)
 );
