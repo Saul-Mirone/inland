@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router';
 
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Separator } from '@/components/ui/separator';
 import {
   SidebarInset,
@@ -11,19 +12,20 @@ import { AppSidebar } from './sidebar';
 
 export function AppLayout() {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh">
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4!" />
         </header>
-        <div className="flex flex-1 overflow-y-auto p-6">
+        <div className="flex flex-1 overflow-y-auto py-6">
           <div className="mx-auto flex max-w-4xl flex-1 flex-col">
             <Outlet />
           </div>
         </div>
       </SidebarInset>
+      <ConfirmDialog />
     </SidebarProvider>
   );
 }

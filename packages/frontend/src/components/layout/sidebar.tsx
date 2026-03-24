@@ -1,7 +1,14 @@
 import { Effect } from 'effect';
-import { FileText, LogOut, Plus } from 'lucide-react';
+import { FileText, LogOut, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
+import { confirm } from '@/components/confirm-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -30,9 +37,31 @@ import { useObservable } from '@/utils/use-observable';
 
 import { SiteSelector } from './site-selector';
 
+// Wait for dropdown close animation (duration-100) to finish
+// before opening the confirm dialog to avoid aria-hidden focus conflicts
+const DROPDOWN_CLOSE_DELAY = 150;
+
 export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleDeleteArticle = (articleId: string, title: string) => {
+    setTimeout(async () => {
+      const confirmed = await confirm({
+        title: 'Delete article',
+        description: `Are you sure you want to delete "${title || 'Untitled'}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        confirmVariant: 'destructive',
+      });
+      if (!confirmed) return;
+      await runEffect(
+        Effect.flatMap(ArticleService, (svc) => svc.deleteArticle(articleId))
+      );
+      if (location.pathname === `/articles/${articleId}`) {
+        fireAndForget(navigate('/'));
+      }
+    }, DROPDOWN_CLOSE_DELAY);
+  };
   const authState = useObservable(authModel.authState$);
   const articles = useObservable(articlesModel.articles$);
   const articlesLoading = useObservable(articlesModel.loading$);
@@ -98,6 +127,24 @@ export function AppSidebar() {
                     {article.status === 'draft' && (
                       <SidebarMenuBadge>draft</SidebarMenuBadge>
                     )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={<SidebarMenuAction showOnHover />}
+                      >
+                        <MoreHorizontal />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="right" align="start">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() =>
+                            handleDeleteArticle(article.id, article.title)
+                          }
+                        >
+                          <Trash2 />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </SidebarMenuItem>
                 ))
               )}

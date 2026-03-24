@@ -45,6 +45,9 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
 
   openArticle = (id: string): Effect.Effect<void> =>
     Effect.gen(this, function* () {
+      const current = this.model.currentArticle$.getValue();
+      if (current?.id === id) return;
+
       this.model.articleLoading$.next(true);
       this.model.error$.next(null);
 

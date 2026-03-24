@@ -10,6 +10,7 @@ import { SitesModelLive } from '@/model/sites-model';
 import { ApiClientLive } from '@/services/api';
 import { ArticleServiceLive } from '@/services/article';
 import { AuthServiceLive } from '@/services/auth';
+import { DialogServiceLive } from '@/services/dialog';
 import { EditorServiceLive } from '@/services/editor';
 import { NavigationServiceLive } from '@/services/navigation';
 import { SiteServiceLive } from '@/services/site';
@@ -17,6 +18,7 @@ import { SiteServiceLive } from '@/services/site';
 const ModelLayer = Layer.mergeAll(
   ApiClientLive,
   NavigationServiceLive,
+  DialogServiceLive,
   SitesModelLive,
   ArticlesModelLive,
   AuthModelLive,
