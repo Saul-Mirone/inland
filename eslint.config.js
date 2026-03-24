@@ -2,7 +2,6 @@ import tsParser from '@typescript-eslint/parser';
 import pluginImportX from 'eslint-plugin-import-x';
 import reactHooks from 'eslint-plugin-react-hooks';
 import { defineConfig } from 'eslint/config';
-import tseslint from 'typescript-eslint';
 
 import oxfmtrc from './.oxfmtrc.json' with { type: 'json' };
 
@@ -37,18 +36,9 @@ export default defineConfig(
   {
     files: [...typeScriptExtensions].map((ext) => `**/*${ext}`),
     plugins: {
-      '@typescript-eslint': tseslint.plugin,
       'import-x': pluginImportX,
     },
     rules: {
-      '@typescript-eslint/no-floating-promises': [
-        'error',
-        {
-          ignoreVoid: false,
-          ignoreIIFE: false,
-        },
-      ],
-      '@typescript-eslint/await-thenable': 'error',
       'import-x/no-extraneous-dependencies': [
         'error',
         { includeInternal: true, whitelist: ['@inland/frontend'] },

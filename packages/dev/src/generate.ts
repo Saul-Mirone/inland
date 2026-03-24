@@ -10,7 +10,7 @@ import { Workspace } from './workspace';
 
 export function generateTsConfig() {
   const generator = new Generator();
-  generator.run().catch(console.error);
+  generator.run().catch((e) => console.error(e));
 }
 
 export class Generator {
@@ -40,13 +40,12 @@ export class Generator {
               p.join('tsconfig.json'),
               this.genPackageTsConfig.bind(this, p),
               'json',
-              // oxlint-disable-next-line typescript-eslint/no-explicit-any
-            ] as any
+            ] as [Path, (prev: string) => string, 'json']
         ),
     ];
 
     for (const [path, content, formatter] of filesToGenerate) {
-      this.logger.info(`Generating: ${path}`);
+      this.logger.info(`Generating: ${path.toString()}`);
       const previous = readFileSync(path.value, 'utf-8');
       let file = content(previous);
       if (formatter) {

@@ -59,6 +59,7 @@ export class Workspace {
         pkg.workspace = this;
         packages.set(pkg.name, pkg);
       } catch (e) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         this.logger.error(e as Error);
       }
     }
@@ -114,7 +115,7 @@ export class Workspace {
     building.add(pkg.name);
 
     pkg.deps = pkg.workspaceDependencies
-      .map((relativeDepPath) => {
+      .map((relativeDepPath): Package | null => {
         const dep = packages.get(relativeDepPath);
 
         if (!dep) {
@@ -135,7 +136,7 @@ export class Workspace {
         this.buildDeps(dep, packages, building);
         return dep;
       })
-      .filter(Boolean) as Package[];
+      .filter((x): x is Package => Boolean(x));
 
     building.delete(pkg.name);
   }

@@ -16,13 +16,14 @@ import {
 const makeError = (message: string, status?: number) =>
   new AuthProviderAPIError({ message, status });
 
-const makeGitHubApiRequest = (accessToken: string, endpoint: string) =>
-  githubFetch(accessToken, endpoint, makeError);
+const makeGitHubApiRequest = <T>(accessToken: string, endpoint: string) =>
+  githubFetch<AuthProviderAPIError, T>(accessToken, endpoint, makeError);
 
 const assertGitHubUser = (
   data: unknown
 ): Effect.Effect<GitHubUser, AuthProviderAPIError> =>
   assertFields(data, ['id', 'login', 'avatar_url'], '/user', makeError).pipe(
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     Effect.map((obj) => obj as unknown as GitHubUser)
   );
 

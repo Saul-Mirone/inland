@@ -69,6 +69,7 @@ const authPlugin = async (fastify: FastifyInstance) => {
   fastify.decorate('authenticate', async function (request, reply) {
     try {
       await request.jwtVerify();
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       request.jwtPayload = request.user as JWTPayload;
     } catch {
       fastify.clearAuthCookie(reply);

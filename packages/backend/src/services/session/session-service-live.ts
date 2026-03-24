@@ -19,7 +19,7 @@ const getRefreshSessionKey = (token: string) =>
 
 const parseRefreshSession = (value: string): JWTPayload | null => {
   try {
-    const parsed = JSON.parse(value) as Partial<JWTPayload>;
+    const parsed: Partial<JWTPayload> = JSON.parse(value);
 
     if (
       typeof parsed.userId !== 'string' ||

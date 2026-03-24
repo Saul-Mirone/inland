@@ -7,12 +7,12 @@ interface TaggedError {
 }
 
 // Shared GitHub API request helper, parameterized over error type
-export const githubFetch = <E extends TaggedError>(
+export const githubFetch = <E extends TaggedError, T = unknown>(
   accessToken: string,
   endpoint: string,
   makeError: (message: string, status?: number) => E,
   options: RequestInit = {}
-): Effect.Effect<unknown, E> =>
+): Effect.Effect<T, E> =>
   Effect.gen(function* () {
     const response = yield* Effect.tryPromise({
       try: () =>
@@ -22,6 +22,7 @@ export const githubFetch = <E extends TaggedError>(
             Authorization: `Bearer ${accessToken}`,
             Accept: 'application/vnd.github.v3+json',
             'User-Agent': 'Inland-CMS/1.0',
+            // oxlint-disable-next-line typescript/no-misused-spread
             ...options.headers,
           },
         }),
@@ -44,7 +45,7 @@ export const githubFetch = <E extends TaggedError>(
       );
     }
 
-    return yield* Effect.tryPromise({
+    const json = yield* Effect.tryPromise({
       try: () => response.json(),
       catch: (error) =>
         makeError(
@@ -53,21 +54,28 @@ export const githubFetch = <E extends TaggedError>(
             : 'Failed to parse response JSON'
         ),
     });
+
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    return json as T;
   });
 
 // Shared runtime validation helper
-export const assertFields = <E extends TaggedError>(
+export const assertFields = <
+  E extends TaggedError,
+  T extends Record<string, unknown> = Record<string, unknown>,
+>(
   response: unknown,
   fields: readonly string[],
   context: string,
   makeError: (message: string) => E
-): Effect.Effect<Record<string, unknown>, E> => {
+): Effect.Effect<T, E> => {
   if (typeof response !== 'object' || response === null) {
     return Effect.fail(
       makeError(`Expected object from ${context}, got ${typeof response}`)
     );
   }
-  const obj = response as Record<string, unknown>;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  const obj = response as T;
   const missing = fields.filter((f) => !(f in obj));
   if (missing.length > 0) {
     return Effect.fail(

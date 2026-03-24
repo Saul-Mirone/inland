@@ -1,8 +1,12 @@
 {
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["import", "typescript", "unicorn", "promise", "react"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
+  },
+  "options": {
+    "typeAware": true
   },
   "rules": {
     "no-console": ["error", { "allow": ["warn", "error"] }],
@@ -125,5 +129,14 @@
       }
     ],
     "react/react-in-jsx-scope": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/__test__/**/*"],
+      "rules": {
+        "typescript/unbound-method": "allow",
+        "typescript/no-unsafe-type-assertion": "allow"
+      }
+    }
+  ]
 }

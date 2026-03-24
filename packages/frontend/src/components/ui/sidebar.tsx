@@ -187,6 +187,7 @@ function Sidebar({
           data-mobile="true"
           className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
             {
               '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
             } as React.CSSProperties
@@ -624,6 +625,7 @@ function SidebarMenuSkeleton({
         className="h-4 max-w-(--skeleton-width) flex-1"
         data-sidebar="menu-skeleton-text"
         style={
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           {
             '--skeleton-width': width,
           } as React.CSSProperties

@@ -11,9 +11,9 @@ export type PackageItem = {
 export const yarnList = once(() => {
   const output = exec('', 'yarn workspaces list -v --json', { silent: true });
 
-  let packageList = JSON.parse(
+  let packageList: PackageItem[] = JSON.parse(
     `[${output.trim().replace(/\r\n|\n/g, ',')}]`
-  ) as PackageItem[];
+  );
 
   packageList.forEach((p) => {
     p.location = p.location.replaceAll(/\\/g, '/');

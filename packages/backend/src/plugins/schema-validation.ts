@@ -79,6 +79,7 @@ export const withSchemaValidation = (config: SchemaValidationConfig) => {
             request[requestData],
             configKey
           );
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           (request as unknown as Record<string, unknown>)[resultKey] =
             validated;
         }

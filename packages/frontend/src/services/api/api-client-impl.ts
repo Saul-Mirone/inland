@@ -111,6 +111,7 @@ export class ApiClientImpl implements ApiClientService {
           response.status === 204 ||
           response.headers.get('content-length') === '0'
         ) {
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           return undefined as T;
         }
 

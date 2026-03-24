@@ -29,17 +29,19 @@ const MAX_RETRY_ATTEMPTS = 9;
 const makeError = (message: string, status?: number) =>
   new GitProviderError({ message, status });
 
-const makeGitHubApiRequest = (
+const makeGitHubApiRequest = <T>(
   accessToken: string,
   endpoint: string,
   options: RequestInit = {}
-) => githubFetch(accessToken, endpoint, makeError, options);
+) =>
+  githubFetch<GitProviderError, T>(accessToken, endpoint, makeError, options);
 
-const assertFields = (
+const assertFields = <T extends Record<string, unknown>>(
   response: unknown,
   fields: readonly string[],
   context: string
-) => sharedAssertFields(response, fields, context, makeError);
+) =>
+  sharedAssertFields<GitProviderError, T>(response, fields, context, makeError);
 
 // Utility functions (pure, module-level)
 const shouldProcessFile = (filePath: string): boolean => {
@@ -93,9 +95,7 @@ const parseMarkdownContent = (
         slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       slug: frontMatter.slug ?? slug,
       content: markdownContent.trim(),
-      status: (frontMatter.status === 'draft' ? 'draft' : 'published') as
-        | 'draft'
-        | 'published',
+      status: frontMatter.status === 'draft' ? 'draft' : 'published',
     };
   } catch {
     return null;
@@ -113,7 +113,7 @@ const createRepoFromTemplate = (
   }
 ) =>
   Effect.gen(function* () {
-    const response = yield* makeGitHubApiRequest(
+    const response = yield* makeGitHubApiRequest<GitHubRepoResponse>(
       accessToken,
       `/repos/${opts.templateOwner}/${opts.templateRepo}/generate`,
       {
@@ -131,7 +131,7 @@ const createRepoFromTemplate = (
       ['id', 'name', 'full_name', 'html_url', 'clone_url', 'default_branch'],
       'POST /repos/.../generate'
     );
-    return response as GitHubRepoResponse;
+    return response;
   });
 
 const getRepoFiles = (
@@ -140,13 +140,12 @@ const getRepoFiles = (
   defaultBranch: string
 ) =>
   Effect.gen(function* () {
-    const response = yield* makeGitHubApiRequest(
+    const response = yield* makeGitHubApiRequest<GitHubTreeResponse>(
       accessToken,
       `/repos/${repoFullName}/git/trees/${encodeURIComponent(defaultBranch)}?recursive=1`
     );
     yield* assertFields(response, ['tree'], 'GET /repos/.../git/trees/...');
-    const tree = response as GitHubTreeResponse;
-    return tree.tree.filter((item) => item.type === 'blob');
+    return response.tree.filter((item) => item.type === 'blob');
   });
 
 const getFileContent = (
@@ -155,7 +154,7 @@ const getFileContent = (
   filePath: string
 ) =>
   Effect.gen(function* () {
-    const response = yield* makeGitHubApiRequest(
+    const response = yield* makeGitHubApiRequest<GitHubFileContentResponse>(
       accessToken,
       `/repos/${repoFullName}/contents/${filePath}`
     );
@@ -164,7 +163,7 @@ const getFileContent = (
       ['content', 'sha'],
       `GET /repos/.../contents/${filePath}`
     );
-    return response as GitHubFileContentResponse;
+    return response;
   });
 
 const updateFileContent = (
@@ -487,7 +486,7 @@ export const makeGitHubApiRepository = (config?: {
         ['commit'],
         `PUT /repos/.../contents/${filePath}`
       );
-      const commit = yield* assertFields(
+      const commit = yield* assertFields<{ sh: string }>(
         validated.commit,
         ['sha'],
         `PUT /repos/.../contents/${filePath} → commit`
@@ -496,7 +495,7 @@ export const makeGitHubApiRepository = (config?: {
       return {
         published: true,
         filePath,
-        commitSha: commit.sha as string,
+        commitSha: commit.sh,
         wasUpdate: sha !== undefined,
       };
     }),
@@ -507,14 +506,14 @@ export const makeGitHubApiRepository = (config?: {
         accessToken,
         `/repos/${repoFullName}`
       );
-      const validated = yield* assertFields(
+      const validated = yield* assertFields<{ default_branch?: string }>(
         repoInfo,
         ['default_branch'],
         `GET /repos/${repoFullName}`
       );
 
       return {
-        defaultBranch: (validated.default_branch as string) || 'main',
+        defaultBranch: validated.default_branch || 'main',
         ...validated,
       };
     }),
@@ -523,10 +522,13 @@ export const makeGitHubApiRepository = (config?: {
     Effect.gen(function* () {
       yield* Effect.logInfo(`Checking Pages status for ${repoFullName}`);
 
-      const pagesInfo = yield* makeGitHubApiRequest(
-        accessToken,
-        `/repos/${repoFullName}/pages`
-      ).pipe(
+      const pagesInfo = yield* makeGitHubApiRequest<{
+        html_url: string;
+        build_type?: string;
+        source: {
+          branch?: string;
+        };
+      }>(accessToken, `/repos/${repoFullName}/pages`).pipe(
         Effect.catchTag('GitProviderError', (error) => {
           if (error.status === 404) {
             return Effect.succeed(null);
@@ -541,18 +543,8 @@ export const makeGitHubApiRepository = (config?: {
 
       return {
         enabled: true,
-        url: (pagesInfo as Record<string, unknown>).html_url as
-          | string
-          | undefined,
-        source:
-          ((pagesInfo as Record<string, unknown>).build_type as
-            | string
-            | undefined) ||
-          (
-            (pagesInfo as Record<string, unknown>).source as
-              | { branch?: string }
-              | undefined
-          )?.branch,
+        url: pagesInfo.html_url,
+        source: pagesInfo.build_type || pagesInfo.source?.branch,
       };
     }),
 

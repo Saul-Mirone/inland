@@ -41,7 +41,7 @@ describe('SessionService', () => {
 
       expect(mockRedis.set).toHaveBeenCalledOnce();
 
-      const call = mockRedis.set.mock.calls[0]!;
+      const call = mockRedis.set.mock.calls[0];
       const key = call[0] as string;
       expect(key).toMatch(new RegExp(`^${REFRESH_TOKEN_PREFIX}`));
 

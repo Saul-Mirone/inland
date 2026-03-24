@@ -41,5 +41,6 @@ export function runRouteEffect<A, R>(
     })
   );
 
-  return fastify.runtime.runPromise(pipeline as Effect.Effect<unknown, never>);
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  return fastify.runtime.runPromise(pipeline as Effect.Effect<unknown>);
 }

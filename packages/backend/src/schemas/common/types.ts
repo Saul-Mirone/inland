@@ -29,7 +29,9 @@ export const PaginationParams = S.Struct({
       S.greaterThanOrEqualTo(1),
       S.lessThanOrEqualTo(MAX_LIMIT)
     ),
-    { default: () => DEFAULT_LIMIT }
+    {
+      default: () => DEFAULT_LIMIT,
+    }
   ),
 });
 

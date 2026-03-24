@@ -138,7 +138,9 @@ describe('GitProviderRepository', () => {
           'test-token',
           'testuser/test-repo',
           templateData,
-          { overrideExistingFiles: true }
+          {
+            overrideExistingFiles: true,
+          }
         );
       });
 

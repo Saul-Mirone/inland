@@ -89,18 +89,16 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
       });
 
       this.model.articles$.next(
-        this.model.articles$
-          .getValue()
-          .map((a) =>
-            a.id === article.id
-              ? {
-                  ...a,
-                  title: editing.title,
-                  slug: editing.slug,
-                  status: editing.status,
-                }
-              : a
-          )
+        this.model.articles$.getValue().map((a) =>
+          a.id === article.id
+            ? {
+                ...a,
+                title: editing.title,
+                slug: editing.slug,
+                status: editing.status,
+              }
+            : a
+        )
       );
 
       const current = this.model.editing$.getValue();
