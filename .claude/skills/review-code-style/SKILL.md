@@ -1,3 +1,8 @@
+---
+name: review-code-style
+description: Review all changed or newly added code in this repository for code style and quality issues. Check both staged and unstaged changes.
+---
+
 Review all changed or newly added code in this repository for code style and quality issues. Check both staged and unstaged changes. Skip issues already covered by `/review-effect` (Effect-TS specific anti-patterns).
 
 ## Rules

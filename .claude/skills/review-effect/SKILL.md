@@ -1,3 +1,8 @@
+---
+name: review-effect
+description: Review all changed or newly added Effect-TS code in this repository for anti-patterns. Check both staged and unstaged changes.
+---
+
 Review all changed or newly added Effect-TS code in this repository for anti-patterns. Check both staged and unstaged changes.
 
 ## Rules
