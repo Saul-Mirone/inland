@@ -1,10 +1,12 @@
 import { Layer } from 'effect';
 
 import { PrismaArticleRepositoryLive } from '../../repositories/implementations/prisma-article-repository';
+import { PrismaMediaRepositoryLive } from '../../repositories/implementations/prisma-media-repository';
 import { PrismaSiteRepositoryLive } from '../../repositories/implementations/prisma-site-repository';
 import { PrismaUserRepositoryLive } from '../../repositories/implementations/prisma-user-repository';
 import { AuthServiceLive } from '../../services/auth/auth-service-live';
 import { makeConfigService } from '../../services/config-service';
+import { MediaServiceLive } from '../../services/media';
 import { SessionServiceLive } from '../../services/session/session-service-live';
 import { SiteServiceLive } from '../../services/site/site-service-live';
 import { UserServiceLive } from '../../services/user/user-service-live';
@@ -19,6 +21,7 @@ const ConfigLayer = makeConfigService;
 // Prisma repositories depend on DatabaseService
 const RepositoryLayer = Layer.mergeAll(
   PrismaArticleRepositoryLive,
+  PrismaMediaRepositoryLive,
   PrismaSiteRepositoryLive,
   PrismaUserRepositoryLive
 ).pipe(Layer.provide(TestDatabaseServiceLayer));
@@ -37,6 +40,7 @@ export const TestRepositoryLayer = Layer.mergeAll(
   MockAuthProviderLive,
   MockArticleServiceLive,
   AuthServiceLive,
+  MediaServiceLive,
   SessionLayer,
   SiteServiceLive,
   UserServiceLive

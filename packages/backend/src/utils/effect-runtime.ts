@@ -7,12 +7,14 @@ import type { prisma } from '../database/client';
 import { AuthProviderLive } from '../plugins/auth-provider';
 import { GitProviderLive } from '../plugins/git-provider';
 import { PrismaArticleRepositoryLive } from '../repositories/implementations/prisma-article-repository';
+import { PrismaMediaRepositoryLive } from '../repositories/implementations/prisma-media-repository';
 import { PrismaSiteRepositoryLive } from '../repositories/implementations/prisma-site-repository';
 import { PrismaUserRepositoryLive } from '../repositories/implementations/prisma-user-repository';
 import { ArticleServiceLive } from '../services/article/article-service-live';
 import { AuthServiceLive } from '../services/auth/auth-service-live';
 import { makeConfigService } from '../services/config-service';
 import { makeDatabaseService } from '../services/database-service';
+import { MediaServiceLive } from '../services/media';
 import { makeRedisService } from '../services/redis-service';
 import { SessionServiceLive } from '../services/session/session-service-live';
 import { SiteServiceLive } from '../services/site/site-service-live';
@@ -29,6 +31,7 @@ export const createAppRuntime = (
   // Prisma repositories depend on DatabaseService
   const RepositoryLayer = Layer.mergeAll(
     PrismaArticleRepositoryLive,
+    PrismaMediaRepositoryLive,
     PrismaSiteRepositoryLive,
     PrismaUserRepositoryLive
   ).pipe(Layer.provide(DatabaseLayer));
@@ -46,6 +49,7 @@ export const createAppRuntime = (
     AuthProviderLive,
     ArticleServiceLive,
     AuthServiceLive,
+    MediaServiceLive,
     SessionLayer,
     SiteServiceLive,
     UserServiceLive

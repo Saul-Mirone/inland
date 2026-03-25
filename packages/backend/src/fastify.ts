@@ -1,3 +1,4 @@
+import multipart from '@fastify/multipart';
 import Fastify from 'fastify';
 
 import { fastifyAuthPlugin } from './plugins/auth';
@@ -7,6 +8,7 @@ import { fastifyRedisPlugin } from './plugins/redis';
 import { schemaValidationPlugin } from './plugins/schema-validation';
 import { articleRoutes } from './routes/articles';
 import { authRoutes } from './routes/auth';
+import { mediaRoutes } from './routes/media';
 import { siteRoutes } from './routes/sites';
 import { resolveConfig } from './services/config-service';
 
@@ -19,6 +21,9 @@ await fastify.register(fastifyRedisPlugin);
 await fastify.register(runtimePlugin);
 await fastify.register(fastifyAuthPlugin);
 await fastify.register(schemaValidationPlugin);
+await fastify.register(multipart, {
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 await fastify.register(import('@fastify/cors'), {
   origin: resolveConfig().appUrl,
@@ -30,6 +35,7 @@ await fastify.register(import('@fastify/cors'), {
 await fastify.register(authRoutes, { prefix: '/api' });
 await fastify.register(siteRoutes, { prefix: '/api' });
 await fastify.register(articleRoutes, { prefix: '/api' });
+await fastify.register(mediaRoutes, { prefix: '/api' });
 
 fastify.get('/', async () => {
   return { message: 'Inland CMS Backend with Effect-TS!' };

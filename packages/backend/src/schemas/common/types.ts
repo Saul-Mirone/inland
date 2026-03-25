@@ -35,7 +35,11 @@ export const PaginationParams = S.Struct({
   ),
 });
 
+// Generic parameter schema for routes with :id
+export const IdParam = S.Struct({ id: Id });
+
 // Export types
+export type IdParam = S.Schema.Type<typeof IdParam>;
 export type Id = S.Schema.Type<typeof Id>;
 export type Email = S.Schema.Type<typeof Email>;
 export type Username = S.Schema.Type<typeof Username>;

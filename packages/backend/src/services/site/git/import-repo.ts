@@ -5,6 +5,7 @@ import { isUniqueConstraintError } from '../../../repositories/repository-error'
 import { SiteRepository } from '../../../repositories/site-repository';
 import { ArticleService } from '../../article/article-service';
 import { AuthService } from '../../auth';
+import { MediaService } from '../../media';
 import {
   DuplicateSiteNameError,
   SiteCreationError,
@@ -49,9 +50,9 @@ export const importRepo = (data: ImportRepoData) =>
         data.gitRepoFullName,
         {
           siteName: resolveDisplayName(data),
-          siteDescription: data.description || `Blog site: ${data.name}`,
+          siteDescription: data.description ?? `Blog site: ${data.name}`,
           siteNameSlug: generateSlug(data.name),
-          siteAuthor: platformUser.displayName || platformUser.username,
+          siteAuthor: platformUser.displayName ?? platformUser.username,
           platformUsername: platformUser.username,
         },
         { overrideExistingFiles: data.overrideExistingFiles }
@@ -93,7 +94,7 @@ export const importRepo = (data: ImportRepoData) =>
       name: data.name,
       displayName: data.displayName,
       gitRepo: data.gitRepoFullName,
-      platform: data.platform || 'github',
+      platform: data.platform ?? 'github',
       deployStatus: pagesUrl ? 'deployed' : 'pending',
       deployUrl: pagesUrl,
     });
@@ -117,6 +118,21 @@ export const importRepo = (data: ImportRepoData) =>
       `Imported ${importResult.imported}/${importResult.total} articles for site ${site.name}`
     );
 
+    const mediaService = yield* MediaService;
+    const mediaResult = yield* mediaService
+      .importMediaFromGit(site.id, data.userId)
+      .pipe(
+        Effect.catchAll((error) =>
+          Effect.logError('Failed to import media', { error }).pipe(
+            Effect.map(() => ({ imported: 0, total: 0 }))
+          )
+        )
+      );
+
+    yield* Effect.logInfo(
+      `Imported ${mediaResult.imported}/${mediaResult.total} media files for site ${site.name}`
+    );
+
     return {
       site: {
         ...site,
@@ -125,10 +141,11 @@ export const importRepo = (data: ImportRepoData) =>
       },
       pagesConfigured: !!pagesUrl,
       workflowInjected: data.setupWorkflow !== false,
-      filesCreated: workflowResult?.filesCreated || [],
-      filesSkipped: workflowResult?.filesSkipped || [],
+      filesCreated: workflowResult?.filesCreated ?? [],
+      filesSkipped: workflowResult?.filesSkipped ?? [],
       articlesImported: importResult.imported,
       totalArticles: importResult.total,
+      mediaImported: mediaResult.imported,
     };
   }).pipe(
     Effect.catchTag(

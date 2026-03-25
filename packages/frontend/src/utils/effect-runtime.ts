@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArticlesModelLive } from '@/model/articles-model';
 import { AuthModelLive } from '@/model/auth-model';
 import { EditorModelLive } from '@/model/editor-model';
+import { MediaModelLive } from '@/model/media-model';
 import { SitesModelLive } from '@/model/sites-model';
 import { ThemeModelLive } from '@/model/theme-model';
 import { ApiClientLive } from '@/services/api';
@@ -13,6 +14,7 @@ import { ArticleServiceLive } from '@/services/article';
 import { AuthServiceLive } from '@/services/auth';
 import { DialogServiceLive } from '@/services/dialog';
 import { EditorServiceLive } from '@/services/editor';
+import { MediaServiceLive } from '@/services/media';
 import { NavigationServiceLive } from '@/services/navigation';
 import { SiteServiceLive } from '@/services/site';
 import { ThemeServiceLive } from '@/services/theme';
@@ -25,12 +27,14 @@ const ModelLayer = Layer.mergeAll(
   ArticlesModelLive,
   AuthModelLive,
   EditorModelLive,
+  MediaModelLive,
   ThemeModelLive
 );
 
 const BaseServiceLayer = Layer.mergeAll(
   ArticleServiceLive,
   AuthServiceLive,
+  MediaServiceLive,
   ThemeServiceLive
 ).pipe(Layer.provideMerge(ModelLayer));
 

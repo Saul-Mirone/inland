@@ -5,6 +5,7 @@ import {
   type ArticleCreateData,
 } from '../../../repositories/article-repository';
 import { GitProviderRepository } from '../../../repositories/git-provider-repository';
+import { MediaService } from '../../media';
 import { validateSiteGitAccess } from './validate-site-git-access';
 
 const logSyncError = (action: string, slug: string) =>
@@ -86,8 +87,19 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
       }
     }
 
+    const mediaService = yield* MediaService;
+    const mediaResult = yield* mediaService
+      .importMediaFromGit(siteId, userId)
+      .pipe(
+        Effect.catchAll((error) =>
+          Effect.logError('Failed to sync media', { error }).pipe(
+            Effect.map(() => ({ imported: 0, total: 0 }))
+          )
+        )
+      );
+
     yield* Effect.logInfo(
-      `Sync complete for ${gitRepo}: ${created.length} created, ${updated.length} updated, ${markedDraft.length} marked draft, ${unchanged.length} unchanged`
+      `Sync complete for ${gitRepo}: ${created.length} created, ${updated.length} updated, ${markedDraft.length} marked draft, ${unchanged.length} unchanged, ${mediaResult.imported} media imported`
     );
 
     return {
@@ -96,5 +108,6 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
       markedDraft: markedDraft.length,
       unchanged: unchanged.length,
       total: remoteArticles.length,
+      mediaImported: mediaResult.imported,
     };
   });

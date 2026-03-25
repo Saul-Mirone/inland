@@ -124,6 +124,7 @@ export interface GitHubTreeResponse {
     readonly path: string;
     readonly type: string;
     readonly sha: string;
+    readonly size?: number;
   }>;
 }
 

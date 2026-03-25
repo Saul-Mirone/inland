@@ -31,6 +31,7 @@ export const makeMockArticleService = (): ArticleServiceInterface => ({
       markedDraft: 0,
       unchanged: 1,
       total: 2,
+      mediaImported: 0,
     }),
   validateTitle: notImplemented('validateTitle'),
   validateSlug: notImplemented('validateSlug'),

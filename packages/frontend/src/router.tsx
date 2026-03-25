@@ -7,6 +7,7 @@ import { AuthBouncer } from './routes/auth-bouncer';
 import { AuthCallback } from './routes/auth-callback';
 import { AuthError } from './routes/auth-error';
 import { Home } from './routes/home';
+import { MediaPage } from './routes/media';
 import { Welcome } from './routes/welcome';
 
 export const AppRouter = () => (
@@ -18,6 +19,7 @@ export const AppRouter = () => (
           <Route path="articles/:id" element={<ArticleGuard />}>
             <Route index element={<ArticleEditPage />} />
           </Route>
+          <Route path="media" element={<MediaPage />} />
         </Route>
       </Route>
     </Route>

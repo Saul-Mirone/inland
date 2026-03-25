@@ -12,6 +12,10 @@ export interface ApiClientService {
   ) => Effect.Effect<T, ApiError>;
   readonly put: <T>(path: string, body?: unknown) => Effect.Effect<T, ApiError>;
   readonly del: <T>(path: string) => Effect.Effect<T, ApiError>;
+  readonly postFormData: <T>(
+    path: string,
+    formData: FormData
+  ) => Effect.Effect<T, ApiError>;
   readonly buildUrl: (path: string) => string;
 }
 

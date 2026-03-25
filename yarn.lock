@@ -1496,6 +1496,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fastify/busboy@npm:^3.0.0":
+  version: 3.2.0
+  resolution: "@fastify/busboy@npm:3.2.0"
+  checksum: 10/7d42b23eed18b1aaf2d2b1c77a5b76ec3606d59f5ddec31c04b144536be57478ed0c73e04768f11535b11a37b48aaaa0aed4904d5f18391ff90045c258e41acc
+  languageName: node
+  linkType: hard
+
 "@fastify/cookie@npm:^11.0.2":
   version: 11.0.2
   resolution: "@fastify/cookie@npm:11.0.2"
@@ -1513,6 +1520,13 @@ __metadata:
     fastify-plugin: "npm:^5.0.0"
     toad-cache: "npm:^3.7.0"
   checksum: 10/3c2defc8a8624ad2f5d88cc21b97a5bb2ae9d4eca836e276815c18e791b0628b1638ce62c208a8167794ba6e7ed57c531226459d35ba02b9c4a0ad31b95d72a0
+  languageName: node
+  linkType: hard
+
+"@fastify/deepmerge@npm:^3.0.0":
+  version: 3.2.1
+  resolution: "@fastify/deepmerge@npm:3.2.1"
+  checksum: 10/e35db0525b2cbb45ba5c0ca8b6f40f80016f4d1b89c8428ed17d181e69b2a7262cdaabeb9cd8033684ca9b2771c037ae2749f02519928f1407c118014248033b
   languageName: node
   linkType: hard
 
@@ -1558,6 +1572,19 @@ __metadata:
   dependencies:
     dequal: "npm:^2.0.3"
   checksum: 10/10ce2bc689f279375974cc61d0779a6672dcc80d62120ebcbf07f821b6f07e6149cd17c196f20d4457b07458407bdbb277a27a42ec3ff322e7a5bbb378e41fda
+  languageName: node
+  linkType: hard
+
+"@fastify/multipart@npm:^9.4.0":
+  version: 9.4.0
+  resolution: "@fastify/multipart@npm:9.4.0"
+  dependencies:
+    "@fastify/busboy": "npm:^3.0.0"
+    "@fastify/deepmerge": "npm:^3.0.0"
+    "@fastify/error": "npm:^4.0.0"
+    fastify-plugin: "npm:^5.0.0"
+    secure-json-parse: "npm:^4.0.0"
+  checksum: 10/a14c3e6c4cd75d6c8d48b2094c7c49113cad322ead77081c1c8a01309fea26b10c41ddb4e90251bbba6a53289c3fe0c88f80a50d6308ae5f5a83c6699a8ab5b1
   languageName: node
   linkType: hard
 
@@ -1762,6 +1789,7 @@ __metadata:
     "@fastify/cookie": "npm:^11.0.2"
     "@fastify/cors": "npm:^11.1.0"
     "@fastify/jwt": "npm:^10.0.0"
+    "@fastify/multipart": "npm:^9.4.0"
     "@fastify/oauth2": "npm:^8.1.2"
     "@fastify/redis": "npm:^7.0.2"
     "@fastify/session": "npm:^11.1.0"

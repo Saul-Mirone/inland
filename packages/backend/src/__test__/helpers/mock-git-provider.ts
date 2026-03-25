@@ -7,6 +7,7 @@ import {
   type CreateRepoData,
   type TemplateData,
   type ImportedArticle,
+  type ImportedMedia,
 } from '../../repositories/git-provider-repository';
 
 // Mock implementation for testing
@@ -109,6 +110,29 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
 
   enablePages: (_accessToken: string, repoFullName: string) =>
     Effect.succeed(`https://testuser.github.io/${repoFullName.split('/')[1]}`),
+
+  getMediaFilesFromRepo: (
+    _accessToken: string,
+    _repoFullName: string,
+    _defaultBranch: string
+  ) => Effect.succeed([] as ImportedMedia[]),
+
+  uploadFileToRepo: (
+    _accessToken: string,
+    _repoFullName: string,
+    opts: { filePath: string; base64Content: string; commitMessage: string }
+  ) =>
+    Effect.succeed({
+      filePath: opts.filePath,
+      blobSha: 'mockblobsha123',
+      commitSha: 'mockcommitsha456',
+    }),
+
+  deleteFileFromRepo: (
+    _accessToken: string,
+    _repoFullName: string,
+    _opts: { filePath: string; commitMessage: string }
+  ) => Effect.succeed({ deleted: true }),
 });
 
 // Mock layer for testing

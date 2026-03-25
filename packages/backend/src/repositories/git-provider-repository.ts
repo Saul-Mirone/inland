@@ -40,6 +40,13 @@ export interface ImportedArticle {
   readonly gitSha?: string;
 }
 
+export interface ImportedMedia {
+  readonly filePath: string;
+  readonly filename: string;
+  readonly sha: string;
+  readonly size: number;
+}
+
 // Git provider errors
 export class GitProviderError extends Data.TaggedError('GitProviderError')<{
   readonly message: string;
@@ -162,6 +169,43 @@ export interface GitProviderRepositoryService {
     accessToken: string,
     repoFullName: string
   ) => Effect.Effect<string, GitProviderError>;
+
+  /**
+   * Upload a file (binary or text) to the repository
+   */
+  readonly uploadFileToRepo: (
+    accessToken: string,
+    repoFullName: string,
+    opts: {
+      filePath: string;
+      base64Content: string;
+      commitMessage: string;
+    }
+  ) => Effect.Effect<
+    { filePath: string; blobSha: string; commitSha: string },
+    GitProviderError
+  >;
+
+  /**
+   * Get image files from repository for import
+   */
+  readonly getMediaFilesFromRepo: (
+    accessToken: string,
+    repoFullName: string,
+    defaultBranch: string
+  ) => Effect.Effect<ImportedMedia[], GitProviderError>;
+
+  /**
+   * Delete a file from the repository
+   */
+  readonly deleteFileFromRepo: (
+    accessToken: string,
+    repoFullName: string,
+    opts: {
+      filePath: string;
+      commitMessage: string;
+    }
+  ) => Effect.Effect<{ deleted: boolean; reason?: string }, GitProviderError>;
 }
 
 // Effect Context for dependency injection

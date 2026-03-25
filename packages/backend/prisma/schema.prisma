@@ -97,6 +97,7 @@ model Media {
   fileSize     BigInt   @map("file_size")
   mimeType     String   @map("mime_type")
   storageType  String   @default("github") @map("storage_type")
+  contentHash  String?  @map("content_hash")
   externalUrl  String?  @map("external_url")
   alt          String?
   createdAt    DateTime @default(now()) @map("created_at")
@@ -106,5 +107,6 @@ model Media {
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, filePath])
+  @@index([siteId, contentHash])
   @@map("media")
 }

@@ -17,6 +17,39 @@ function extractErrorMessage(data: unknown): string | undefined {
   return isErrorResponse(data) ? data.error : undefined;
 }
 
+const toApiError = (error: unknown): ApiError => {
+  if (error instanceof ApiError) return error;
+  return new ApiError({
+    status: 0,
+    message: error instanceof Error ? error.message : 'Unknown network error',
+  });
+};
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorData: unknown = await response.json().catch(() => ({}));
+    const message =
+      extractErrorMessage(errorData) ??
+      `Request failed with status ${response.status}`;
+
+    throw new ApiError({
+      status: response.status,
+      message,
+      redirectUrl: response.status === 401 ? '/' : undefined,
+    });
+  }
+
+  if (
+    response.status === 204 ||
+    response.headers.get('content-length') === '0'
+  ) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    return undefined as T;
+  }
+
+  return await response.json();
+}
+
 export class ApiClientImpl implements ApiClientService {
   private readonly baseUrl: string;
   private refreshPromise: Promise<boolean> | null = null;
@@ -94,37 +127,9 @@ export class ApiClientImpl implements ApiClientService {
           body: body !== undefined ? JSON.stringify(body) : undefined,
         });
 
-        if (!response.ok) {
-          const errorData: unknown = await response.json().catch(() => ({}));
-          const message =
-            extractErrorMessage(errorData) ??
-            `Request failed with status ${response.status}`;
-
-          throw new ApiError({
-            status: response.status,
-            message,
-            redirectUrl: response.status === 401 ? '/' : undefined,
-          });
-        }
-
-        if (
-          response.status === 204 ||
-          response.headers.get('content-length') === '0'
-        ) {
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-          return undefined as T;
-        }
-
-        return await response.json();
+        return handleResponse<T>(response);
       },
-      catch: (error) => {
-        if (error instanceof ApiError) return error;
-        return new ApiError({
-          status: 0,
-          message:
-            error instanceof Error ? error.message : 'Unknown network error',
-        });
-      },
+      catch: toApiError,
     });
   }
 
@@ -142,5 +147,22 @@ export class ApiClientImpl implements ApiClientService {
 
   del<T>(path: string): Effect.Effect<T, ApiError> {
     return this.request<T>('DELETE', path);
+  }
+
+  postFormData<T>(
+    path: string,
+    formData: FormData
+  ): Effect.Effect<T, ApiError> {
+    return Effect.tryPromise({
+      try: async () => {
+        const response = await this.apiFetch(path, {
+          method: 'POST',
+          body: formData,
+        });
+
+        return handleResponse<T>(response);
+      },
+      catch: toApiError,
+    });
   }
 }

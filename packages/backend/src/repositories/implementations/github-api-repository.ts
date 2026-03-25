@@ -6,6 +6,7 @@ import type {
   CreateRepoData,
   TemplateData,
   ImportedArticle,
+  ImportedMedia,
 } from '../git-provider-repository';
 
 import {
@@ -470,6 +471,44 @@ export const makeGitHubApiRepository = (config?: {
       return articles;
     }),
 
+  getMediaFilesFromRepo: (
+    accessToken: string,
+    repoFullName: string,
+    defaultBranch: string
+  ) =>
+    Effect.gen(function* () {
+      const files = yield* getRepoFiles(
+        accessToken,
+        repoFullName,
+        defaultBranch
+      );
+
+      const imageExtensions = [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.svg',
+        '.avif',
+      ];
+
+      return files
+        .filter(
+          (file) =>
+            file.path.startsWith('assets/images/') &&
+            imageExtensions.some((ext) => file.path.toLowerCase().endsWith(ext))
+        )
+        .map(
+          (file): ImportedMedia => ({
+            filePath: file.path,
+            filename: file.path.split('/').pop()!,
+            sha: file.sha,
+            size: file.size ?? 0,
+          })
+        );
+    }),
+
   publishArticleToRepo: (
     accessToken: string,
     repoFullName: string,
@@ -660,4 +699,86 @@ export const makeGitHubApiRepository = (config?: {
 
   enablePages: (accessToken: string, repoFullName: string) =>
     enableGitHubPages(accessToken, repoFullName),
+
+  uploadFileToRepo: (
+    accessToken: string,
+    repoFullName: string,
+    opts: {
+      filePath: string;
+      base64Content: string;
+      commitMessage: string;
+    }
+  ) =>
+    Effect.gen(function* () {
+      const existingFile = yield* getFileOrNull(
+        accessToken,
+        repoFullName,
+        opts.filePath
+      );
+      const sha = existingFile ? existingFile.sha : undefined;
+
+      const response = yield* makeGitHubApiRequest(
+        accessToken,
+        `/repos/${repoFullName}/contents/${opts.filePath}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: opts.commitMessage,
+            content: opts.base64Content,
+            ...(sha !== undefined && { sha }),
+          }),
+        }
+      );
+
+      const validated = yield* assertFields<{
+        commit: unknown;
+        content: unknown;
+      }>(
+        response,
+        ['commit', 'content'],
+        `PUT /repos/.../contents/${opts.filePath}`
+      );
+      const commit = yield* assertFields<{ sha: string }>(
+        validated.commit,
+        ['sha'],
+        `PUT /repos/.../contents/${opts.filePath} → commit`
+      );
+      const contentInfo = yield* assertFields<{ sha: string }>(
+        validated.content,
+        ['sha'],
+        `PUT /repos/.../contents/${opts.filePath} → content`
+      );
+
+      return {
+        filePath: opts.filePath,
+        blobSha: contentInfo.sha,
+        commitSha: commit.sha,
+      };
+    }),
+
+  deleteFileFromRepo: (
+    accessToken: string,
+    repoFullName: string,
+    opts: { filePath: string; commitMessage: string }
+  ) =>
+    Effect.gen(function* () {
+      const currentFile = yield* getFileOrNull(
+        accessToken,
+        repoFullName,
+        opts.filePath
+      );
+
+      if (!currentFile) {
+        return { deleted: false, reason: 'File not found' };
+      }
+
+      yield* deleteFile(accessToken, repoFullName, {
+        filePath: opts.filePath,
+        sha: currentFile.sha,
+        message: opts.commitMessage,
+      });
+
+      return { deleted: true };
+    }),
 });

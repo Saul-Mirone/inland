@@ -1,4 +1,7 @@
-import { Crepe } from '@milkdown/crepe';
+import type { Node } from '@milkdown/kit/prose/model';
+
+import { Crepe, CrepeFeature } from '@milkdown/crepe';
+import { upload, uploadConfig } from '@milkdown/kit/plugin/upload';
 import { replaceAll } from '@milkdown/kit/utils';
 import { Effect } from 'effect';
 import {
@@ -16,6 +19,7 @@ import { logger } from '@/utils/logger';
 import type { EditorServiceInterface } from './editor-service';
 
 export type SaveFn = () => Promise<void>;
+export type UploadImageFn = (file: File) => Promise<string>;
 
 export class EditorServiceImpl implements EditorServiceInterface {
   private autoSaveSubscription: Subscription | null = null;
@@ -23,7 +27,8 @@ export class EditorServiceImpl implements EditorServiceInterface {
   constructor(
     private readonly model: EditorModelService,
     private readonly articles: ArticlesModelService,
-    private readonly save: SaveFn
+    private readonly save: SaveFn,
+    private readonly uploadImage: UploadImageFn
   ) {}
 
   initialize = (root: HTMLElement): Effect.Effect<void> =>
@@ -31,7 +36,38 @@ export class EditorServiceImpl implements EditorServiceInterface {
       yield* this.destroy();
 
       const editing = this.articles.editing$.getValue();
-      const crepe = new Crepe({ root, defaultValue: editing.content });
+      const uploadFn = this.uploadImage;
+      const crepe = new Crepe({
+        root,
+        defaultValue: editing.content,
+        featureConfigs: {
+          [CrepeFeature.ImageBlock]: {
+            onUpload: uploadFn,
+          },
+        },
+      });
+
+      crepe.editor
+        .config((ctx) => {
+          ctx.update(uploadConfig.key, (prev) => ({
+            ...prev,
+            uploader: async (files, schema) => {
+              const nodes: Node[] = [];
+              for (let i = 0; i < files.length; i++) {
+                const file = files.item(i);
+                if (!file || !file.type.startsWith('image/')) continue;
+                const url = await uploadFn(file);
+                const imageNode = schema.nodes['image-block'].createAndFill({
+                  src: url,
+                });
+                if (imageNode) nodes.push(imageNode);
+              }
+              return nodes;
+            },
+          }));
+        })
+        .use(upload);
+
       this.model.crepe$.next(crepe);
 
       crepe.on((listener) => {
@@ -51,7 +87,11 @@ export class EditorServiceImpl implements EditorServiceInterface {
 
       this.model.ready$.next(true);
       this.startAutoSave();
-    }).pipe(Effect.catchAll(() => Effect.void));
+    }).pipe(
+      Effect.catchAll((error) =>
+        Effect.logError('Editor initialization failed', { error })
+      )
+    );
 
   destroy = (): Effect.Effect<void> =>
     Effect.gen(this, function* () {
@@ -72,7 +112,11 @@ export class EditorServiceImpl implements EditorServiceInterface {
         this.model.crepe$.next(null);
         this.model.ready$.next(false);
       }
-    }).pipe(Effect.catchAll(() => Effect.void));
+    }).pipe(
+      Effect.catchAll((error) =>
+        Effect.logError('Editor destruction failed', { error })
+      )
+    );
 
   replaceContent = (markdown: string): Effect.Effect<void> =>
     Effect.sync(() => {
