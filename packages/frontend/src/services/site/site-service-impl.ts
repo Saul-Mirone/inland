@@ -126,6 +126,7 @@ export class SiteServiceImpl implements SiteServiceInterface {
     Effect.gen(this, function* () {
       const result = yield* this.api.post<SyncResult>(`/sites/${siteId}/sync`);
       yield* this.articleService.fetchArticles(siteId);
+      yield* this.articleService.refreshCurrentArticle();
       return result;
     }).pipe(
       Effect.catchAll((error) =>

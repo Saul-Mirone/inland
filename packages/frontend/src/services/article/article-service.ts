@@ -19,6 +19,7 @@ export interface ArticleServiceInterface {
   readonly clearArticles: () => Effect.Effect<void>;
   readonly fetchArticles: (siteId?: string) => Effect.Effect<void>;
   readonly openArticle: (id: string) => Effect.Effect<void>;
+  readonly refreshCurrentArticle: () => Effect.Effect<void>;
   readonly quickCreate: (siteId: string) => Effect.Effect<string>;
   readonly createArticle: (data: CreateArticleData) => Effect.Effect<void>;
   readonly updateEditField: <K extends keyof EditingState>(

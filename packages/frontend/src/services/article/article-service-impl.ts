@@ -48,7 +48,22 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
     Effect.gen(this, function* () {
       const current = this.model.currentArticle$.getValue();
       if (current?.id === id) return;
+      yield* this.loadArticleIntoEditor(id);
+    }).pipe(
+      Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
+    );
 
+  refreshCurrentArticle = (): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      const current = this.model.currentArticle$.getValue();
+      if (!current) return;
+      yield* this.loadArticleIntoEditor(current.id);
+    }).pipe(
+      Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
+    );
+
+  private loadArticleIntoEditor = (id: string): Effect.Effect<void, ApiError> =>
+    Effect.gen(this, function* () {
       this.model.articleLoading$.next(true);
       this.model.error$.next(null);
 
@@ -63,9 +78,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         saving: false,
       });
       this.model.articleLoading$.next(false);
-    }).pipe(
-      Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
-    );
+    });
 
   updateEditField = <K extends keyof EditingState>(
     field: K,
@@ -251,7 +264,11 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         `Article ${action} successfully!${result.filePath ? ` File: ${result.filePath}` : ''}`
       );
     }).pipe(
-      Effect.catchAll((error) => Effect.sync(() => this.pushError(error))),
+      Effect.catchAll((error) =>
+        Effect.sync(() => {
+          toast.error(error.message);
+        })
+      ),
       Effect.ensuring(Effect.sync(() => this.model.publishingId$.next(null)))
     );
 }
