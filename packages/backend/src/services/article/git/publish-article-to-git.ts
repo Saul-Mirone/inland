@@ -10,6 +10,7 @@ import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
   GitRepositoryError,
+  GitConflictError,
 } from '../article-types';
 
 const generateExcerpt = (content: string): string => {
@@ -64,6 +65,21 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
     const authService = yield* AuthService;
     const accessToken = yield* authService.getUserAuthToken(userId);
 
+    if (article.gitSha) {
+      const remoteSha = yield* gitProvider.getArticleFileSha(
+        accessToken,
+        article.site.gitRepo,
+        article.slug
+      );
+      if (remoteSha && remoteSha !== article.gitSha) {
+        return yield* new GitConflictError({
+          articleId,
+          localSha: article.gitSha,
+          remoteSha,
+        });
+      }
+    }
+
     const today = new Date().toISOString().split('T')[0];
     const excerpt = generateExcerpt(article.content);
 
@@ -89,6 +105,8 @@ excerpt: ${excerpt}
 
     const repoData: ArticleUpdateData = {
       status: 'published',
+      gitSha: result.blobSha,
+      gitSyncedAt: new Date(),
     };
     const updatedArticle = yield* articleRepo.update(articleId, repoData);
 

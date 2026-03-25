@@ -1,5 +1,13 @@
 import { Effect } from 'effect';
-import { FileText, LogOut, MoreHorizontal, Plus, Trash2 } from 'lucide-react';
+import {
+  FileText,
+  LogOut,
+  MoreHorizontal,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
 import { confirm } from '@/components/confirm-dialog';
@@ -31,6 +39,7 @@ import { authModel } from '@/model/auth-model';
 import { sitesModel } from '@/model/sites-model';
 import { ArticleService } from '@/services/article';
 import { AuthService } from '@/services/auth';
+import { SiteService } from '@/services/site';
 import { runEffect } from '@/utils/effect-runtime';
 import { fireAndForget } from '@/utils/fire-and-forget';
 import { useObservable } from '@/utils/use-observable';
@@ -48,6 +57,17 @@ export function AppSidebar() {
   const articles = useObservable(articlesModel.articles$);
   const articlesLoading = useObservable(articlesModel.loading$);
   const user = authState.user;
+
+  const selectedSiteId = useObservable(sitesModel.selectedSiteId$);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = () => {
+    if (!selectedSiteId || syncing) return;
+    setSyncing(true);
+    void runEffect(
+      Effect.flatMap(SiteService, (svc) => svc.syncArticles(selectedSiteId))
+    ).finally(() => setSyncing(false));
+  };
 
   const handleDeleteArticle = (articleId: string, title: string) => {
     setTimeout(async () => {
@@ -77,13 +97,20 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Articles</SidebarGroupLabel>
           <SidebarGroupAction
+            title="Sync from GitHub"
+            disabled={syncing}
+            onClick={handleSync}
+            className="right-10"
+          >
+            <RefreshCw className={syncing ? 'animate-spin' : ''} />
+          </SidebarGroupAction>
+          <SidebarGroupAction
             title="New article"
             onClick={() => {
-              const siteId = sitesModel.selectedSiteId$.getValue();
-              if (!siteId) return;
+              if (!selectedSiteId) return;
               void runEffect(
                 Effect.flatMap(ArticleService, (svc) =>
-                  Effect.map(svc.quickCreate(siteId), (articleId) => {
+                  Effect.map(svc.quickCreate(selectedSiteId), (articleId) => {
                     if (articleId) {
                       fireAndForget(navigate(`/articles/${articleId}`));
                     }

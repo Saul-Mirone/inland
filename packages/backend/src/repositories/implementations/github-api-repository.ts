@@ -44,6 +44,8 @@ const assertFields = <T extends Record<string, unknown>>(
   sharedAssertFields<GitProviderError, T>(response, fields, context, makeError);
 
 // Utility functions (pure, module-level)
+const articleFilePath = (slug: string): string => `content/${slug}.md`;
+
 const shouldProcessFile = (filePath: string): boolean => {
   const textExtensions = [
     '.html',
@@ -390,7 +392,7 @@ export const makeGitHubApiRepository = (config?: {
     articleSlug: string
   ) =>
     Effect.gen(function* () {
-      const filePath = `content/${articleSlug}.md`;
+      const filePath = articleFilePath(articleSlug);
 
       const currentFile = yield* getFileOrNull(
         accessToken,
@@ -409,6 +411,17 @@ export const makeGitHubApiRepository = (config?: {
       });
 
       return { deleted: true, filePath };
+    }),
+
+  getArticleFileSha: (
+    accessToken: string,
+    repoFullName: string,
+    articleSlug: string
+  ) =>
+    Effect.gen(function* () {
+      const filePath = articleFilePath(articleSlug);
+      const file = yield* getFileOrNull(accessToken, repoFullName, filePath);
+      return file ? file.sha : null;
     }),
 
   getMarkdownFilesFromRepo: (
@@ -443,7 +456,7 @@ export const makeGitHubApiRepository = (config?: {
 
           const article = parseMarkdownContent(content, file.path);
           if (article) {
-            articles.push(article);
+            articles.push({ ...article, gitSha: file.sha });
           }
         }).pipe(
           Effect.catchAll((error) =>
@@ -464,7 +477,7 @@ export const makeGitHubApiRepository = (config?: {
     markdownContent: string
   ) =>
     Effect.gen(function* () {
-      const filePath = `content/${articleSlug}.md`;
+      const filePath = articleFilePath(articleSlug);
 
       const existingFile = yield* getFileOrNull(
         accessToken,
@@ -481,21 +494,30 @@ export const makeGitHubApiRepository = (config?: {
         message,
         sha,
       });
-      const validated = yield* assertFields(
+      const validated = yield* assertFields<{
+        commit: unknown;
+        content: unknown;
+      }>(
         response,
-        ['commit'],
+        ['commit', 'content'],
         `PUT /repos/.../contents/${filePath}`
       );
-      const commit = yield* assertFields<{ sh: string }>(
+      const commit = yield* assertFields<{ sha: string }>(
         validated.commit,
         ['sha'],
         `PUT /repos/.../contents/${filePath} → commit`
+      );
+      const contentInfo = yield* assertFields<{ sha: string }>(
+        validated.content,
+        ['sha'],
+        `PUT /repos/.../contents/${filePath} → content`
       );
 
       return {
         published: true,
         filePath,
-        commitSha: commit.sh,
+        commitSha: commit.sha,
+        blobSha: contentInfo.sha,
         wasUpdate: sha !== undefined,
       };
     }),

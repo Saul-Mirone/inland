@@ -13,6 +13,8 @@ export interface ArticleCreateData {
   readonly slug: string;
   readonly content: string;
   readonly status?: 'draft' | 'published';
+  readonly gitSha?: string;
+  readonly gitSyncedAt?: Date;
 }
 
 export interface ArticleUpdateData {
@@ -20,6 +22,15 @@ export interface ArticleUpdateData {
   readonly slug?: string;
   readonly content?: string;
   readonly status?: 'draft' | 'published';
+  readonly gitSha?: string | null;
+  readonly gitSyncedAt?: Date | null;
+}
+
+export interface ArticleSyncItem {
+  readonly id: string;
+  readonly slug: string;
+  readonly status: string;
+  readonly gitSha: string | null;
 }
 
 export interface ArticleWithSite extends Article {
@@ -65,6 +76,9 @@ export interface ArticleRepositoryService {
     data: ArticleUpdateData
   ) => Effect.Effect<ArticleWithSite, RepositoryError>;
   readonly delete: (id: string) => Effect.Effect<Article, RepositoryError>;
+  readonly findAllForSync: (
+    siteId: string
+  ) => Effect.Effect<ArticleSyncItem[], RepositoryError>;
 }
 
 // Context tag for dependency injection

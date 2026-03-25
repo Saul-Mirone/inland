@@ -37,6 +37,7 @@ export interface ImportedArticle {
   readonly slug: string;
   readonly content: string;
   readonly status: 'draft' | 'published';
+  readonly gitSha?: string;
 }
 
 // Git provider errors
@@ -104,10 +105,20 @@ export interface GitProviderRepositoryService {
       published: boolean;
       filePath: string;
       commitSha: string;
+      blobSha: string;
       wasUpdate: boolean;
     },
     GitProviderError
   >;
+
+  /**
+   * Get the blob SHA of an article file in the repository
+   */
+  readonly getArticleFileSha: (
+    accessToken: string,
+    repoFullName: string,
+    articleSlug: string
+  ) => Effect.Effect<string | null, GitProviderError>;
 
   /**
    * Get repository information

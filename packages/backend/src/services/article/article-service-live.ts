@@ -9,6 +9,7 @@ import {
 import { deleteArticleFromGit } from './git/delete-article-from-git';
 import { importArticlesFromGit } from './git/import-articles-from-git';
 import { publishArticleToGit } from './git/publish-article-to-git';
+import { syncArticlesFromGit } from './git/sync-articles-from-git';
 import { createArticle } from './operations/create-article';
 import { deleteArticle } from './operations/delete-article';
 import { findArticleById } from './operations/find-article-by-id';
@@ -26,6 +27,7 @@ export const ArticleServiceLive = Layer.succeed(ArticleService, {
   deleteArticleFromGit,
   importArticlesFromGit,
   publishArticleToGit,
+  syncArticlesFromGit,
   validateTitle,
   validateSlug,
   generateSlugFromTitle,

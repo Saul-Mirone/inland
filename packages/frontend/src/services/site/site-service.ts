@@ -34,6 +34,17 @@ export interface SiteServiceInterface {
   readonly importSite: (
     data: ImportSiteData
   ) => Effect.Effect<{ articlesImported?: number } | undefined>;
+  readonly syncArticles: (
+    siteId: string
+  ) => Effect.Effect<SyncResult | undefined>;
+}
+
+export interface SyncResult {
+  created: number;
+  updated: number;
+  markedDraft: number;
+  unchanged: number;
+  total: number;
 }
 
 // ── DI tag ──────────────────────────────────────────────────────────

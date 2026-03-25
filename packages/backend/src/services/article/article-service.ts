@@ -8,6 +8,7 @@ import type {
 import type { deleteArticleFromGit } from './git/delete-article-from-git';
 import type { importArticlesFromGit } from './git/import-articles-from-git';
 import type { publishArticleToGit } from './git/publish-article-to-git';
+import type { syncArticlesFromGit } from './git/sync-articles-from-git';
 import type { createArticle } from './operations/create-article';
 import type { deleteArticle } from './operations/delete-article';
 import type { findArticleById } from './operations/find-article-by-id';
@@ -25,6 +26,7 @@ export interface ArticleServiceInterface {
   readonly deleteArticleFromGit: typeof deleteArticleFromGit;
   readonly importArticlesFromGit: typeof importArticlesFromGit;
   readonly publishArticleToGit: typeof publishArticleToGit;
+  readonly syncArticlesFromGit: typeof syncArticlesFromGit;
   readonly validateTitle: typeof validateTitle;
   readonly validateSlug: typeof validateSlug;
   readonly generateSlugFromTitle: typeof generateSlugFromTitle;

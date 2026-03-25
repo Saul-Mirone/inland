@@ -41,6 +41,12 @@ export class GitRepositoryError extends Data.TaggedError('GitRepositoryError')<{
   readonly message: string;
 }> {}
 
+export class GitConflictError extends Data.TaggedError('GitConflictError')<{
+  readonly articleId: string;
+  readonly localSha: string | null;
+  readonly remoteSha: string;
+}> {}
+
 // Domain types
 export interface CreateArticleData {
   readonly siteId: string;

@@ -6,7 +6,15 @@ import { Input } from '@/components/ui/input';
 import { SiteService } from '@/services/site';
 import { runEffect } from '@/utils/effect-runtime';
 
+const slugify = (text: string): string =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-_.]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 const initialFormState = {
+  displayName: '',
   name: '',
   gitRepoFullName: '',
   description: '',
@@ -17,11 +25,28 @@ const initialFormState = {
 
 export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
   const [form, setForm] = useState(initialFormState);
+  const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const updateDisplayName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const displayName = e.target.value;
+    setForm((prev) => ({
+      ...prev,
+      displayName,
+      ...(!nameManuallyEdited && {
+        name: slugify(displayName) || prev.name,
+      }),
+    }));
+  };
+
+  const updateName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNameManuallyEdited(true);
+    setForm((prev) => ({ ...prev, name: e.target.value }));
+  };
+
   const updateTextField =
-    (field: 'name' | 'gitRepoFullName' | 'description') =>
+    (field: 'gitRepoFullName' | 'description') =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
@@ -36,7 +61,7 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!form.name.trim()) {
+    if (!form.displayName.trim()) {
       setError('Please enter a site name');
       return;
     }
@@ -59,7 +84,8 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
     runEffect(
       Effect.flatMap(SiteService, (svc) =>
         svc.importSite({
-          name: form.name.trim(),
+          name: form.name.trim() || slugify(form.displayName),
+          displayName: form.displayName.trim() || undefined,
           gitRepoFullName: form.gitRepoFullName.trim(),
           description: form.description.trim() || undefined,
           setupWorkflow: form.setupWorkflow,
@@ -71,6 +97,7 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
       .then(
         () => {
           setForm(initialFormState);
+          setNameManuallyEdited(false);
           onSuccess();
           return undefined;
         },
@@ -89,11 +116,27 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
           Site Name
           <Input
             type="text"
-            value={form.name}
-            onChange={updateTextField('name')}
-            placeholder="my-blog"
+            value={form.displayName}
+            onChange={updateDisplayName}
+            placeholder="My Awesome Blog"
             disabled={loading}
           />
+        </label>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          Site ID
+          <Input
+            type="text"
+            value={form.name}
+            onChange={updateName}
+            placeholder="my-awesome-blog"
+            disabled={loading}
+          />
+          <span className="text-xs text-muted-foreground">
+            Auto-generated from site name. Used as an identifier.
+          </span>
         </label>
       </div>
 

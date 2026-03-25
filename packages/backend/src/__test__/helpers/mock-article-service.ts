@@ -24,6 +24,14 @@ export const makeMockArticleService = (): ArticleServiceInterface => ({
       articles: [],
     }),
   publishArticleToGit: notImplemented('publishArticleToGit'),
+  syncArticlesFromGit: () =>
+    Effect.succeed({
+      created: 1,
+      updated: 0,
+      markedDraft: 0,
+      unchanged: 1,
+      total: 2,
+    }),
   validateTitle: notImplemented('validateTitle'),
   validateSlug: notImplemented('validateSlug'),
   generateSlugFromTitle: notImplemented('generateSlugFromTitle'),

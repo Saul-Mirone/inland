@@ -1,0 +1,100 @@
+import { Effect } from 'effect';
+
+import {
+  ArticleRepository,
+  type ArticleCreateData,
+} from '../../../repositories/article-repository';
+import { GitProviderRepository } from '../../../repositories/git-provider-repository';
+import { validateSiteGitAccess } from './validate-site-git-access';
+
+const logSyncError = (action: string, slug: string) =>
+  Effect.catchAll((error: unknown) =>
+    Effect.logError(`Failed to ${action} article ${slug}:`, { error })
+  );
+
+export const syncArticlesFromGit = (siteId: string, userId: string) =>
+  Effect.gen(function* () {
+    const articleRepo = yield* ArticleRepository;
+    const gitProvider = yield* GitProviderRepository;
+
+    const { site, gitRepo, accessToken } = yield* validateSiteGitAccess(
+      siteId,
+      userId
+    );
+
+    const repoInfo = yield* gitProvider.getRepositoryInfo(accessToken, gitRepo);
+
+    const remoteArticles = yield* gitProvider.getMarkdownFilesFromRepo(
+      accessToken,
+      gitRepo,
+      repoInfo.defaultBranch
+    );
+
+    const dbArticles = yield* articleRepo.findAllForSync(site.id);
+
+    const remoteBySlug = new Map(remoteArticles.map((a) => [a.slug, a]));
+    const dbBySlug = new Map(dbArticles.map((a) => [a.slug, a]));
+
+    const created: string[] = [];
+    const updated: string[] = [];
+    const markedDraft: string[] = [];
+    const unchanged: string[] = [];
+
+    for (const [slug, remote] of remoteBySlug) {
+      yield* Effect.gen(function* () {
+        const existing = dbBySlug.get(slug);
+
+        if (!existing) {
+          const createData: ArticleCreateData = {
+            siteId: site.id,
+            title: remote.title,
+            slug: remote.slug,
+            content: remote.content,
+            status: remote.status,
+            gitSha: remote.gitSha,
+            gitSyncedAt: new Date(),
+          };
+          yield* articleRepo.create(createData);
+          created.push(slug);
+        } else if (
+          remote.gitSha !== undefined &&
+          remote.gitSha !== existing.gitSha
+        ) {
+          yield* articleRepo.update(existing.id, {
+            title: remote.title,
+            content: remote.content,
+            gitSha: remote.gitSha,
+            gitSyncedAt: new Date(),
+          });
+          updated.push(slug);
+        } else {
+          unchanged.push(slug);
+        }
+      }).pipe(logSyncError('sync', slug));
+    }
+
+    for (const [slug, dbArticle] of dbBySlug) {
+      if (!remoteBySlug.has(slug) && dbArticle.status === 'published') {
+        yield* articleRepo
+          .update(dbArticle.id, {
+            status: 'draft',
+            gitSha: null,
+            gitSyncedAt: new Date(),
+          })
+          .pipe(logSyncError('mark as draft', slug));
+        markedDraft.push(slug);
+      }
+    }
+
+    yield* Effect.logInfo(
+      `Sync complete for ${gitRepo}: ${created.length} created, ${updated.length} updated, ${markedDraft.length} marked draft, ${unchanged.length} unchanged`
+    );
+
+    return {
+      created: created.length,
+      updated: updated.length,
+      markedDraft: markedDraft.length,
+      unchanged: unchanged.length,
+      total: remoteArticles.length,
+    };
+  });

@@ -28,6 +28,10 @@ const createArticle = (data: ArticleCreateData) =>
             slug: data.slug,
             content: data.content,
             status: data.status || 'draft',
+            ...(data.gitSha !== undefined && { gitSha: data.gitSha }),
+            ...(data.gitSyncedAt !== undefined && {
+              gitSyncedAt: data.gitSyncedAt,
+            }),
           },
           include: {
             site: {
@@ -183,6 +187,10 @@ const updateArticle = (id: string, data: ArticleUpdateData) =>
             ...(data.slug !== undefined && { slug: data.slug }),
             ...(data.content !== undefined && { content: data.content }),
             ...(data.status !== undefined && { status: data.status }),
+            ...(data.gitSha !== undefined && { gitSha: data.gitSha }),
+            ...(data.gitSyncedAt !== undefined && {
+              gitSyncedAt: data.gitSyncedAt,
+            }),
           },
           include: {
             site: {
@@ -197,6 +205,23 @@ const updateArticle = (id: string, data: ArticleUpdateData) =>
         }),
       catch: (error) =>
         new RepositoryError({ operation: 'article.update', cause: error }),
+    });
+  });
+
+const findAllForSync = (siteId: string) =>
+  Effect.gen(function* () {
+    const { prisma } = yield* DatabaseService;
+    return yield* Effect.tryPromise({
+      try: () =>
+        prisma.article.findMany({
+          where: { siteId },
+          select: { id: true, slug: true, status: true, gitSha: true },
+        }),
+      catch: (error) =>
+        new RepositoryError({
+          operation: 'article.findAllForSync',
+          cause: error,
+        }),
     });
   });
 
@@ -227,6 +252,7 @@ export const PrismaArticleRepositoryLive = Layer.effect(
       findByUserId: bind(findArticlesByUserId),
       update: bind(updateArticle),
       delete: bind(deleteArticle),
+      findAllForSync: bind(findAllForSync),
     } satisfies ArticleRepositoryService;
   })
 );

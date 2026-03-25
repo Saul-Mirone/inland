@@ -10,56 +10,44 @@ import * as Schemas from '../../schemas';
 import { ArticleService } from '../../services/article';
 import { httpError, runRouteEffect } from '../../utils/route-effect';
 
-export const publishArticleRoute = async (fastify: FastifyInstance) => {
+export const syncArticlesRoute = async (fastify: FastifyInstance) => {
   fastify.post(
-    '/articles/:id/publish',
+    '/sites/:id/sync',
     {
       preHandler: [
         fastify.authenticate,
-        withSchemaValidation({
-          params: Schemas.ArticleIdParam,
-        }),
+        withSchemaValidation({ params: Schemas.SiteParam }),
       ],
     },
-    async (
-      request: TypedFastifyRequest<unknown, Schemas.ArticleIdParam>,
-      reply
-    ) => {
+    async (request: TypedFastifyRequest<unknown, Schemas.SiteParam>, reply) => {
       const userPayload = request.jwtPayload!;
       const { id } = request.validatedParams!;
 
-      const publishArticle = Effect.gen(function* () {
+      const syncEffect = Effect.gen(function* () {
         const articleService = yield* ArticleService;
-        const result = yield* articleService.publishArticleToGit(
+        return yield* articleService.syncArticlesFromGit(
           id,
           userPayload.userId
         );
-        return {
-          message: 'Article published successfully',
-          ...result,
-        };
       });
 
       return runRouteEffect(
         fastify,
         reply,
-        publishArticle.pipe(
+        syncEffect.pipe(
           Effect.catchTags({
-            ArticleNotFoundError: () => httpError(404, 'Article not found'),
-            ArticleAccessDeniedError: () => httpError(403, 'Access denied'),
-            GitConflictError: () =>
-              httpError(
-                409,
-                'The article has been modified on GitHub. Please sync before publishing.'
-              ),
+            SiteAccessDeniedError: () => httpError(403, 'Access denied'),
+            GitRepositoryError: (e) => httpError(400, e.message),
             AuthTokenError: () =>
               httpError(
                 401,
                 'Authentication token is invalid. Please reconnect your account.'
               ),
+            GitProviderError: (e) =>
+              httpError(502, `Git provider error: ${e.message}`),
           })
         ),
-        { fallbackMessage: 'Failed to publish article' }
+        { fallbackMessage: 'Failed to sync articles' }
       );
     }
   );

@@ -36,6 +36,12 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       filePath: `content/${articleSlug}.md`,
     }),
 
+  getArticleFileSha: (
+    _accessToken: string,
+    _repoFullName: string,
+    _articleSlug: string
+  ) => Effect.succeed('abc123blobsha' as string | null),
+
   getMarkdownFilesFromRepo: (
     _accessToken: string,
     _repoFullName: string,
@@ -47,6 +53,7 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
         slug: 'test-article',
         content: 'This is a test article content.',
         status: 'published' as const,
+        gitSha: 'abc123blobsha',
       },
     ] as ImportedArticle[]),
 
@@ -60,6 +67,7 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       published: true,
       filePath: `content/${articleSlug}.md`,
       commitSha: 'abc123def456',
+      blobSha: 'newblobsha789',
       wasUpdate: false,
     }),
 

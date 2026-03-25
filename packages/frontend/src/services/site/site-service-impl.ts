@@ -15,6 +15,7 @@ import type {
   CreateSiteData,
   ImportSiteData,
   SiteServiceInterface,
+  SyncResult,
 } from './site-service';
 
 interface FetchSitesResponse {
@@ -111,6 +112,20 @@ export class SiteServiceImpl implements SiteServiceInterface {
       yield* this.fetchSites();
       this.model.selectedSiteId$.next(result.site.id);
       yield* this.articleService.fetchArticles(result.site.id);
+      return result;
+    }).pipe(
+      Effect.catchAll((error) =>
+        Effect.sync(() => {
+          this.pushError(error);
+          return undefined;
+        })
+      )
+    );
+
+  syncArticles = (siteId: string): Effect.Effect<SyncResult | undefined> =>
+    Effect.gen(this, function* () {
+      const result = yield* this.api.post<SyncResult>(`/sites/${siteId}/sync`);
+      yield* this.articleService.fetchArticles(siteId);
       return result;
     }).pipe(
       Effect.catchAll((error) =>
