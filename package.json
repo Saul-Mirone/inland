@@ -44,8 +44,8 @@
   },
   "devDependencies": {
     "eslint-plugin-react-hooks": "^7.0.1",
-    "oxfmt": "^0.41.0",
-    "oxlint-tsgolint": "^0.17.2"
+    "oxfmt": "^0.42.0",
+    "oxlint-tsgolint": "^0.18.0"
   },
   "lint-staged": {
     "*": "oxfmt --no-error-on-unmatched-pattern",
