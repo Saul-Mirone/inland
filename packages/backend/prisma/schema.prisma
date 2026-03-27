@@ -74,6 +74,8 @@ model Article {
   title       String
   slug        String
   content     String
+  excerpt     String?
+  tags        String?
   status      String    @default("draft")
   gitSha      String?   @map("git_sha")
   gitSyncedAt DateTime? @map("git_synced_at")

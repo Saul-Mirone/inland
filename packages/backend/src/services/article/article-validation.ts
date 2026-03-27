@@ -47,6 +47,13 @@ export const validateSlug = (slug: string) =>
     return trimmedSlug;
   });
 
+export const normalizeTags = (tags: string): string =>
+  tags
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .join(', ');
+
 export const generateSlugFromTitle = (title: string) =>
   Effect.gen(function* () {
     const trimmedTitle = title.trim();

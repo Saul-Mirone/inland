@@ -12,7 +12,11 @@ import {
   DuplicateSlugError,
   type UpdateArticleData,
 } from '../article-types';
-import { validateTitle, validateSlug } from '../article-validation';
+import {
+  validateTitle,
+  validateSlug,
+  normalizeTags,
+} from '../article-validation';
 
 export const updateArticle = (
   articleId: string,
@@ -40,6 +44,12 @@ export const updateArticle = (
         slug: yield* validateSlug(data.slug),
       }),
       ...(data.content !== undefined && { content: data.content }),
+      ...(data.excerpt !== undefined && {
+        excerpt: data.excerpt,
+      }),
+      ...(data.tags !== undefined && {
+        tags: data.tags ? normalizeTags(data.tags) : data.tags,
+      }),
       ...(data.status !== undefined && { status: data.status }),
     };
     const article = yield* articleRepo.update(articleId, repoData).pipe(

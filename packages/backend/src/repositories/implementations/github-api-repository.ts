@@ -61,6 +61,37 @@ const shouldProcessFile = (filePath: string): boolean => {
   return textExtensions.some((ext) => filePath.endsWith(ext));
 };
 
+const parseFrontMatterTags = (
+  frontMatter: Record<string, string>,
+  raw: string
+): string | undefined => {
+  const tagsValue = frontMatter.tags;
+  if (!tagsValue) return undefined;
+
+  // Handle inline array: [tag1, tag2, tag3]
+  const inlineMatch = tagsValue.match(/^\[(.+)\]$/);
+  if (inlineMatch) {
+    return inlineMatch[1]
+      .split(',')
+      .map((t) => t.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // Handle YAML list format (- tag1\n- tag2)
+  const tagsMatch = raw.match(/^tags:\s*\n((?:\s+-\s+.+\n?)+)/m);
+  if (tagsMatch) {
+    return tagsMatch[1]
+      .split('\n')
+      .map((line) => line.replace(/^\s*-\s+/, '').trim())
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  // Simple string value
+  return tagsValue || undefined;
+};
+
 const parseMarkdownContent = (
   content: string,
   filePath: string
@@ -92,12 +123,17 @@ const parseMarkdownContent = (
       }
     });
 
+    const excerpt = frontMatter.excerpt || frontMatter.description || undefined;
+    const tags = parseFrontMatterTags(frontMatter, frontMatterText);
+
     return {
       title:
         frontMatter.title ??
         slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       slug: frontMatter.slug ?? slug,
       content: markdownContent.trim(),
+      excerpt,
+      tags,
       status: frontMatter.status === 'draft' ? 'draft' : 'published',
     };
   } catch {

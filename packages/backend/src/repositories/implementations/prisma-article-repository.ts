@@ -27,6 +27,10 @@ const createArticle = (data: ArticleCreateData) =>
             title: data.title,
             slug: data.slug,
             content: data.content,
+            ...(data.excerpt !== undefined && {
+              excerpt: data.excerpt,
+            }),
+            ...(data.tags !== undefined && { tags: data.tags }),
             status: data.status || 'draft',
             ...(data.gitSha !== undefined && { gitSha: data.gitSha }),
             ...(data.gitSyncedAt !== undefined && {
@@ -105,6 +109,8 @@ const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
               id: true,
               title: true,
               slug: true,
+              excerpt: true,
+              tags: true,
               status: true,
               createdAt: true,
               updatedAt: true,
@@ -186,6 +192,10 @@ const updateArticle = (id: string, data: ArticleUpdateData) =>
             ...(data.title !== undefined && { title: data.title }),
             ...(data.slug !== undefined && { slug: data.slug }),
             ...(data.content !== undefined && { content: data.content }),
+            ...(data.excerpt !== undefined && {
+              excerpt: data.excerpt,
+            }),
+            ...(data.tags !== undefined && { tags: data.tags }),
             ...(data.status !== undefined && { status: data.status }),
             ...(data.gitSha !== undefined && { gitSha: data.gitSha }),
             ...(data.gitSyncedAt !== undefined && {

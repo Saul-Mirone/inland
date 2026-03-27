@@ -381,6 +381,8 @@ describe('ArticleService', () => {
         title: 'Old',
         slug: 'old',
         content: '',
+        excerpt: '',
+        tags: '',
         status: 'draft',
         saving: false,
       });
@@ -406,6 +408,8 @@ describe('ArticleService', () => {
         title: 'Updated Title',
         slug: 'updated-slug',
         content: 'Updated content',
+        excerpt: '',
+        tags: '',
         status: 'published',
         saving: false,
       });
@@ -424,6 +428,8 @@ describe('ArticleService', () => {
         title: 'Updated Title',
         slug: 'updated-slug',
         content: 'Updated content',
+        excerpt: null,
+        tags: null,
         status: 'published',
       });
     });
@@ -434,6 +440,8 @@ describe('ArticleService', () => {
         title: 'T',
         slug: 's',
         content: 'C',
+        excerpt: '',
+        tags: '',
         status: 'draft',
         saving: false,
       });
@@ -511,6 +519,8 @@ describe('ArticleService', () => {
         title: 'T',
         slug: 's',
         content: 'C',
+        excerpt: '',
+        tags: '',
         status: 'draft',
         saving: false,
       });

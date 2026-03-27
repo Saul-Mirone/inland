@@ -6,6 +6,8 @@ export interface Article {
   title: string;
   slug: string;
   content: string;
+  excerpt: string | null;
+  tags: string | null;
   status: 'draft' | 'published';
   siteId: string;
   createdAt: string;
@@ -20,6 +22,8 @@ export interface EditingState {
   title: string;
   slug: string;
   content: string;
+  excerpt: string;
+  tags: string;
   status: 'draft' | 'published';
   saving: boolean;
 }
@@ -28,6 +32,8 @@ export const INITIAL_EDITING: EditingState = {
   title: '',
   slug: '',
   content: '',
+  excerpt: '',
+  tags: '',
   status: 'draft',
   saving: false,
 };

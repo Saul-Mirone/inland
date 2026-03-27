@@ -1,7 +1,7 @@
 import type React from 'react';
 
 import { Effect } from 'effect';
-import { CircleDot, Link, Upload } from 'lucide-react';
+import { CircleDot, AlignLeft, Link, Tag, Upload } from 'lucide-react';
 
 import { confirm } from '@/components/confirm-dialog';
 import { MarkdownEditor } from '@/components/editor/markdown-editor';
@@ -114,6 +114,24 @@ export function ArticleEditPage() {
               value={editing.slug}
               onChange={(e) => updateField('slug', e.target.value)}
               placeholder="article-slug"
+              className="flex-1 bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+            />
+          </PropertyRow>
+          <PropertyRow icon={AlignLeft} label="Excerpt">
+            <input
+              id="excerpt"
+              value={editing.excerpt}
+              onChange={(e) => updateField('excerpt', e.target.value)}
+              placeholder="Brief summary (auto-generated if empty)"
+              className="flex-1 bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
+            />
+          </PropertyRow>
+          <PropertyRow icon={Tag} label="Tags">
+            <input
+              id="tags"
+              value={editing.tags}
+              onChange={(e) => updateField('tags', e.target.value)}
+              placeholder="tag1, tag2, tag3"
               className="flex-1 bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
             />
           </PropertyRow>

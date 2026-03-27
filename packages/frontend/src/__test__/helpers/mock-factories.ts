@@ -7,6 +7,8 @@ export const mockArticle = (overrides?: Partial<Article>): Article => ({
   title: 'Test Article',
   slug: 'test-article',
   content: 'Test content',
+  excerpt: null,
+  tags: null,
   status: 'draft',
   siteId: 'site-1',
   createdAt: '2026-01-01T00:00:00Z',

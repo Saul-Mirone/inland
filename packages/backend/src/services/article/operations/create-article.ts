@@ -12,6 +12,7 @@ import {
   DuplicateSlugError,
   type CreateArticleData,
 } from '../article-types';
+import { normalizeTags } from '../article-validation';
 
 export const createArticle = (userId: string, data: CreateArticleData) =>
   Effect.gen(function* () {
@@ -39,6 +40,12 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
       title: data.title,
       slug: data.slug,
       content: data.content,
+      ...(data.excerpt !== undefined && {
+        excerpt: data.excerpt,
+      }),
+      ...(data.tags !== undefined && {
+        tags: normalizeTags(data.tags),
+      }),
       status: data.status ?? 'draft',
     };
     const article = yield* articleRepo.create(repoData).pipe(

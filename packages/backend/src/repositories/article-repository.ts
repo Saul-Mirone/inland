@@ -12,6 +12,8 @@ export interface ArticleCreateData {
   readonly title: string;
   readonly slug: string;
   readonly content: string;
+  readonly excerpt?: string;
+  readonly tags?: string;
   readonly status?: 'draft' | 'published';
   readonly gitSha?: string;
   readonly gitSyncedAt?: Date;
@@ -21,6 +23,8 @@ export interface ArticleUpdateData {
   readonly title?: string;
   readonly slug?: string;
   readonly content?: string;
+  readonly excerpt?: string | null;
+  readonly tags?: string | null;
   readonly status?: 'draft' | 'published';
   readonly gitSha?: string | null;
   readonly gitSyncedAt?: Date | null;
@@ -46,6 +50,8 @@ export interface ArticleListItem {
   readonly id: string;
   readonly title: string;
   readonly slug: string;
+  readonly excerpt: string | null;
+  readonly tags: string | null;
   readonly status: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;

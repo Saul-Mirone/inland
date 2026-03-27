@@ -38,6 +38,8 @@ export const mockArticle = (overrides: Partial<Article> = {}): Article => ({
   title: 'Test Article',
   slug: 'test-article',
   content: 'This is a test article',
+  excerpt: null,
+  tags: null,
   status: 'draft',
   gitSha: null,
   gitSyncedAt: null,

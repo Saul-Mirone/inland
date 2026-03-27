@@ -72,6 +72,8 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
           title: articleData.title,
           slug: articleData.slug,
           content: articleData.content,
+          excerpt: articleData.excerpt,
+          tags: articleData.tags,
           status: articleData.status,
         };
         const article = yield* articleRepo.create(repoData);

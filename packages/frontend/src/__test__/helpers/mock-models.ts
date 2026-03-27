@@ -34,6 +34,8 @@ export const mockArticlesModel: ArticlesModelService = {
     title: '',
     slug: '',
     content: '',
+    excerpt: '',
+    tags: '',
     status: 'draft',
     saving: false,
   }),
@@ -51,6 +53,8 @@ export const resetMockArticlesModel = () => {
     title: '',
     slug: '',
     content: '',
+    excerpt: '',
+    tags: '',
     status: 'draft',
     saving: false,
   });

@@ -9,6 +9,8 @@ export interface ArticleData {
   title: string;
   slug?: string;
   content: string;
+  excerpt?: string;
+  tags?: string;
   status: 'draft' | 'published';
 }
 

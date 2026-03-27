@@ -51,6 +51,8 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
             title: remote.title,
             slug: remote.slug,
             content: remote.content,
+            excerpt: remote.excerpt,
+            tags: remote.tags,
             status: remote.status,
             gitSha: remote.gitSha,
             gitSyncedAt: new Date(),
@@ -64,6 +66,8 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
           yield* articleRepo.update(existing.id, {
             title: remote.title,
             content: remote.content,
+            excerpt: remote.excerpt,
+            tags: remote.tags,
             gitSha: remote.gitSha,
             gitSyncedAt: new Date(),
           });

@@ -12,6 +12,7 @@ import {
   GitRepositoryError,
   GitConflictError,
 } from '../article-types';
+import { normalizeTags } from '../article-validation';
 
 const generateExcerpt = (content: string): string => {
   let text = content
@@ -81,12 +82,17 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
     }
 
     const today = new Date().toISOString().split('T')[0];
-    const excerpt = generateExcerpt(article.content);
+    const updatedAt = article.updatedAt.toISOString().split('T')[0];
+    const excerpt = article.excerpt || generateExcerpt(article.content);
+    const tagsLine = article.tags
+      ? `\ntags: [${normalizeTags(article.tags)}]`
+      : '';
 
     const frontMatter = `---
 title: ${article.title}
 date: ${today}
-excerpt: ${excerpt}
+updatedAt: ${updatedAt}
+excerpt: ${excerpt}${tagsLine}
 ---
 
 `;

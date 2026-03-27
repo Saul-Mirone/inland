@@ -48,6 +48,8 @@ CREATE TABLE "articles" (
     "title" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "content" TEXT NOT NULL,
+    "excerpt" TEXT,
+    "tags" TEXT,
     "status" TEXT NOT NULL DEFAULT 'draft',
     "git_sha" TEXT,
     "git_synced_at" TIMESTAMP(3),

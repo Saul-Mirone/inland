@@ -10,6 +10,8 @@ export const CreateArticleData = S.Struct({
   title: S.String.pipe(S.minLength(1), S.maxLength(500)),
   slug: S.optional(Slug),
   content: S.String,
+  excerpt: S.optional(S.String.pipe(S.maxLength(500))),
+  tags: S.optional(S.String.pipe(S.maxLength(500))),
   status: S.optional(ArticleStatus),
 });
 
@@ -17,6 +19,8 @@ export const UpdateArticleData = S.Struct({
   title: S.optional(S.String.pipe(S.minLength(1), S.maxLength(500))),
   slug: S.optional(Slug),
   content: S.optional(S.String),
+  excerpt: S.optional(S.NullOr(S.String.pipe(S.maxLength(500)))),
+  tags: S.optional(S.NullOr(S.String.pipe(S.maxLength(500)))),
   status: S.optional(ArticleStatus),
 });
 

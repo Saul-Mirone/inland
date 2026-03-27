@@ -53,6 +53,8 @@ export interface CreateArticleData {
   readonly title: string;
   readonly slug: string;
   readonly content: string;
+  readonly excerpt?: string;
+  readonly tags?: string;
   readonly status?: 'draft' | 'published';
 }
 
@@ -60,5 +62,7 @@ export interface UpdateArticleData {
   readonly title?: string;
   readonly slug?: string;
   readonly content?: string;
+  readonly excerpt?: string | null;
+  readonly tags?: string | null;
   readonly status?: 'draft' | 'published';
 }

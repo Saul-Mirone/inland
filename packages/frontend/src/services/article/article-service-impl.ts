@@ -74,6 +74,8 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         title: data.article.title,
         slug: data.article.slug,
         content: data.article.content,
+        excerpt: data.article.excerpt ?? '',
+        tags: data.article.tags ?? '',
         status: data.article.status,
         saving: false,
       });
@@ -102,6 +104,8 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         title: editing.title,
         slug: editing.slug,
         content: editing.content,
+        excerpt: editing.excerpt || null,
+        tags: editing.tags || null,
         status: editing.status,
       });
 
@@ -112,6 +116,8 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
                 ...a,
                 title: editing.title,
                 slug: editing.slug,
+                excerpt: editing.excerpt || null,
+                tags: editing.tags || null,
                 status: editing.status,
               }
             : a

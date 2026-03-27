@@ -36,6 +36,8 @@ export interface ImportedArticle {
   readonly title: string;
   readonly slug: string;
   readonly content: string;
+  readonly excerpt?: string;
+  readonly tags?: string;
   readonly status: 'draft' | 'published';
   readonly gitSha?: string;
 }
