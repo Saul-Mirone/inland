@@ -44,6 +44,7 @@ export const mockArticlesModel: ArticlesModelService = {
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),
   publishingId$: new BehaviorSubject<string | null>(null),
+  selectedTag$: new BehaviorSubject<string | null>(null),
 };
 
 export const resetMockArticlesModel = () => {
@@ -63,6 +64,7 @@ export const resetMockArticlesModel = () => {
   mockArticlesModel.error$.next(null);
   mockArticlesModel.deletingId$.next(null);
   mockArticlesModel.publishingId$.next(null);
+  mockArticlesModel.selectedTag$.next(null);
 };
 
 export const MockArticlesModelLive = Layer.succeed(

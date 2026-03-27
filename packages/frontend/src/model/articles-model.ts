@@ -47,6 +47,7 @@ export interface ArticlesModelService {
   readonly error$: BehaviorSubject<string | null>;
   readonly deletingId$: BehaviorSubject<string | null>;
   readonly publishingId$: BehaviorSubject<string | null>;
+  readonly selectedTag$: BehaviorSubject<string | null>;
 }
 
 const instance: ArticlesModelService = {
@@ -58,6 +59,7 @@ const instance: ArticlesModelService = {
   error$: new BehaviorSubject<string | null>(null),
   deletingId$: new BehaviorSubject<string | null>(null),
   publishingId$: new BehaviorSubject<string | null>(null),
+  selectedTag$: new BehaviorSubject<string | null>(null),
 };
 
 export class ArticlesModel extends Context.Tag('ArticlesModel')<
@@ -68,3 +70,11 @@ export class ArticlesModel extends Context.Tag('ArticlesModel')<
 export const ArticlesModelLive = Layer.succeed(ArticlesModel, instance);
 
 export const articlesModel = instance;
+
+export function parseTags(tags: string | null): string[] {
+  if (!tags) return [];
+  return tags
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+}

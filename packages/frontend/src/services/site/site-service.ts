@@ -29,6 +29,7 @@ export interface SiteServiceInterface {
   readonly bootstrap: () => Effect.Effect<void>;
   readonly fetchSites: (page?: number, limit?: number) => Effect.Effect<void>;
   readonly selectSite: (siteId: string) => Effect.Effect<void>;
+  readonly deselectSite: () => Effect.Effect<void>;
   readonly deleteSite: (siteId: string) => Effect.Effect<void>;
   readonly createSite: (data: CreateSiteData) => Effect.Effect<void>;
   readonly importSite: (

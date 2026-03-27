@@ -5,8 +5,9 @@ import {
   Plus,
   RefreshCw,
   Trash2,
+  X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
 import { confirm } from '@/components/confirm-dialog';
@@ -28,7 +29,7 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { articlesModel } from '@/model/articles-model';
+import { articlesModel, parseTags } from '@/model/articles-model';
 import { sitesModel } from '@/model/sites-model';
 import { ArticleService } from '@/services/article';
 import { SiteService } from '@/services/site';
@@ -43,8 +44,16 @@ export function ArticleList() {
   const navigate = useNavigate();
   const articles = useObservable(articlesModel.articles$);
   const articlesLoading = useObservable(articlesModel.loading$);
+  const selectedTag = useObservable(articlesModel.selectedTag$);
   const selectedSiteId = useObservable(sitesModel.selectedSiteId$);
   const [syncing, setSyncing] = useState(false);
+
+  const filteredArticles = useMemo(() => {
+    if (!selectedTag) return articles;
+    return articles.filter((article) =>
+      parseTags(article.tags).includes(selectedTag)
+    );
+  }, [articles, selectedTag]);
 
   const handleSync = () => {
     if (!selectedSiteId || syncing) return;
@@ -74,7 +83,24 @@ export function ArticleList() {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Articles</SidebarGroupLabel>
+      {selectedTag ? (
+        <SidebarGroupLabel className="pr-16">
+          <span className="truncate">Tag: {selectedTag}</span>
+          <button
+            className="ml-auto opacity-50 hover:opacity-100"
+            onClick={() =>
+              void runEffect(
+                Effect.flatMap(ArticleService, (svc) => svc.selectTag(null))
+              )
+            }
+            title="Clear filter"
+          >
+            <X className="size-3.5" />
+          </button>
+        </SidebarGroupLabel>
+      ) : (
+        <SidebarGroupLabel>All Articles</SidebarGroupLabel>
+      )}
       <SidebarGroupAction
         title="Sync from GitHub"
         disabled={syncing}
@@ -108,16 +134,19 @@ export function ArticleList() {
               <SidebarMenuSkeleton />
               <SidebarMenuSkeleton />
             </>
-          ) : articles.length === 0 ? (
+          ) : filteredArticles.length === 0 ? (
             <li className="px-2 py-1.5 text-xs text-sidebar-foreground/50">
-              No articles yet
+              {selectedTag
+                ? `No articles tagged "${selectedTag}"`
+                : 'No articles yet'}
             </li>
           ) : (
-            articles.map((article) => (
+            filteredArticles.map((article) => (
               <SidebarMenuItem key={article.id}>
                 <SidebarMenuButton
                   isActive={location.pathname === `/articles/${article.id}`}
                   tooltip={article.title}
+                  className={article.status === 'draft' ? 'pr-16!' : undefined}
                   render={<Link to={`/articles/${article.id}`} />}
                   onClick={() => {
                     void runEffect(
@@ -131,7 +160,7 @@ export function ArticleList() {
                   <span>{article.title}</span>
                 </SidebarMenuButton>
                 {article.status === 'draft' && (
-                  <SidebarMenuBadge>draft</SidebarMenuBadge>
+                  <SidebarMenuBadge className="right-7">draft</SidebarMenuBadge>
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger

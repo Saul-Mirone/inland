@@ -1667,10 +1667,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fontsource-variable/geist@npm:^5.2.8":
+"@fontsource-variable/inter@npm:^5.2.8":
   version: 5.2.8
-  resolution: "@fontsource-variable/geist@npm:5.2.8"
-  checksum: 10/15bdedec8c10f81b0036100d27d08f633fd4149832fb4365c5f912efab4589781e6779c667272ad47f429b72d31c6e662453fd424420f2842dad4a4d5cd3f422
+  resolution: "@fontsource-variable/inter@npm:5.2.8"
+  checksum: 10/7f45ab415f0d3c43f31129dd9972dcbfb60ebe51801891b9a88a7ba395d4be664c507b0027138f42307b9ffe91bdd564fcae98bce5b244046274f4aceae07382
+  languageName: node
+  linkType: hard
+
+"@fontsource-variable/jetbrains-mono@npm:^5.2.8":
+  version: 5.2.8
+  resolution: "@fontsource-variable/jetbrains-mono@npm:5.2.8"
+  checksum: 10/c18676abf332e9d6ed2558a7c96756cad1af777054fdf66a7192e6f7dc52bcbdce51dfc6160ad79a21664d53d26787cbdaad180c193c42366a82efbd870c6dd7
+  languageName: node
+  linkType: hard
+
+"@fontsource-variable/rubik@npm:^5.2.8":
+  version: 5.2.8
+  resolution: "@fontsource-variable/rubik@npm:5.2.8"
+  checksum: 10/7074acb6f1ed084cc8b2629948fe22e37ce472fef0c8a572fce0a5028fb7fd26e1b91058e4cbb7e74ded1b6e3cb2bce4511b26a3c215da3e2dcb732df680618b
   languageName: node
   linkType: hard
 
@@ -1834,7 +1848,9 @@ __metadata:
   resolution: "@inland/frontend@workspace:packages/frontend"
   dependencies:
     "@base-ui/react": "npm:^1.2.0"
-    "@fontsource-variable/geist": "npm:^5.2.8"
+    "@fontsource-variable/inter": "npm:^5.2.8"
+    "@fontsource-variable/jetbrains-mono": "npm:^5.2.8"
+    "@fontsource-variable/rubik": "npm:^5.2.8"
     "@milkdown/crepe": "npm:^7.19.2"
     "@milkdown/kit": "npm:^7.19.2"
     "@milkdown/react": "npm:^7.19.2"

@@ -277,4 +277,9 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
       ),
       Effect.ensuring(Effect.sync(() => this.model.publishingId$.next(null)))
     );
+
+  selectTag = (tag: string | null): Effect.Effect<void> =>
+    Effect.sync(() => {
+      this.model.selectedTag$.next(tag);
+    });
 }

@@ -37,6 +37,7 @@ export interface ArticleServiceInterface {
   readonly deleteArticle: (id: string) => Effect.Effect<void>;
   readonly publishCurrentArticle: () => Effect.Effect<void>;
   readonly publishArticle: (id: string) => Effect.Effect<void>;
+  readonly selectTag: (tag: string | null) => Effect.Effect<void>;
 }
 
 export class ArticleService extends Context.Tag('ArticleService')<

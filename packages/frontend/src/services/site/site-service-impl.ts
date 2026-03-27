@@ -52,6 +52,11 @@ export class SiteServiceImpl implements SiteServiceInterface {
       this.model.selectedSiteId$.next(siteId);
     });
 
+  deselectSite = (): Effect.Effect<void> =>
+    Effect.sync(() => {
+      this.model.selectedSiteId$.next(null);
+    });
+
   fetchSites = (page = 1, limit = 20): Effect.Effect<void> =>
     Effect.gen(this, function* () {
       this.model.loading$.next(true);

@@ -73,6 +73,8 @@ export function SiteSelector() {
           if (remaining.length > 0) {
             yield* siteSvc.selectSite(remaining[0].id);
             yield* articleSvc.fetchArticles(remaining[0].id);
+          } else {
+            yield* siteSvc.deselectSite();
           }
         }
       })
@@ -121,9 +123,10 @@ export function SiteSelector() {
                     onClick={() => {
                       void runEffect(
                         Effect.gen(function* () {
+                          const articleSvc = yield* ArticleService;
+                          yield* articleSvc.selectTag(null);
                           const siteSvc = yield* SiteService;
                           yield* siteSvc.selectSite(site.id);
-                          const articleSvc = yield* ArticleService;
                           yield* articleSvc.fetchArticles(site.id);
                         })
                       );

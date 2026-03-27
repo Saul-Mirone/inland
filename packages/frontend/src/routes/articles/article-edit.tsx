@@ -67,12 +67,11 @@ export function ArticleEditPage() {
     );
   };
 
+  const isPublished = currentArticle?.status === 'published';
+
   const handlePublish = async () => {
     const confirmed = await confirm({
-      title:
-        editing.status === 'published'
-          ? 'Re-publish article'
-          : 'Publish article',
+      title: isPublished ? 'Re-publish article' : 'Publish article',
       description: (
         <>
           This will push "{editing.title || 'Untitled'}" to GitHub as{' '}
@@ -82,7 +81,7 @@ export function ArticleEditPage() {
           . Continue?
         </>
       ),
-      confirmText: editing.status === 'published' ? 'Re-publish' : 'Publish',
+      confirmText: isPublished ? 'Re-publish' : 'Publish',
     });
     if (!confirmed) return;
     void runEffect(
@@ -161,9 +160,7 @@ export function ArticleEditPage() {
             onClick={handlePublish}
           >
             <span className="text-muted-foreground/70">
-              {editing.status === 'published'
-                ? 'Re-publish to GitHub'
-                : 'Publish to GitHub'}
+              {isPublished ? 'Re-publish to GitHub' : 'Publish to GitHub'}
             </span>
           </PropertyRow>
         </div>
