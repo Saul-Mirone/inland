@@ -9,6 +9,7 @@ export interface Article {
   excerpt: string | null;
   tags: string | null;
   status: 'draft' | 'published';
+  gitSyncedAt: string | null;
   siteId: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +71,15 @@ export class ArticlesModel extends Context.Tag('ArticlesModel')<
 export const ArticlesModelLive = Layer.succeed(ArticlesModel, instance);
 
 export const articlesModel = instance;
+
+export function hasUnpublishedChanges(article: Article): boolean {
+  if (article.status !== 'published') return false;
+  if (!article.gitSyncedAt) return true;
+  return (
+    new Date(article.updatedAt).getTime() >
+    new Date(article.gitSyncedAt).getTime()
+  );
+}
 
 export function parseTags(tags: string | null): string[] {
   if (!tags) return [];

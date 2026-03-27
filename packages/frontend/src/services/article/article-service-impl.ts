@@ -109,6 +109,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         status: editing.status,
       });
 
+      const now = new Date().toISOString();
       this.model.articles$.next(
         this.model.articles$.getValue().map((a) =>
           a.id === article.id
@@ -119,6 +120,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
                 excerpt: editing.excerpt || null,
                 tags: editing.tags || null,
                 status: editing.status,
+                updatedAt: now,
               }
             : a
         )
@@ -257,12 +259,18 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         `/articles/${id}/publish`
       );
 
+      const publishedAt = new Date().toISOString();
       this.model.articles$.next(
-        this.model.articles$
-          .getValue()
-          .map((a) =>
-            a.id === id ? { ...a, status: 'published' as const } : a
-          )
+        this.model.articles$.getValue().map((a) =>
+          a.id === id
+            ? {
+                ...a,
+                status: 'published' as const,
+                gitSyncedAt: publishedAt,
+                updatedAt: publishedAt,
+              }
+            : a
+        )
       );
 
       const action = result.wasUpdate ? 'updated' : 'published';

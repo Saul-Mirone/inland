@@ -29,7 +29,11 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
 } from '@/components/ui/sidebar';
-import { articlesModel, parseTags } from '@/model/articles-model';
+import {
+  articlesModel,
+  hasUnpublishedChanges,
+  parseTags,
+} from '@/model/articles-model';
 import { sitesModel } from '@/model/sites-model';
 import { ArticleService } from '@/services/article';
 import { SiteService } from '@/services/site';
@@ -141,47 +145,61 @@ export function ArticleList() {
                 : 'No articles yet'}
             </li>
           ) : (
-            filteredArticles.map((article) => (
-              <SidebarMenuItem key={article.id}>
-                <SidebarMenuButton
-                  isActive={location.pathname === `/articles/${article.id}`}
-                  tooltip={article.title}
-                  className={article.status === 'draft' ? 'pr-16!' : undefined}
-                  render={<Link to={`/articles/${article.id}`} />}
-                  onClick={() => {
-                    void runEffect(
-                      Effect.flatMap(ArticleService, (svc) =>
-                        svc.openArticle(article.id)
-                      )
-                    );
-                  }}
-                >
-                  <FileText />
-                  <span>{article.title}</span>
-                </SidebarMenuButton>
-                {article.status === 'draft' && (
-                  <SidebarMenuBadge className="right-7">draft</SidebarMenuBadge>
-                )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={<SidebarMenuAction showOnHover />}
+            filteredArticles.map((article) => {
+              const unpublished = hasUnpublishedChanges(article);
+              return (
+                <SidebarMenuItem key={article.id}>
+                  <SidebarMenuButton
+                    isActive={location.pathname === `/articles/${article.id}`}
+                    tooltip={article.title}
+                    className={
+                      article.status === 'draft' ? 'pr-16!' : undefined
+                    }
+                    render={<Link to={`/articles/${article.id}`} />}
+                    onClick={() => {
+                      void runEffect(
+                        Effect.flatMap(ArticleService, (svc) =>
+                          svc.openArticle(article.id)
+                        )
+                      );
+                    }}
                   >
-                    <MoreHorizontal />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start">
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() =>
-                        handleDeleteArticle(article.id, article.title)
-                      }
+                    {unpublished ? (
+                      <div className="relative">
+                        <FileText />
+                        <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-red-500" />
+                      </div>
+                    ) : (
+                      <FileText />
+                    )}
+                    <span>{article.title}</span>
+                  </SidebarMenuButton>
+                  {article.status === 'draft' && (
+                    <SidebarMenuBadge className="right-7">
+                      draft
+                    </SidebarMenuBadge>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={<SidebarMenuAction showOnHover />}
                     >
-                      <Trash2 />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            ))
+                      <MoreHorizontal />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() =>
+                          handleDeleteArticle(article.id, article.title)
+                        }
+                      >
+                        <Trash2 />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              );
+            })
           )}
         </SidebarMenu>
       </SidebarGroupContent>

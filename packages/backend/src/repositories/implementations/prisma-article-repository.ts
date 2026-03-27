@@ -112,6 +112,7 @@ const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
               excerpt: true,
               tags: true,
               status: true,
+              gitSyncedAt: true,
               createdAt: true,
               updatedAt: true,
             },

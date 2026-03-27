@@ -52,6 +52,25 @@ export const updateArticle = (
       }),
       ...(data.status !== undefined && { status: data.status }),
     };
+
+    // Skip update if no fields actually changed to avoid
+    // unnecessary updatedAt bumps (e.g. auto-save after publish)
+    const isNoop =
+      (repoData.title === undefined ||
+        repoData.title === existingArticle.title) &&
+      (repoData.slug === undefined || repoData.slug === existingArticle.slug) &&
+      (repoData.content === undefined ||
+        repoData.content === existingArticle.content) &&
+      (repoData.excerpt === undefined ||
+        repoData.excerpt === existingArticle.excerpt) &&
+      (repoData.tags === undefined || repoData.tags === existingArticle.tags) &&
+      (repoData.status === undefined ||
+        repoData.status === existingArticle.status);
+
+    if (isNoop) {
+      return { article: existingArticle };
+    }
+
     const article = yield* articleRepo.update(articleId, repoData).pipe(
       Effect.catchTag(
         'RepositoryError',
