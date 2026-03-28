@@ -9,6 +9,7 @@ export interface Article {
   excerpt: string | null;
   tags: string | null;
   status: 'draft' | 'published';
+  publishedAt: string | null;
   gitSyncedAt: string | null;
   siteId: string;
   createdAt: string;
@@ -26,6 +27,7 @@ export interface EditingState {
   excerpt: string;
   tags: string;
   status: 'draft' | 'published';
+  publishedAt: string;
   saving: boolean;
 }
 
@@ -36,6 +38,7 @@ export const INITIAL_EDITING: EditingState = {
   excerpt: '',
   tags: '',
   status: 'draft',
+  publishedAt: '',
   saving: false,
 };
 
@@ -75,10 +78,13 @@ export const articlesModel = instance;
 export function hasUnpublishedChanges(article: Article): boolean {
   if (article.status !== 'published') return false;
   if (!article.gitSyncedAt) return true;
-  return (
-    new Date(article.updatedAt).getTime() >
-    new Date(article.gitSyncedAt).getTime()
-  );
+  // Use 1s tolerance because gitSyncedAt (app-layer Date) and
+  // updatedAt (Prisma @updatedAt) are set in the same operation
+  // but can differ by tens of milliseconds.
+  const diff =
+    new Date(article.updatedAt).getTime() -
+    new Date(article.gitSyncedAt).getTime();
+  return diff > 1000;
 }
 
 export function parseTags(tags: string | null): string[] {

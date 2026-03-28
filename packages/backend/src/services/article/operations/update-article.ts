@@ -51,6 +51,9 @@ export const updateArticle = (
         tags: data.tags ? normalizeTags(data.tags) : data.tags,
       }),
       ...(data.status !== undefined && { status: data.status }),
+      ...(data.publishedAt !== undefined && {
+        publishedAt: data.publishedAt ? new Date(data.publishedAt) : null,
+      }),
     };
 
     // Skip update if no fields actually changed to avoid
@@ -65,7 +68,10 @@ export const updateArticle = (
         repoData.excerpt === existingArticle.excerpt) &&
       (repoData.tags === undefined || repoData.tags === existingArticle.tags) &&
       (repoData.status === undefined ||
-        repoData.status === existingArticle.status);
+        repoData.status === existingArticle.status) &&
+      (repoData.publishedAt === undefined ||
+        repoData.publishedAt?.getTime() ===
+          existingArticle.publishedAt?.getTime());
 
     if (isNoop) {
       return { article: existingArticle };

@@ -51,6 +51,7 @@ CREATE TABLE "articles" (
     "excerpt" TEXT,
     "tags" TEXT,
     "status" TEXT NOT NULL DEFAULT 'draft',
+    "published_at" TIMESTAMP(3),
     "git_sha" TEXT,
     "git_synced_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

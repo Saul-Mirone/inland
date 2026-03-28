@@ -81,7 +81,9 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
       }
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const publishDate = (article.publishedAt ?? new Date())
+      .toISOString()
+      .split('T')[0];
     const updatedAt = article.updatedAt.toISOString().split('T')[0];
     const excerpt = article.excerpt || generateExcerpt(article.content);
     const tagsLine = article.tags
@@ -90,7 +92,7 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
 
     const frontMatter = `---
 title: ${article.title}
-date: ${today}
+date: ${publishDate}
 updatedAt: ${updatedAt}
 excerpt: ${excerpt}${tagsLine}
 ---
@@ -111,6 +113,7 @@ excerpt: ${excerpt}${tagsLine}
 
     const repoData: ArticleUpdateData = {
       status: 'published',
+      ...(!article.publishedAt && { publishedAt: new Date() }),
       gitSha: result.blobSha,
       gitSyncedAt: new Date(),
     };

@@ -77,6 +77,7 @@ model Article {
   excerpt     String?
   tags        String?
   status      String    @default("draft")
+  publishedAt DateTime? @map("published_at")
   gitSha      String?   @map("git_sha")
   gitSyncedAt DateTime? @map("git_synced_at")
   createdAt   DateTime  @default(now()) @map("created_at")

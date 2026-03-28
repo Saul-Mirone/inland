@@ -23,8 +23,16 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
     },
     async (request: TypedFastifyRequest<Schemas.CreateArticleData>, reply) => {
       const userPayload = request.jwtPayload!;
-      const { siteId, title, slug, content, excerpt, tags, status } =
-        request.validatedBody!;
+      const {
+        siteId,
+        title,
+        slug,
+        content,
+        excerpt,
+        tags,
+        status,
+        publishedAt,
+      } = request.validatedBody!;
 
       const createArticle = Effect.gen(function* () {
         const articleService = yield* ArticleService;
@@ -45,6 +53,7 @@ export const createArticleRoute = async (fastify: FastifyInstance) => {
             excerpt,
             tags,
             status,
+            publishedAt,
           }
         );
 

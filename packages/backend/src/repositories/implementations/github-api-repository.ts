@@ -135,6 +135,7 @@ const parseMarkdownContent = (
       excerpt,
       tags,
       status: frontMatter.status === 'draft' ? 'draft' : 'published',
+      date: frontMatter.date || undefined,
     };
   } catch {
     return null;

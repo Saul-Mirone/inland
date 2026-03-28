@@ -54,6 +54,9 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
             excerpt: remote.excerpt,
             tags: remote.tags,
             status: remote.status,
+            ...(remote.date && {
+              publishedAt: new Date(remote.date),
+            }),
             gitSha: remote.gitSha,
             gitSyncedAt: new Date(),
           };

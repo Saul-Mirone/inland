@@ -137,6 +137,12 @@
         "typescript/unbound-method": "allow",
         "typescript/no-unsafe-type-assertion": "allow"
       }
+    },
+    {
+      "files": ["packages/frontend/src/components/ui/**/*"],
+      "rules": {
+        "eslint/no-shadow": "off"
+      }
     }
   ]
 }

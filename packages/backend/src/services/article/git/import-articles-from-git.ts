@@ -75,6 +75,11 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
           excerpt: articleData.excerpt,
           tags: articleData.tags,
           status: articleData.status,
+          ...(articleData.date && {
+            publishedAt: new Date(articleData.date),
+          }),
+          gitSha: articleData.gitSha,
+          gitSyncedAt: new Date(),
         };
         const article = yield* articleRepo.create(repoData);
 

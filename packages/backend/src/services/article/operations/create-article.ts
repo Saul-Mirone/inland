@@ -47,6 +47,11 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
         tags: normalizeTags(data.tags),
       }),
       status: data.status ?? 'draft',
+      publishedAt: data.publishedAt
+        ? new Date(data.publishedAt)
+        : data.status === 'published'
+          ? new Date()
+          : undefined,
     };
     const article = yield* articleRepo.create(repoData).pipe(
       Effect.catchTag(

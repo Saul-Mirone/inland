@@ -133,7 +133,8 @@ export class EditorServiceImpl implements EditorServiceInterface {
             prev.title === curr.title &&
             prev.slug === curr.slug &&
             prev.content === curr.content &&
-            prev.status === curr.status
+            prev.status === curr.status &&
+            prev.publishedAt === curr.publishedAt
         ),
         skip(1),
         debounceTime(1000)

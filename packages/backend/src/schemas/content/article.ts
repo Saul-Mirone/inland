@@ -13,6 +13,7 @@ export const CreateArticleData = S.Struct({
   excerpt: S.optional(S.String.pipe(S.maxLength(500))),
   tags: S.optional(S.String.pipe(S.maxLength(500))),
   status: S.optional(ArticleStatus),
+  publishedAt: S.optional(S.NullOr(S.String)),
 });
 
 export const UpdateArticleData = S.Struct({
@@ -22,6 +23,7 @@ export const UpdateArticleData = S.Struct({
   excerpt: S.optional(S.NullOr(S.String.pipe(S.maxLength(500)))),
   tags: S.optional(S.NullOr(S.String.pipe(S.maxLength(500)))),
   status: S.optional(ArticleStatus),
+  publishedAt: S.optional(S.NullOr(S.String)),
 });
 
 // Parameter schemas

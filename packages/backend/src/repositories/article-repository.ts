@@ -15,6 +15,7 @@ export interface ArticleCreateData {
   readonly excerpt?: string;
   readonly tags?: string;
   readonly status?: 'draft' | 'published';
+  readonly publishedAt?: Date | null;
   readonly gitSha?: string;
   readonly gitSyncedAt?: Date;
 }
@@ -26,6 +27,7 @@ export interface ArticleUpdateData {
   readonly excerpt?: string | null;
   readonly tags?: string | null;
   readonly status?: 'draft' | 'published';
+  readonly publishedAt?: Date | null;
   readonly gitSha?: string | null;
   readonly gitSyncedAt?: Date | null;
 }
@@ -53,6 +55,7 @@ export interface ArticleListItem {
   readonly excerpt: string | null;
   readonly tags: string | null;
   readonly status: string;
+  readonly publishedAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

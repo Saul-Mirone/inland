@@ -12,6 +12,7 @@ export interface ArticleData {
   excerpt?: string;
   tags?: string;
   status: 'draft' | 'published';
+  publishedAt?: string | null;
 }
 
 export type CreateArticleData = ArticleData;

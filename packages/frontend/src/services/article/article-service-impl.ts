@@ -77,6 +77,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         excerpt: data.article.excerpt ?? '',
         tags: data.article.tags ?? '',
         status: data.article.status,
+        publishedAt: data.article.publishedAt ?? '',
         saving: false,
       });
       this.model.articleLoading$.next(false);
@@ -107,6 +108,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
         excerpt: editing.excerpt || null,
         tags: editing.tags || null,
         status: editing.status,
+        publishedAt: editing.publishedAt || null,
       });
 
       const now = new Date().toISOString();
@@ -266,6 +268,7 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
             ? {
                 ...a,
                 status: 'published' as const,
+                publishedAt: a.publishedAt || publishedAt,
                 gitSyncedAt: publishedAt,
                 updatedAt: publishedAt,
               }

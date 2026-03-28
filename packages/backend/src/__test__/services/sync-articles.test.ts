@@ -43,6 +43,13 @@ describe('syncArticlesFromGit', () => {
         gitSha: 'abc123blobsha',
       })
     );
+    mockPrisma.article.update.mockResolvedValue(
+      mockArticleWithSite({
+        slug: 'test-article',
+        status: 'published',
+        gitSha: 'abc123blobsha',
+      })
+    );
 
     const result = await testRuntime.runPromise(
       syncArticlesFromGit('site-1', 'user-1')

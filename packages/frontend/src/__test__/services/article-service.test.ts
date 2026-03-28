@@ -384,6 +384,7 @@ describe('ArticleService', () => {
         excerpt: '',
         tags: '',
         status: 'draft',
+        publishedAt: '',
         saving: false,
       });
 
@@ -411,6 +412,7 @@ describe('ArticleService', () => {
         excerpt: '',
         tags: '',
         status: 'published',
+        publishedAt: '',
         saving: false,
       });
       mockApi.put.mockReturnValue(apiSuccess({}));
@@ -431,6 +433,7 @@ describe('ArticleService', () => {
         excerpt: null,
         tags: null,
         status: 'published',
+        publishedAt: null,
       });
     });
 
@@ -443,6 +446,7 @@ describe('ArticleService', () => {
         excerpt: '',
         tags: '',
         status: 'draft',
+        publishedAt: '',
         saving: false,
       });
 
@@ -522,6 +526,7 @@ describe('ArticleService', () => {
         excerpt: '',
         tags: '',
         status: 'draft',
+        publishedAt: '',
         saving: false,
       });
       mockApi.post.mockReturnValue(

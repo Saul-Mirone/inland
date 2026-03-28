@@ -1,10 +1,23 @@
 import type React from 'react';
 
 import { Effect } from 'effect';
-import { CircleDot, AlignLeft, Link, Tag, Upload } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  CircleDot,
+  AlignLeft,
+  Link,
+  Tag,
+  Upload,
+} from 'lucide-react';
 
 import { confirm } from '@/components/confirm-dialog';
 import { MarkdownEditor } from '@/components/editor/markdown-editor';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -30,7 +43,7 @@ type PropertyRowProps = {
 function PropertyRow(props: PropertyRowProps) {
   const { icon: Icon, label, children } = props;
   const className =
-    'flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left hover:bg-muted/50';
+    'flex h-8 w-full items-center gap-2 rounded-sm px-2 text-left hover:bg-muted/50';
   const inner = (
     <>
       <span className="flex w-20 shrink-0 items-center gap-1.5 text-muted-foreground">
@@ -133,6 +146,35 @@ export function ArticleEditPage() {
               placeholder="tag1, tag2, tag3"
               className="flex-1 bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
             />
+          </PropertyRow>
+          <PropertyRow icon={CalendarIcon} label="Date">
+            <Popover>
+              <PopoverTrigger className="flex-1 text-left text-sm">
+                {editing.publishedAt ? (
+                  new Date(editing.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                ) : (
+                  <span className="text-muted-foreground/50">Pick a date</span>
+                )}
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={
+                    editing.publishedAt
+                      ? new Date(editing.publishedAt)
+                      : undefined
+                  }
+                  onSelect={(date) =>
+                    updateField('publishedAt', date ? date.toISOString() : '')
+                  }
+                  captionLayout="dropdown"
+                />
+              </PopoverContent>
+            </Popover>
           </PropertyRow>
           <PropertyRow icon={CircleDot} label="Status">
             <Select

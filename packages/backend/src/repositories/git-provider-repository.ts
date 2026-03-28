@@ -39,6 +39,7 @@ export interface ImportedArticle {
   readonly excerpt?: string;
   readonly tags?: string;
   readonly status: 'draft' | 'published';
+  readonly date?: string;
   readonly gitSha?: string;
 }
 

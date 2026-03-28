@@ -37,6 +37,7 @@ export const mockArticlesModel: ArticlesModelService = {
     excerpt: '',
     tags: '',
     status: 'draft',
+    publishedAt: '',
     saving: false,
   }),
   loading$: new BehaviorSubject(false),
@@ -57,6 +58,7 @@ export const resetMockArticlesModel = () => {
     excerpt: '',
     tags: '',
     status: 'draft',
+    publishedAt: '',
     saving: false,
   });
   mockArticlesModel.loading$.next(false);

@@ -56,6 +56,7 @@ export interface CreateArticleData {
   readonly excerpt?: string;
   readonly tags?: string;
   readonly status?: 'draft' | 'published';
+  readonly publishedAt?: string | null;
 }
 
 export interface UpdateArticleData {
@@ -65,4 +66,5 @@ export interface UpdateArticleData {
   readonly excerpt?: string | null;
   readonly tags?: string | null;
   readonly status?: 'draft' | 'published';
+  readonly publishedAt?: string | null;
 }
