@@ -13,6 +13,11 @@ import {
   type AuthState,
 } from '@/model/auth-model';
 import {
+  MediaModel,
+  type MediaItem,
+  type MediaModelService,
+} from '@/model/media-model';
+import {
   SitesModel,
   type PaginationMeta,
   type SitesModelService,
@@ -127,3 +132,21 @@ export const resetMockSitesModel = () => {
 };
 
 export const MockSitesModelLive = Layer.succeed(SitesModel, mockSitesModel);
+
+// ── Media Model ─────────────────────────────────────────────────────
+
+export const mockMediaModel: MediaModelService = {
+  media$: new BehaviorSubject<MediaItem[]>([]),
+  loading$: new BehaviorSubject(false),
+  error$: new BehaviorSubject<string | null>(null),
+  total$: new BehaviorSubject(0),
+};
+
+export const resetMockMediaModel = () => {
+  mockMediaModel.media$.next([]);
+  mockMediaModel.loading$.next(false);
+  mockMediaModel.error$.next(null);
+  mockMediaModel.total$.next(0);
+};
+
+export const MockMediaModelLive = Layer.succeed(MediaModel, mockMediaModel);

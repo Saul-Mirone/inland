@@ -278,4 +278,125 @@ describe('SiteService', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('bootstrap', () => {
+    it('should fetch sites and select the first one', async () => {
+      const sites = [
+        mockSite({ id: 's1', name: 'Site 1' }),
+        mockSite({ id: 's2', name: 'Site 2' }),
+      ];
+      mockApi.get.mockReturnValue(
+        apiSuccess({
+          sites,
+          total: 2,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        })
+      );
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.bootstrap();
+        })
+      );
+
+      expect(mockSitesModel.selectedSiteId$.getValue()).toBe('s1');
+    });
+
+    it('should not override already selected site', async () => {
+      mockSitesModel.selectedSiteId$.next('existing-id');
+      mockApi.get.mockReturnValue(
+        apiSuccess({
+          sites: [mockSite({ id: 's1' })],
+          total: 1,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        })
+      );
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.bootstrap();
+        })
+      );
+
+      expect(mockSitesModel.selectedSiteId$.getValue()).toBe('existing-id');
+    });
+  });
+
+  describe('selectSite', () => {
+    it('should set selectedSiteId', async () => {
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.selectSite('site-42');
+        })
+      );
+
+      expect(mockSitesModel.selectedSiteId$.getValue()).toBe('site-42');
+    });
+  });
+
+  describe('deselectSite', () => {
+    it('should clear selectedSiteId', async () => {
+      mockSitesModel.selectedSiteId$.next('some-site');
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.deselectSite();
+        })
+      );
+
+      expect(mockSitesModel.selectedSiteId$.getValue()).toBe(null);
+    });
+  });
+
+  describe('syncArticles', () => {
+    it('should sync and return result', async () => {
+      mockApi.post.mockReturnValue(
+        apiSuccess({
+          created: 2,
+          updated: 1,
+          markedDraft: 0,
+          unchanged: 3,
+          total: 6,
+        })
+      );
+      mockApi.get.mockReturnValue(apiSuccess({ articles: [] }));
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.syncArticles('site-1');
+        })
+      );
+
+      expect(result).toEqual({
+        created: 2,
+        updated: 1,
+        markedDraft: 0,
+        unchanged: 3,
+        total: 6,
+      });
+      expect(mockApi.post).toHaveBeenCalledWith('/sites/site-1/sync');
+    });
+
+    it('should return undefined on error', async () => {
+      mockApi.post.mockReturnValue(apiError(500, 'Sync failed'));
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.syncArticles('site-1');
+        })
+      );
+
+      expect(result).toBeUndefined();
+    });
+  });
 });

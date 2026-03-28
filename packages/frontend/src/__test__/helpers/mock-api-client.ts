@@ -10,6 +10,7 @@ export interface MockApiClient {
   readonly post: Mock;
   readonly put: Mock;
   readonly del: Mock;
+  readonly postFormData: Mock;
   readonly buildUrl: Mock;
 }
 
@@ -18,6 +19,7 @@ export const createMockApiClient = (): MockApiClient => ({
   post: vi.fn(),
   put: vi.fn(),
   del: vi.fn(),
+  postFormData: vi.fn(),
   buildUrl: vi.fn((path: string) => `http://localhost:3001${path}`),
 });
 
@@ -28,6 +30,7 @@ export const resetMockApi = () => {
   mockApi.post.mockReset();
   mockApi.put.mockReset();
   mockApi.del.mockReset();
+  mockApi.postFormData.mockReset();
   mockApi.buildUrl.mockReset();
   mockApi.buildUrl.mockImplementation(
     (path: string) => `http://localhost:3001${path}`

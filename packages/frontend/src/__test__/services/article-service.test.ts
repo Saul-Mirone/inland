@@ -557,4 +557,93 @@ describe('ArticleService', () => {
       expect(mockApi.post).not.toHaveBeenCalled();
     });
   });
+
+  describe('clearArticles', () => {
+    it('should clear articles, current article, and editing state', async () => {
+      mockArticlesModel.articles$.next([mockArticle()]);
+      mockArticlesModel.currentArticle$.next(mockArticle());
+      mockArticlesModel.editing$.next({
+        title: 'Something',
+        slug: 'something',
+        content: 'Content',
+        excerpt: '',
+        tags: '',
+        status: 'published',
+        publishedAt: '',
+        saving: false,
+      });
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.clearArticles();
+        })
+      );
+
+      expect(mockArticlesModel.articles$.getValue()).toEqual([]);
+      expect(mockArticlesModel.currentArticle$.getValue()).toBe(null);
+      expect(mockArticlesModel.editing$.getValue().title).toBe('');
+    });
+  });
+
+  describe('refreshCurrentArticle', () => {
+    it('should reload current article into editor', async () => {
+      const article = mockArticle({ id: 'a1', title: 'Original' });
+      mockArticlesModel.currentArticle$.next(article);
+
+      const refreshed = mockArticle({ id: 'a1', title: 'Refreshed' });
+      mockApi.get.mockReturnValue(apiSuccess({ article: refreshed }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.refreshCurrentArticle();
+        })
+      );
+
+      expect(mockApi.get).toHaveBeenCalledWith('/articles/a1');
+      expect(mockArticlesModel.currentArticle$.getValue()?.title).toBe(
+        'Refreshed'
+      );
+    });
+
+    it('should do nothing when no current article', async () => {
+      mockArticlesModel.currentArticle$.next(null);
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.refreshCurrentArticle();
+        })
+      );
+
+      expect(mockApi.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('selectTag', () => {
+    it('should set selectedTag', async () => {
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.selectTag('javascript');
+        })
+      );
+
+      expect(mockArticlesModel.selectedTag$.getValue()).toBe('javascript');
+    });
+
+    it('should clear selectedTag with null', async () => {
+      mockArticlesModel.selectedTag$.next('old-tag');
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.selectTag(null);
+        })
+      );
+
+      expect(mockArticlesModel.selectedTag$.getValue()).toBe(null);
+    });
+  });
 });
