@@ -53,3 +53,5 @@ generated/
 
 # dev-container data
 dev-container/data/
+
+coverage

@@ -74,6 +74,52 @@ describe('SiteService', () => {
     });
   });
 
+  describe('findSiteById', () => {
+    it('should return site with full details', async () => {
+      const siteDetails = {
+        ...mockSite(),
+        user: { id: 'user-1', username: 'testuser' },
+        articles: [],
+        media: [],
+      };
+
+      mockPrisma.site.findUnique.mockResolvedValue(siteDetails);
+
+      const result = await testRuntime.runPromise(
+        SiteService.findSiteById('site-1', 'user-1')
+      );
+
+      expect(result).toEqual(siteDetails);
+    });
+
+    it('should fail when site not found', async () => {
+      mockPrisma.site.findUnique.mockResolvedValue(null);
+
+      const result = await testRuntime.runPromiseExit(
+        SiteService.findSiteById('missing', 'user-1')
+      );
+
+      expect(Exit.isFailure(result)).toBe(true);
+    });
+
+    it('should fail when user does not own site', async () => {
+      const siteDetails = {
+        ...mockSite({ userId: 'other-user' }),
+        user: { id: 'other-user', username: 'other' },
+        articles: [],
+        media: [],
+      };
+
+      mockPrisma.site.findUnique.mockResolvedValue(siteDetails);
+
+      const result = await testRuntime.runPromiseExit(
+        SiteService.findSiteById('site-1', 'user-1')
+      );
+
+      expect(Exit.isFailure(result)).toBe(true);
+    });
+  });
+
   describe('updateSite', () => {
     it('should update a site successfully', async () => {
       // Mock data
