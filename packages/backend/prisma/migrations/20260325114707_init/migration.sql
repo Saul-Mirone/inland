@@ -31,6 +31,7 @@ CREATE TABLE "sites" (
     "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "display_name" TEXT,
+    "description" TEXT,
     "git_repo" TEXT NOT NULL,
     "platform" TEXT NOT NULL DEFAULT 'github',
     "deploy_status" TEXT NOT NULL DEFAULT 'pending',

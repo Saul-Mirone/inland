@@ -58,6 +58,7 @@ export interface ImportRepoData {
 export interface UpdateSiteData {
   readonly name?: string;
   readonly displayName?: string;
+  readonly description?: string;
   readonly gitRepo?: string;
   readonly platform?: string;
   readonly deployStatus?: string;

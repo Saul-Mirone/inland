@@ -26,6 +26,15 @@ export interface TemplateData {
   readonly platformUsername: string;
 }
 
+export interface SiteConfig {
+  readonly name: string;
+  readonly description: string;
+  readonly url: string;
+  readonly author: string;
+  readonly avatarUrl: string;
+  readonly authorUrl: string;
+}
+
 export interface GitFile {
   readonly path: string;
   readonly sha: string;
@@ -197,6 +206,15 @@ export interface GitProviderRepositoryService {
     repoFullName: string,
     defaultBranch: string
   ) => Effect.Effect<ImportedMedia[], GitProviderError>;
+
+  /**
+   * Push inland.config.json to the repository
+   */
+  readonly pushSiteConfig: (
+    accessToken: string,
+    repoFullName: string,
+    config: SiteConfig
+  ) => Effect.Effect<{ filePath: string; commitSha: string }, GitProviderError>;
 
   /**
    * Delete a file from the repository

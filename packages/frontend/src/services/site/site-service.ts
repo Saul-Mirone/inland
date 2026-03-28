@@ -23,6 +23,12 @@ export interface ImportSiteData {
   overrideExistingFiles: boolean;
 }
 
+export interface UpdateSiteData {
+  name?: string;
+  displayName?: string;
+  description?: string;
+}
+
 // ── Service interface ───────────────────────────────────────────────
 
 export interface SiteServiceInterface {
@@ -35,6 +41,10 @@ export interface SiteServiceInterface {
   readonly importSite: (
     data: ImportSiteData
   ) => Effect.Effect<{ articlesImported?: number } | undefined>;
+  readonly updateSite: (
+    siteId: string,
+    data: UpdateSiteData
+  ) => Effect.Effect<void>;
   readonly syncArticles: (
     siteId: string
   ) => Effect.Effect<SyncResult | undefined>;

@@ -6,6 +6,7 @@ import {
   type GitRepo,
   type CreateRepoData,
   type TemplateData,
+  type SiteConfig,
   type ImportedArticle,
   type ImportedMedia,
 } from '../../repositories/git-provider-repository';
@@ -133,6 +134,16 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
     _repoFullName: string,
     _opts: { filePath: string; commitMessage: string }
   ) => Effect.succeed({ deleted: true }),
+
+  pushSiteConfig: (
+    _accessToken: string,
+    _repoFullName: string,
+    _config: SiteConfig
+  ) =>
+    Effect.succeed({
+      filePath: 'inland.config.json',
+      commitSha: 'mockconfigsha789',
+    }),
 });
 
 // Mock layer for testing

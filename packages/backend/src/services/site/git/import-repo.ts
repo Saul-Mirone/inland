@@ -93,6 +93,7 @@ export const importRepo = (data: ImportRepoData) =>
       userId: data.userId,
       name: data.name,
       displayName: data.displayName,
+      description: data.description,
       gitRepo: data.gitRepoFullName,
       platform: data.platform ?? 'github',
       deployStatus: pagesUrl ? 'deployed' : 'pending',

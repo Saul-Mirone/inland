@@ -14,6 +14,7 @@ import { pushServiceError } from '@/services/shared/push-error';
 import type {
   CreateSiteData,
   ImportSiteData,
+  UpdateSiteData,
   SiteServiceInterface,
   SyncResult,
 } from './site-service';
@@ -125,6 +126,14 @@ export class SiteServiceImpl implements SiteServiceInterface {
           return undefined;
         })
       )
+    );
+
+  updateSite = (siteId: string, data: UpdateSiteData): Effect.Effect<void> =>
+    Effect.gen(this, function* () {
+      yield* this.api.put(`/sites/${siteId}`, data);
+      yield* this.fetchSites();
+    }).pipe(
+      Effect.catchAll((error) => Effect.sync(() => this.pushError(error)))
     );
 
   syncArticles = (siteId: string): Effect.Effect<SyncResult | undefined> =>

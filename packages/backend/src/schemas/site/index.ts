@@ -36,6 +36,7 @@ export const ImportRepoData = S.Struct({
 export const UpdateSiteData = S.Struct({
   name: S.optional(S.String.pipe(S.minLength(1), S.maxLength(100))),
   displayName: S.optional(S.String.pipe(S.maxLength(200))),
+  description: S.optional(S.String.pipe(S.maxLength(500))),
   gitRepo: S.optional(S.String.pipe(S.minLength(1))),
   platform: S.optional(GitPlatform),
   deployStatus: S.optional(SiteStatus),

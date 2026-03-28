@@ -45,6 +45,7 @@ export const createSite = (data: CreateSiteData) =>
         userId: data.userId,
         name: data.name,
         displayName: data.displayName,
+        description: data.description,
         gitRepo: gitRepo.fullName,
         platform: 'github',
         deployStatus: 'deployed',

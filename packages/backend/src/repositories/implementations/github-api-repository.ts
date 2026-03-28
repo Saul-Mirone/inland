@@ -5,6 +5,7 @@ import type {
   GitRepo,
   CreateRepoData,
   TemplateData,
+  SiteConfig,
   ImportedArticle,
   ImportedMedia,
 } from '../git-provider-repository';
@@ -662,6 +663,7 @@ export const makeGitHubApiRepository = (config?: {
       const filesSkipped: string[] = [];
 
       const filesToInject = [
+        'inland.config.json',
         '.github/workflows/deploy.yml',
         'build/index.js',
         'build/milkdown-compiler.js',
@@ -817,5 +819,40 @@ export const makeGitHubApiRepository = (config?: {
       });
 
       return { deleted: true };
+    }),
+
+  pushSiteConfig: (
+    accessToken: string,
+    repoFullName: string,
+    siteConfig: SiteConfig
+  ) =>
+    Effect.gen(function* () {
+      const filePath = 'inland.config.json';
+      const content = JSON.stringify(siteConfig, null, 2) + '\n';
+
+      const existingFile = yield* getFileOrNull(
+        accessToken,
+        repoFullName,
+        filePath
+      );
+      const sha = existingFile ? existingFile.sha : undefined;
+
+      const response = yield* updateFileContent(accessToken, repoFullName, {
+        filePath,
+        content,
+        message: 'Update site configuration',
+        sha,
+      });
+
+      const validated = yield* assertFields<{
+        commit: unknown;
+      }>(response, ['commit'], `PUT /repos/.../contents/${filePath}`);
+      const commit = yield* assertFields<{ sha: string }>(
+        validated.commit,
+        ['sha'],
+        `PUT /repos/.../contents/${filePath} → commit`
+      );
+
+      return { filePath, commitSha: commit.sha };
     }),
 });

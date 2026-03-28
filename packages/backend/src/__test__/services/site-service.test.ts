@@ -103,7 +103,6 @@ describe('SiteService', () => {
       expect(result).toEqual(mockUpdatedSite);
       expect(mockPrisma.site.findUnique).toHaveBeenCalledWith({
         where: { id: 'site-1' },
-        select: { userId: true },
       });
       expect(mockPrisma.site.update).toHaveBeenCalledWith({
         where: { id: 'site-1' },

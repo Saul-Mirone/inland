@@ -5,6 +5,7 @@ export interface SiteWithCounts {
   id: string;
   name: string;
   displayName?: string | null;
+  description?: string | null;
   gitRepo: string;
   platform: string;
   deployStatus: string;

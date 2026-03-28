@@ -1,10 +1,11 @@
 import { Effect } from 'effect';
-import { ChevronsUpDown, Globe, Plus, Trash2 } from 'lucide-react';
+import { ChevronsUpDown, Globe, Plus, Settings, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { confirm } from '@/components/confirm-dialog';
 import { CreateSiteDialog } from '@/components/sites/create-site-dialog';
+import { SiteSettingsDialog } from '@/components/sites/site-settings-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ export function SiteSelector() {
   const selectedSiteId = useObservable(sitesModel.selectedSiteId$);
   const loading = useObservable(sitesModel.loading$);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
 
@@ -155,6 +157,24 @@ export function SiteSelector() {
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuGroup>
+              {selectedSite && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      className="gap-2 p-2"
+                      onClick={() => setSettingsOpen(true)}
+                    >
+                      <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                        <Settings className="size-4" />
+                      </div>
+                      <span className="font-medium text-muted-foreground">
+                        Site settings
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem
@@ -174,6 +194,7 @@ export function SiteSelector() {
         </SidebarMenuItem>
       </SidebarMenu>
       <CreateSiteDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <SiteSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }
