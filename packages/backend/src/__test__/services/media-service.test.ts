@@ -1,14 +1,19 @@
-import { ManagedRuntime, Exit } from 'effect';
+import { Effect, Layer, ManagedRuntime, Exit } from 'effect';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import type { Media } from '../../../generated/prisma/client';
 
+import {
+  GitProviderRepository,
+  type GitProviderRepositoryService,
+} from '../../repositories/git-provider-repository';
 import { deleteMedia } from '../../services/media/delete-media';
 import { importMediaFromGit } from '../../services/media/import-media-from-git';
 import { listMedia } from '../../services/media/list-media';
 import { uploadMedia } from '../../services/media/upload-media';
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database';
 import { mockGitIntegration, mockSite } from '../helpers/mock-factories';
+import { makeMockGitProvider } from '../helpers/mock-git-provider';
 import { TestRepositoryLayer } from '../helpers/test-layers';
 
 const testRuntime = ManagedRuntime.make(TestRepositoryLayer);
@@ -192,28 +197,57 @@ describe('MediaService', () => {
   });
 
   describe('importMediaFromGit', () => {
+    const mediaGitProvider: GitProviderRepositoryService = {
+      ...makeMockGitProvider(),
+      getMediaFilesFromRepo: () =>
+        Effect.succeed([
+          {
+            filePath: 'assets/images/photo.png',
+            filename: 'photo.png',
+            sha: 'sha123',
+            size: 2048,
+          },
+        ]),
+    };
+    const mediaImportLayer = Layer.merge(
+      TestRepositoryLayer,
+      Layer.succeed(GitProviderRepository, mediaGitProvider)
+    );
+    const mediaRuntime = ManagedRuntime.make(mediaImportLayer);
+
     it('should import new media files from repository', async () => {
       setupSiteGitAccess();
-      mockPrisma.media.findUnique.mockResolvedValue(null); // no existing
+      mockPrisma.media.findUnique.mockResolvedValue(null);
       mockPrisma.media.create.mockResolvedValue(mockMedia());
 
-      const result = await testRuntime.runPromise(
+      const result = await mediaRuntime.runPromise(
         importMediaFromGit('site-1', 'user-1')
       );
 
-      expect(result).toHaveProperty('imported');
-      expect(result).toHaveProperty('total');
+      expect(result.imported).toBe(1);
+      expect(result.total).toBe(1);
+      expect(mockPrisma.media.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            siteId: 'site-1',
+            filename: 'photo.png',
+            filePath: 'assets/images/photo.png',
+            mimeType: 'image/png',
+          }),
+        })
+      );
     });
 
     it('should skip already imported media', async () => {
       setupSiteGitAccess();
-      mockPrisma.media.findUnique.mockResolvedValue(mockMedia()); // already exists
+      mockPrisma.media.findUnique.mockResolvedValue(mockMedia());
 
-      const result = await testRuntime.runPromise(
+      const result = await mediaRuntime.runPromise(
         importMediaFromGit('site-1', 'user-1')
       );
 
       expect(result.imported).toBe(0);
+      expect(result.total).toBe(1);
       expect(mockPrisma.media.create).not.toHaveBeenCalled();
     });
   });

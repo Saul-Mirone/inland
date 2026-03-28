@@ -1,7 +1,12 @@
-import { Effect, ManagedRuntime, Exit } from 'effect';
+import { Effect, Layer, ManagedRuntime, Exit } from 'effect';
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import {
+  AuthProviderRepository,
+  type AuthProviderRepositoryService,
+} from '../../repositories/auth-provider-repository';
 import { AuthService } from '../../services/auth';
+import { makeMockAuthProvider } from '../helpers/mock-auth-provider';
 import { mockPrisma, resetMockPrisma } from '../helpers/mock-database';
 import { mockGitIntegration, mockUser } from '../helpers/mock-factories';
 import { TestRepositoryLayer } from '../helpers/test-layers';
@@ -58,6 +63,36 @@ describe('AuthService', () => {
       );
 
       expect(result).toBe('valid-token');
+    });
+
+    it('should fail and clear token when validation fails', async () => {
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration({ accessToken: 'expired-token' })
+      );
+      mockPrisma.gitIntegration.updateMany.mockResolvedValue({ count: 1 });
+
+      // Create runtime with invalid-token mock
+      const invalidTokenProvider: AuthProviderRepositoryService = {
+        ...makeMockAuthProvider(),
+        validateToken: () =>
+          Effect.succeed({ isValid: false, reason: 'Token expired' }),
+      };
+      const invalidTokenLayer = Layer.merge(
+        TestRepositoryLayer,
+        Layer.succeed(AuthProviderRepository, invalidTokenProvider)
+      );
+      const invalidRuntime = ManagedRuntime.make(invalidTokenLayer);
+
+      const result = await invalidRuntime.runPromiseExit(
+        Effect.gen(function* () {
+          const auth = yield* AuthService;
+          return yield* auth.getUserAuthToken('user-1');
+        })
+      );
+
+      expect(Exit.isFailure(result)).toBe(true);
+      // Should have cleared the invalid token
+      expect(mockPrisma.gitIntegration.updateMany).toHaveBeenCalled();
     });
 
     it('should fail when no integration exists', async () => {
