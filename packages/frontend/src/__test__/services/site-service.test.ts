@@ -168,6 +168,56 @@ describe('SiteService', () => {
     });
   });
 
+  describe('updateSite', () => {
+    it('should call PUT and refetch sites', async () => {
+      mockApi.put.mockReturnValue(apiSuccess({ site: { id: 's1' } }));
+      mockApi.get.mockReturnValue(
+        apiSuccess({
+          sites: [
+            mockSite({
+              id: 's1',
+              displayName: 'Updated',
+              description: 'New desc',
+            }),
+          ],
+          total: 1,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+        })
+      );
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.updateSite('s1', {
+            displayName: 'Updated',
+            description: 'New desc',
+          });
+        })
+      );
+
+      expect(mockApi.put).toHaveBeenCalledWith('/sites/s1', {
+        displayName: 'Updated',
+        description: 'New desc',
+      });
+      expect(mockApi.get).toHaveBeenCalledWith('/sites?page=1&limit=20');
+    });
+
+    it('should handle errors', async () => {
+      mockApi.put.mockReturnValue(apiError(500, 'Update failed'));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.updateSite('s1', { displayName: 'Fail' });
+        })
+      );
+
+      expect(mockSitesModel.error$.getValue()).toBe('Update failed');
+    });
+  });
+
   describe('importSite', () => {
     it('should import site, select, and return result', async () => {
       mockApi.post.mockReturnValue(

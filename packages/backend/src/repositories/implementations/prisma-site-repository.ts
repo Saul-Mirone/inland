@@ -189,6 +189,9 @@ const updateSite = (id: string, data: SiteUpdateData) =>
             ...(data.displayName !== undefined && {
               displayName: data.displayName,
             }),
+            ...(data.description !== undefined && {
+              description: data.description,
+            }),
             ...(data.gitRepo !== undefined && { gitRepo: data.gitRepo }),
             ...(data.platform !== undefined && { platform: data.platform }),
             ...(data.deployStatus !== undefined && {
@@ -223,6 +226,7 @@ const createSite = (data: SiteCreateData) =>
           data: {
             name: data.name,
             displayName: data.displayName,
+            description: data.description,
             userId: data.userId,
             gitRepo: data.gitRepo || '',
             platform: data.platform || 'github',

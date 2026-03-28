@@ -138,6 +138,92 @@ describe('SiteService', () => {
 
       expect(Exit.isFailure(result)).toBe(true);
     });
+
+    it('should update description and displayName', async () => {
+      const mockUpdatedSite = mockSite({
+        id: 'site-1',
+        displayName: 'New Title',
+        description: 'New description',
+      });
+
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite());
+      mockPrisma.site.update.mockResolvedValue(mockUpdatedSite);
+
+      const result = await testRuntime.runPromise(
+        SiteService.updateSite('site-1', 'user-1', {
+          displayName: 'New Title',
+          description: 'New description',
+        })
+      );
+
+      expect(result).toEqual(mockUpdatedSite);
+      expect(mockPrisma.site.update).toHaveBeenCalledWith({
+        where: { id: 'site-1' },
+        data: {
+          displayName: 'New Title',
+          description: 'New description',
+        },
+      });
+    });
+
+    it('should trigger git config push when config fields change', async () => {
+      const existingSite = mockSite({ gitRepo: 'testuser/test-repo' });
+      const updatedSite = mockSite({
+        displayName: 'Updated Name',
+        description: 'Updated desc',
+        gitRepo: 'testuser/test-repo',
+      });
+
+      mockPrisma.site.findUnique.mockResolvedValue(existingSite);
+      mockPrisma.site.update.mockResolvedValue(updatedSite);
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      await testRuntime.runPromise(
+        SiteService.updateSite('site-1', 'user-1', {
+          displayName: 'Updated Name',
+          description: 'Updated desc',
+        })
+      );
+
+      // pushSiteConfigToRepo calls authService.getUserAuthToken
+      // which reads gitIntegration — verifies the push path was triggered
+      expect(mockPrisma.gitIntegration.findFirst).toHaveBeenCalled();
+    });
+
+    it('should not trigger git config push for non-config fields', async () => {
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite());
+      mockPrisma.site.update.mockResolvedValue(
+        mockSite({ deployStatus: 'ready' })
+      );
+
+      await testRuntime.runPromise(
+        SiteService.updateSite('site-1', 'user-1', {
+          deployStatus: 'ready',
+        })
+      );
+
+      // Should not attempt to push config
+      expect(mockPrisma.gitIntegration.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('should not include description in update when not provided', async () => {
+      mockPrisma.site.findUnique.mockResolvedValue(mockSite());
+      mockPrisma.site.update.mockResolvedValue(
+        mockSite({ displayName: 'Only Name' })
+      );
+
+      await testRuntime.runPromise(
+        SiteService.updateSite('site-1', 'user-1', {
+          displayName: 'Only Name',
+        })
+      );
+
+      const updateCall = mockPrisma.site.update.mock.calls[0][0];
+      expect(updateCall.data).toEqual({ displayName: 'Only Name' });
+      expect(updateCall.data).not.toHaveProperty('description');
+    });
   });
 
   describe('deleteSite', () => {
@@ -258,6 +344,65 @@ describe('SiteService', () => {
     });
   });
 
+  describe('createSite', () => {
+    it('should save description to database when provided', async () => {
+      const mockCreatedSite = mockSite({
+        id: 'site-1',
+        name: 'new-site',
+        description: 'My site description',
+        gitRepo: 'testuser/new-site',
+      });
+
+      mockPrisma.site.create.mockResolvedValue(mockCreatedSite);
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      await testRuntime.runPromise(
+        SiteService.createSite({
+          userId: 'user-1',
+          name: 'new-site',
+          description: 'My site description',
+        })
+      );
+
+      expect(mockPrisma.site.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: 'new-site',
+          description: 'My site description',
+          userId: 'user-1',
+        }),
+      });
+    });
+
+    it('should pass undefined description when not provided', async () => {
+      const mockCreatedSite = mockSite({
+        id: 'site-1',
+        name: 'no-desc-site',
+        gitRepo: 'testuser/no-desc-site',
+      });
+
+      mockPrisma.site.create.mockResolvedValue(mockCreatedSite);
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      await testRuntime.runPromise(
+        SiteService.createSite({
+          userId: 'user-1',
+          name: 'no-desc-site',
+        })
+      );
+
+      expect(mockPrisma.site.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          name: 'no-desc-site',
+          description: undefined,
+        }),
+      });
+    });
+  });
+
   describe('importRepo', () => {
     it('should import an existing repository successfully', async () => {
       // Mock data
@@ -312,6 +457,8 @@ describe('SiteService', () => {
         data: {
           userId: 'user-1',
           name: 'imported-site',
+          displayName: undefined,
+          description: 'Imported repository',
           gitRepo: 'testuser/existing-repo',
           platform: 'github',
           deployStatus: 'deployed',
