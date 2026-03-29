@@ -1,6 +1,7 @@
 import { Context } from 'effect';
 
 import type { createSite } from './git/create-site';
+import type { forceSyncSite } from './git/force-sync-site';
 import type { importRepo } from './git/import-repo';
 import type { deleteSite } from './operations/delete-site';
 import type { findSiteById } from './operations/find-site-by-id';
@@ -15,6 +16,7 @@ export interface SiteServiceInterface {
   readonly findUserSites: typeof findUserSites;
   readonly updateSite: typeof updateSite;
   readonly importRepo: typeof importRepo;
+  readonly forceSyncSite: typeof forceSyncSite;
   readonly validateSiteName: typeof validateSiteName;
   readonly validateGitRepo: typeof validateGitRepo;
 }

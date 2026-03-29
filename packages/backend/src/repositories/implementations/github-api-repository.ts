@@ -821,6 +821,17 @@ export const makeGitHubApiRepository = (config?: {
       return { deleted: true };
     }),
 
+  checkRepoExists: (accessToken: string, repoFullName: string) =>
+    makeGitHubApiRequest(accessToken, `/repos/${repoFullName}`).pipe(
+      Effect.map(() => true),
+      Effect.catchAll((error) => {
+        if (error.status === 404) {
+          return Effect.succeed(false);
+        }
+        return Effect.fail(error);
+      })
+    ),
+
   pushSiteConfig: (
     accessToken: string,
     repoFullName: string,

@@ -1,6 +1,7 @@
 export { SiteService } from './site-service';
 export type {
   CreateSiteData,
+  ForceSyncResult,
   ImportSiteData,
   UpdateSiteData,
   SiteServiceInterface,

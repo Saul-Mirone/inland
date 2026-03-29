@@ -1,6 +1,7 @@
 import { Layer } from 'effect';
 
 import { createSite } from './git/create-site';
+import { forceSyncSite } from './git/force-sync-site';
 import { importRepo } from './git/import-repo';
 import { deleteSite } from './operations/delete-site';
 import { findSiteById } from './operations/find-site-by-id';
@@ -16,6 +17,7 @@ export const SiteServiceLive = Layer.succeed(SiteService, {
   findUserSites,
   updateSite,
   importRepo,
+  forceSyncSite,
   validateSiteName,
   validateGitRepo,
 });

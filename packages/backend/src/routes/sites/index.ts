@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { createSiteRoute } from './create-site';
 import { deleteSiteRoute } from './delete-site';
+import { forceSyncRoute } from './force-sync';
 import { getSiteByIdRoute } from './get-site-by-id';
 import { getUserSitesRoute } from './get-user-sites';
 import { importRepoRoute } from './import-repo';
@@ -16,4 +17,5 @@ export const siteRoutes = async (fastify: FastifyInstance) => {
   await deleteSiteRoute(fastify);
   await importRepoRoute(fastify);
   await syncArticlesRoute(fastify);
+  await forceSyncRoute(fastify);
 };

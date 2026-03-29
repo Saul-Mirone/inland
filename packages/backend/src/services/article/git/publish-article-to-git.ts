@@ -6,40 +6,13 @@ import {
 } from '../../../repositories/article-repository';
 import { GitProviderRepository } from '../../../repositories/git-provider-repository';
 import { AuthService } from '../../auth';
+import { buildArticleMarkdown } from '../article-markdown';
 import {
   ArticleNotFoundError,
   ArticleAccessDeniedError,
   GitRepositoryError,
   GitConflictError,
 } from '../article-types';
-import { normalizeTags } from '../article-validation';
-
-const generateExcerpt = (content: string): string => {
-  let text = content
-    .replace(':', '')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/^>\s+/gm, '')
-    .replace(/^[\s]*[-*+]\s+/gm, '')
-    .replace(/^[\s]*\d+\.\s+/gm, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (text.length <= 150) {
-    return text;
-  }
-
-  const truncated = text.substring(0, 150);
-  const lastSpaceIndex = truncated.lastIndexOf(' ');
-
-  if (lastSpaceIndex > 100) {
-    return truncated.substring(0, lastSpaceIndex) + '...';
-  }
-
-  return truncated + '...';
-};
 
 export const publishArticleToGit = (articleId: string, userId: string) =>
   Effect.gen(function* () {
@@ -81,24 +54,7 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
       }
     }
 
-    const publishDate = (article.publishedAt ?? new Date())
-      .toISOString()
-      .split('T')[0];
-    const updatedAt = article.updatedAt.toISOString().split('T')[0];
-    const excerpt = article.excerpt || generateExcerpt(article.content);
-    const tagsLine = article.tags
-      ? `\ntags: [${normalizeTags(article.tags)}]`
-      : '';
-
-    const frontMatter = `---
-title: ${article.title}
-date: ${publishDate}
-updatedAt: ${updatedAt}
-excerpt: ${excerpt}${tagsLine}
----
-
-`;
-    const markdownContent = frontMatter + article.content;
+    const markdownContent = buildArticleMarkdown(article);
 
     const result = yield* gitProvider.publishArticleToRepo(
       accessToken,

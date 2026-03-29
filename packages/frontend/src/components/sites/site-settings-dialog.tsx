@@ -1,6 +1,9 @@
 import { Effect } from 'effect';
+import { RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
+import { confirm } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -157,6 +160,64 @@ function SiteSettingsForm({
       <Button type="submit" disabled={loading || !isDirty} className="w-full">
         {loading ? 'Saving...' : 'Save Changes'}
       </Button>
+
+      <ForceSyncSection siteId={site.id} disabled={loading} />
     </form>
+  );
+}
+
+function ForceSyncSection({
+  siteId,
+  disabled,
+}: {
+  siteId: string;
+  disabled: boolean;
+}) {
+  const [syncing, setSyncing] = useState(false);
+
+  const handleForceSync = async () => {
+    const confirmed = await confirm({
+      title: 'Force sync to repository',
+      description:
+        'This will overwrite the repository content with data from the CMS. If the repository was deleted, it will be recreated. Continue?',
+      confirmText: 'Force Sync',
+      confirmVariant: 'destructive',
+    });
+    if (!confirmed) return;
+
+    setSyncing(true);
+    runEffect(Effect.flatMap(SiteService, (svc) => svc.forceSyncSite(siteId)))
+      .then(
+        (result) => {
+          if (result) {
+            const parts = [`${result.published} published`];
+            if (result.deleted > 0) parts.push(`${result.deleted} deleted`);
+            if (result.repoRecreated) parts.push('repo recreated');
+            toast.success(`Force sync complete: ${parts.join(', ')}`);
+          }
+          return undefined;
+        },
+        () => undefined
+      )
+      .finally(() => setSyncing(false));
+  };
+
+  return (
+    <div className="border-t pt-4 space-y-2">
+      <p className="text-xs text-muted-foreground">
+        Force sync pushes all CMS content to the repository, replacing its
+        content. If the repository was deleted, it will be recreated.
+      </p>
+      <Button
+        type="button"
+        variant="destructive"
+        className="w-full"
+        disabled={disabled || syncing}
+        onClick={() => void handleForceSync()}
+      >
+        <RefreshCw className={syncing ? 'animate-spin' : ''} />
+        {syncing ? 'Syncing...' : 'Force Sync to Repository'}
+      </Button>
+    </div>
   );
 }

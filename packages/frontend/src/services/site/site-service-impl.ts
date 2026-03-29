@@ -13,6 +13,7 @@ import { pushServiceError } from '@/services/shared/push-error';
 
 import type {
   CreateSiteData,
+  ForceSyncResult,
   ImportSiteData,
   UpdateSiteData,
   SiteServiceInterface,
@@ -139,6 +140,26 @@ export class SiteServiceImpl implements SiteServiceInterface {
   syncArticles = (siteId: string): Effect.Effect<SyncResult | undefined> =>
     Effect.gen(this, function* () {
       const result = yield* this.api.post<SyncResult>(`/sites/${siteId}/sync`);
+      yield* this.articleService.fetchArticles(siteId);
+      yield* this.articleService.refreshCurrentArticle();
+      return result;
+    }).pipe(
+      Effect.catchAll((error) =>
+        Effect.sync(() => {
+          this.pushError(error);
+          return undefined;
+        })
+      )
+    );
+
+  forceSyncSite = (
+    siteId: string
+  ): Effect.Effect<ForceSyncResult | undefined> =>
+    Effect.gen(this, function* () {
+      const result = yield* this.api.post<ForceSyncResult>(
+        `/sites/${siteId}/force-sync`
+      );
+      yield* this.fetchSites();
       yield* this.articleService.fetchArticles(siteId);
       yield* this.articleService.refreshCurrentArticle();
       return result;

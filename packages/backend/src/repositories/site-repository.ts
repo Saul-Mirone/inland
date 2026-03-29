@@ -51,6 +51,7 @@ export interface SiteUpdateData {
   readonly gitRepo?: string;
   readonly platform?: string;
   readonly deployStatus?: string;
+  readonly deployUrl?: string;
 }
 
 // Repository interface

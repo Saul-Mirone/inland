@@ -88,6 +88,9 @@ export interface ArticleRepositoryService {
   readonly findAllForSync: (
     siteId: string
   ) => Effect.Effect<ArticleSyncItem[], RepositoryError>;
+  readonly findAllPublishedBySiteId: (
+    siteId: string
+  ) => Effect.Effect<Article[], RepositoryError>;
 }
 
 // Context tag for dependency injection

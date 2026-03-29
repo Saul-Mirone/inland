@@ -243,6 +243,23 @@ const findAllForSync = (siteId: string) =>
     });
   });
 
+const findAllPublishedBySiteId = (siteId: string) =>
+  Effect.gen(function* () {
+    const { prisma } = yield* DatabaseService;
+    return yield* Effect.tryPromise({
+      try: () =>
+        prisma.article.findMany({
+          where: { siteId, status: 'published' },
+          orderBy: { updatedAt: 'desc' },
+        }),
+      catch: (error) =>
+        new RepositoryError({
+          operation: 'article.findAllPublishedBySiteId',
+          cause: error,
+        }),
+    });
+  });
+
 const deleteArticle = (id: string) =>
   Effect.gen(function* () {
     const { prisma } = yield* DatabaseService;
@@ -271,6 +288,7 @@ export const PrismaArticleRepositoryLive = Layer.effect(
       update: bind(updateArticle),
       delete: bind(deleteArticle),
       findAllForSync: bind(findAllForSync),
+      findAllPublishedBySiteId: bind(findAllPublishedBySiteId),
     } satisfies ArticleRepositoryService;
   })
 );

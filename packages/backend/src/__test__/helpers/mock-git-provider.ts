@@ -144,6 +144,9 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
       filePath: 'inland.config.json',
       commitSha: 'mockconfigsha789',
     }),
+
+  checkRepoExists: (_accessToken: string, _repoFullName: string) =>
+    Effect.succeed(true),
 });
 
 // Mock layer for testing

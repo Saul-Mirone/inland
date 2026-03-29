@@ -399,4 +399,92 @@ describe('SiteService', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('forceSyncSite', () => {
+    it('should force sync and return result', async () => {
+      mockApi.post.mockReturnValue(
+        apiSuccess({
+          repoRecreated: false,
+          published: 3,
+          deleted: 1,
+          failed: 0,
+          mediaImported: 0,
+          total: 3,
+        })
+      );
+      mockApi.get.mockReturnValue(
+        apiSuccess({
+          sites: [],
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+        })
+      );
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.forceSyncSite('site-1');
+        })
+      );
+
+      expect(result).toEqual({
+        repoRecreated: false,
+        published: 3,
+        deleted: 1,
+        failed: 0,
+        mediaImported: 0,
+        total: 3,
+      });
+      expect(mockApi.post).toHaveBeenCalledWith('/sites/site-1/force-sync');
+    });
+
+    it('should return undefined on error', async () => {
+      mockApi.post.mockReturnValue(apiError(502, 'Git provider error'));
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.forceSyncSite('site-1');
+        })
+      );
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should refresh sites and articles after sync', async () => {
+      mockApi.post.mockReturnValue(
+        apiSuccess({
+          repoRecreated: true,
+          published: 1,
+          deleted: 0,
+          failed: 0,
+          mediaImported: 2,
+          total: 1,
+        })
+      );
+      mockApi.get.mockReturnValue(
+        apiSuccess({
+          sites: [],
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+        })
+      );
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          yield* service.forceSyncSite('site-1');
+        })
+      );
+
+      // post for force-sync, get for fetchSites + fetchArticles
+      // + refreshCurrentArticle
+      expect(mockApi.post).toHaveBeenCalledTimes(1);
+      expect(mockApi.get).toHaveBeenCalled();
+    });
+  });
 });

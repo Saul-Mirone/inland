@@ -227,6 +227,14 @@ export interface GitProviderRepositoryService {
       commitMessage: string;
     }
   ) => Effect.Effect<{ deleted: boolean; reason?: string }, GitProviderError>;
+
+  /**
+   * Check if a repository exists and is accessible
+   */
+  readonly checkRepoExists: (
+    accessToken: string,
+    repoFullName: string
+  ) => Effect.Effect<boolean, GitProviderError>;
 }
 
 // Effect Context for dependency injection

@@ -197,6 +197,9 @@ const updateSite = (id: string, data: SiteUpdateData) =>
             ...(data.deployStatus !== undefined && {
               deployStatus: data.deployStatus,
             }),
+            ...(data.deployUrl !== undefined && {
+              deployUrl: data.deployUrl,
+            }),
           },
         }),
       catch: (error) =>

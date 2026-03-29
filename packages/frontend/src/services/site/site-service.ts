@@ -48,6 +48,9 @@ export interface SiteServiceInterface {
   readonly syncArticles: (
     siteId: string
   ) => Effect.Effect<SyncResult | undefined>;
+  readonly forceSyncSite: (
+    siteId: string
+  ) => Effect.Effect<ForceSyncResult | undefined>;
 }
 
 export interface SyncResult {
@@ -55,6 +58,15 @@ export interface SyncResult {
   updated: number;
   markedDraft: number;
   unchanged: number;
+  total: number;
+}
+
+export interface ForceSyncResult {
+  repoRecreated: boolean;
+  published: number;
+  deleted: number;
+  failed: number;
+  mediaImported: number;
   total: number;
 }
 
