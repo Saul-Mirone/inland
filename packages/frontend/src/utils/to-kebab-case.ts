@@ -1,4 +1,5 @@
-export function toKebabCase(str: string): string {
+export function toKebabCase(str: string | undefined | null): string {
+  if (!str) return '';
   return str
     .trim()
     .toLowerCase()

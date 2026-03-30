@@ -3,9 +3,9 @@ import type React from 'react';
 import { Effect } from 'effect';
 import {
   Calendar as CalendarIcon,
-  CircleDot,
   AlignLeft,
   Link,
+  RefreshCw,
   Tag,
   Upload,
 } from 'lucide-react';
@@ -18,13 +18,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { articlesModel } from '@/model/articles-model';
 import { ArticleService } from '@/services/article';
@@ -135,6 +128,14 @@ export function ArticleEditPage() {
               placeholder="article-slug"
               className="flex-1 bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
             />
+            <button
+              type="button"
+              title="Regenerate from title"
+              className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground"
+              onClick={() => updateField('slug', toKebabCase(editing.title))}
+            >
+              <RefreshCw className="size-3" />
+            </button>
           </PropertyRow>
           <PropertyRow icon={AlignLeft} label="Excerpt">
             <input
@@ -182,24 +183,6 @@ export function ArticleEditPage() {
                 />
               </PopoverContent>
             </Popover>
-          </PropertyRow>
-          <PropertyRow icon={CircleDot} label="Status">
-            <Select
-              value={editing.status}
-              onValueChange={(v) => {
-                if (v === 'draft' || v === 'published') {
-                  updateField('status', v);
-                }
-              }}
-            >
-              <SelectTrigger className="h-auto w-auto gap-1 border-none bg-transparent p-0 text-sm shadow-none focus:ring-0 dark:bg-transparent dark:hover:bg-transparent">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-              </SelectContent>
-            </Select>
           </PropertyRow>
           <PropertyRow
             icon={Upload}
