@@ -161,7 +161,11 @@ function SiteSettingsForm({
         {loading ? 'Saving...' : 'Save Changes'}
       </Button>
 
-      <ForceSyncSection siteId={site.id} disabled={loading} />
+      <ForceSyncSection
+        siteId={site.id}
+        disabled={loading}
+        onComplete={onSuccess}
+      />
     </form>
   );
 }
@@ -169,9 +173,11 @@ function SiteSettingsForm({
 function ForceSyncSection({
   siteId,
   disabled,
+  onComplete,
 }: {
   siteId: string;
   disabled: boolean;
+  onComplete: () => void;
 }) {
   const [syncing, setSyncing] = useState(false);
 
@@ -195,6 +201,7 @@ function ForceSyncSection({
             if (result.repoRecreated) parts.push('repo recreated');
             toast.success(`Force sync complete: ${parts.join(', ')}`);
           }
+          onComplete();
           return undefined;
         },
         () => undefined

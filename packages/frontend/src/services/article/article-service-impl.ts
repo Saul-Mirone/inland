@@ -100,32 +100,26 @@ export class ArticleServiceImpl implements ArticleServiceInterface {
       const editing = this.model.editing$.getValue();
       this.model.editing$.next({ ...editing, saving: true });
 
-      yield* this.api.put(`/articles/${article.id}`, {
-        siteId: article.siteId,
-        title: editing.title,
-        slug: editing.slug,
-        content: editing.content,
-        excerpt: editing.excerpt || null,
-        tags: editing.tags || null,
-        status: editing.status,
-        publishedAt: editing.publishedAt || null,
-      });
+      const result = yield* this.api.put<{ article: Article }>(
+        `/articles/${article.id}`,
+        {
+          siteId: article.siteId,
+          title: editing.title,
+          slug: editing.slug,
+          content: editing.content,
+          excerpt: editing.excerpt || null,
+          tags: editing.tags || null,
+          status: editing.status,
+          publishedAt: editing.publishedAt || null,
+        }
+      );
 
-      const now = new Date().toISOString();
+      const saved = result.article;
+      this.model.currentArticle$.next(saved);
       this.model.articles$.next(
-        this.model.articles$.getValue().map((a) =>
-          a.id === article.id
-            ? {
-                ...a,
-                title: editing.title,
-                slug: editing.slug,
-                excerpt: editing.excerpt || null,
-                tags: editing.tags || null,
-                status: editing.status,
-                updatedAt: now,
-              }
-            : a
-        )
+        this.model.articles$
+          .getValue()
+          .map((a) => (a.id === article.id ? saved : a))
       );
 
       const current = this.model.editing$.getValue();

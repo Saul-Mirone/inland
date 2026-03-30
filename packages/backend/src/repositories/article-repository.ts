@@ -18,6 +18,8 @@ export interface ArticleCreateData {
   readonly publishedAt?: Date | null;
   readonly gitSha?: string;
   readonly gitSyncedAt?: Date;
+  readonly contentHash?: string;
+  readonly gitSyncedHash?: string;
 }
 
 export interface ArticleUpdateData {
@@ -30,6 +32,8 @@ export interface ArticleUpdateData {
   readonly publishedAt?: Date | null;
   readonly gitSha?: string | null;
   readonly gitSyncedAt?: Date | null;
+  readonly contentHash?: string;
+  readonly gitSyncedHash?: string;
 }
 
 export interface ArticleSyncItem {
@@ -56,6 +60,8 @@ export interface ArticleListItem {
   readonly tags: string | null;
   readonly status: string;
   readonly publishedAt: Date | null;
+  readonly contentHash: string | null;
+  readonly gitSyncedHash: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

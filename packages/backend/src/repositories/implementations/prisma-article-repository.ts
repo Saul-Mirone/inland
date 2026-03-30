@@ -39,6 +39,12 @@ const createArticle = (data: ArticleCreateData) =>
             ...(data.gitSyncedAt !== undefined && {
               gitSyncedAt: data.gitSyncedAt,
             }),
+            ...(data.contentHash !== undefined && {
+              contentHash: data.contentHash,
+            }),
+            ...(data.gitSyncedHash !== undefined && {
+              gitSyncedHash: data.gitSyncedHash,
+            }),
           },
           include: {
             site: {
@@ -117,6 +123,8 @@ const findArticlesBySiteId = (siteId: string, pagination?: PaginationOptions) =>
               status: true,
               publishedAt: true,
               gitSyncedAt: true,
+              contentHash: true,
+              gitSyncedHash: true,
               createdAt: true,
               updatedAt: true,
             },
@@ -208,6 +216,12 @@ const updateArticle = (id: string, data: ArticleUpdateData) =>
             ...(data.gitSha !== undefined && { gitSha: data.gitSha }),
             ...(data.gitSyncedAt !== undefined && {
               gitSyncedAt: data.gitSyncedAt,
+            }),
+            ...(data.contentHash !== undefined && {
+              contentHash: data.contentHash,
+            }),
+            ...(data.gitSyncedHash !== undefined && {
+              gitSyncedHash: data.gitSyncedHash,
             }),
           },
           include: {

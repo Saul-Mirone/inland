@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
-import { Moon, Sun } from 'lucide-react';
-import { Outlet } from 'react-router';
+import { Moon, Sun, X } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router';
 
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,11 @@ import { useObservable } from '@/utils/use-observable';
 import { AppSidebar } from './sidebar';
 
 export function AppLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const effectiveTheme = useObservable(themeModel.effectiveTheme$);
   const isDark = effectiveTheme === 'dark';
+  const isArticleOpen = location.pathname.startsWith('/articles/');
 
   const handleToggleTheme = () => {
     void runEffect(Effect.flatMap(ThemeService, (svc) => svc.toggle()));
@@ -41,6 +44,17 @@ export function AppLayout() {
               {isDark ? 'Light mode' : 'Dark mode'}
             </span>
           </Button>
+          {isArticleOpen && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto size-7"
+              onClick={() => navigate('/')}
+            >
+              <X className="size-4" />
+              <span className="sr-only">Close article</span>
+            </Button>
+          )}
         </header>
         <div className="flex flex-1 overflow-y-auto py-6">
           <div className="mx-auto flex max-w-4xl flex-1 flex-col">

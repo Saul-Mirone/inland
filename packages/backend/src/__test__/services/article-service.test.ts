@@ -70,6 +70,7 @@ describe('ArticleService', () => {
           slug: 'test-article',
           content: 'This is a test article',
           status: 'draft',
+          contentHash: expect.any(String),
         },
         include: {
           site: {
@@ -306,7 +307,10 @@ describe('ArticleService', () => {
       expect(result.article.title).toBe('Updated Title');
       expect(mockPrisma.article.update).toHaveBeenCalledWith({
         where: { id: 'article-1' },
-        data: { title: 'Updated Title' },
+        data: {
+          title: 'Updated Title',
+          contentHash: expect.any(String),
+        },
         include: expect.objectContaining({
           site: expect.any(Object),
         }),

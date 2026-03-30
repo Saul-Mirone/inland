@@ -5,6 +5,7 @@ import type { SiteConfig } from '../../../repositories/git-provider-repository';
 import { ArticleRepository } from '../../../repositories/article-repository';
 import { GitProviderRepository } from '../../../repositories/git-provider-repository';
 import { SiteRepository } from '../../../repositories/site-repository';
+import { computeContentHash } from '../../article/article-content-hash';
 import { buildArticleMarkdown } from '../../article/article-markdown';
 import { GitRepositoryError } from '../../article/article-types';
 import { AuthService } from '../../auth';
@@ -182,10 +183,14 @@ export const forceSyncSite = (siteId: string, userId: string) =>
           markdown
         );
 
+        const syncedHash = computeContentHash(article);
+
         yield* articleRepo
           .update(article.id, {
             gitSha: result.blobSha,
             gitSyncedAt: new Date(),
+            contentHash: syncedHash,
+            gitSyncedHash: syncedHash,
           })
           .pipe(
             Effect.catchTag('RepositoryError', (error) =>

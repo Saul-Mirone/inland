@@ -5,6 +5,7 @@ import {
   type ArticleUpdateData,
 } from '../../../repositories/article-repository';
 import { isUniqueConstraintError } from '../../../repositories/repository-error';
+import { computeContentHash } from '../article-content-hash';
 import {
   ArticleNotFoundError,
   ArticleUpdateError,
@@ -36,7 +37,7 @@ export const updateArticle = (
       return yield* new ArticleAccessDeniedError({ articleId, userId });
     }
 
-    const repoData: ArticleUpdateData = {
+    let repoData: ArticleUpdateData = {
       ...(data.title !== undefined && {
         title: yield* validateTitle(data.title),
       }),
@@ -76,6 +77,19 @@ export const updateArticle = (
     if (isNoop) {
       return { article: existingArticle };
     }
+
+    // Recompute content hash from the merged article state
+    const mergedFields = {
+      title: repoData.title ?? existingArticle.title,
+      slug: repoData.slug ?? existingArticle.slug,
+      content: repoData.content ?? existingArticle.content,
+      excerpt:
+        repoData.excerpt !== undefined
+          ? repoData.excerpt
+          : existingArticle.excerpt,
+      tags: repoData.tags !== undefined ? repoData.tags : existingArticle.tags,
+    };
+    repoData = { ...repoData, contentHash: computeContentHash(mergedFields) };
 
     const article = yield* articleRepo.update(articleId, repoData).pipe(
       Effect.catchTag(

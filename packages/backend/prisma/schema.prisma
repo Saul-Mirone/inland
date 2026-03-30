@@ -70,19 +70,21 @@ model Site {
 
 // Article model
 model Article {
-  id          String    @id @default(cuid())
-  siteId      String    @map("site_id")
-  title       String
-  slug        String
-  content     String
-  excerpt     String?
-  tags        String?
-  status      String    @default("draft")
-  publishedAt DateTime? @map("published_at")
-  gitSha      String?   @map("git_sha")
-  gitSyncedAt DateTime? @map("git_synced_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id             String    @id @default(cuid())
+  siteId         String    @map("site_id")
+  title          String
+  slug           String
+  content        String
+  excerpt        String?
+  tags           String?
+  status         String    @default("draft")
+  publishedAt    DateTime? @map("published_at")
+  gitSha         String?   @map("git_sha")
+  gitSyncedAt    DateTime? @map("git_synced_at")
+  contentHash    String?   @map("content_hash")
+  gitSyncedHash  String?   @map("git_synced_hash")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
   site Site @relation(fields: [siteId], references: [id], onDelete: Cascade)

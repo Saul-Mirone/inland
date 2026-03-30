@@ -8,6 +8,7 @@ import {
   type Subscription,
   debounceTime,
   distinctUntilChanged,
+  filter,
   skip,
 } from 'rxjs';
 
@@ -23,6 +24,8 @@ export type UploadImageFn = (file: File) => Promise<string>;
 
 export class EditorServiceImpl implements EditorServiceInterface {
   private autoSaveSubscription: Subscription | null = null;
+  private editorSettled = true;
+  private settleTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly model: EditorModelService,
@@ -35,6 +38,7 @@ export class EditorServiceImpl implements EditorServiceInterface {
     Effect.gen(this, function* () {
       yield* this.destroy();
 
+      this.editorSettled = false;
       const editing = this.articles.editing$.getValue();
       const uploadFn = this.uploadImage;
       const crepe = new Crepe({
@@ -87,6 +91,13 @@ export class EditorServiceImpl implements EditorServiceInterface {
 
       this.model.ready$.next(true);
       this.startAutoSave();
+
+      // Let editor settle before enabling auto-save to prevent
+      // Milkdown's markdown normalization from triggering a save
+      this.settleTimer = setTimeout(() => {
+        this.editorSettled = true;
+        this.settleTimer = null;
+      }, 500);
     }).pipe(
       Effect.catchAll((error) =>
         Effect.logError('Editor initialization failed', { error })
@@ -137,6 +148,7 @@ export class EditorServiceImpl implements EditorServiceInterface {
             prev.publishedAt === curr.publishedAt
         ),
         skip(1),
+        filter(() => this.editorSettled),
         debounceTime(1000)
       )
       .subscribe(() => {
@@ -147,5 +159,10 @@ export class EditorServiceImpl implements EditorServiceInterface {
   private stopAutoSave(): void {
     this.autoSaveSubscription?.unsubscribe();
     this.autoSaveSubscription = null;
+    if (this.settleTimer) {
+      clearTimeout(this.settleTimer);
+      this.settleTimer = null;
+    }
+    this.editorSettled = true;
   }
 }

@@ -404,7 +404,16 @@ describe('ArticleService', () => {
   describe('saveCurrentArticle', () => {
     it('should save using editing state and current article id', async () => {
       const article = mockArticle({ id: 'a1', siteId: 'site-1' });
+      const savedArticle = mockArticle({
+        id: 'a1',
+        siteId: 'site-1',
+        title: 'Updated Title',
+        slug: 'updated-slug',
+        content: 'Updated content',
+        contentHash: 'newhash',
+      });
       mockArticlesModel.currentArticle$.next(article);
+      mockArticlesModel.articles$.next([article]);
       mockArticlesModel.editing$.next({
         title: 'Updated Title',
         slug: 'updated-slug',
@@ -415,8 +424,7 @@ describe('ArticleService', () => {
         publishedAt: '',
         saving: false,
       });
-      mockApi.put.mockReturnValue(apiSuccess({}));
-      mockApi.get.mockReturnValue(apiSuccess({ articles: [] }));
+      mockApi.put.mockReturnValue(apiSuccess({ article: savedArticle }));
 
       await testRuntime.runPromise(
         Effect.gen(function* () {
@@ -437,8 +445,44 @@ describe('ArticleService', () => {
       });
     });
 
+    it('should update currentArticle and articles from server response', async () => {
+      const article = mockArticle({ id: 'a1', siteId: 'site-1' });
+      const savedArticle = mockArticle({
+        id: 'a1',
+        siteId: 'site-1',
+        title: 'Saved',
+        contentHash: 'xyz',
+      });
+      mockArticlesModel.currentArticle$.next(article);
+      mockArticlesModel.articles$.next([article]);
+      mockArticlesModel.editing$.next({
+        title: 'Saved',
+        slug: 'test-article',
+        content: 'Test content',
+        excerpt: '',
+        tags: '',
+        status: 'draft',
+        publishedAt: '',
+        saving: false,
+      });
+      mockApi.put.mockReturnValue(apiSuccess({ article: savedArticle }));
+
+      await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* ArticleService;
+          yield* service.saveCurrentArticle();
+        })
+      );
+
+      expect(mockArticlesModel.currentArticle$.getValue()).toEqual(
+        savedArticle
+      );
+      expect(mockArticlesModel.articles$.getValue()).toEqual([savedArticle]);
+    });
+
     it('should set saving flag during save', async () => {
-      mockArticlesModel.currentArticle$.next(mockArticle({ id: 'a1' }));
+      const article = mockArticle({ id: 'a1' });
+      mockArticlesModel.currentArticle$.next(article);
       mockArticlesModel.editing$.next({
         title: 'T',
         slug: 's',
@@ -453,9 +497,8 @@ describe('ArticleService', () => {
       const savingStates: boolean[] = [];
       mockApi.put.mockImplementation(() => {
         savingStates.push(mockArticlesModel.editing$.getValue().saving);
-        return apiSuccess({});
+        return apiSuccess({ article });
       });
-      mockApi.get.mockReturnValue(apiSuccess({ articles: [] }));
 
       await testRuntime.runPromise(
         Effect.gen(function* () {

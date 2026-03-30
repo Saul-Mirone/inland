@@ -6,6 +6,7 @@ import {
 } from '../../../repositories/article-repository';
 import { GitProviderRepository } from '../../../repositories/git-provider-repository';
 import { MediaService } from '../../media';
+import { computeContentHash } from '../article-content-hash';
 import { validateSiteGitAccess } from './validate-site-git-access';
 
 const logSyncError = (action: string, slug: string) =>
@@ -45,6 +46,8 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
       yield* Effect.gen(function* () {
         const existing = dbBySlug.get(slug);
 
+        const hash = computeContentHash(remote);
+
         if (!existing) {
           const createData: ArticleCreateData = {
             siteId: site.id,
@@ -59,6 +62,8 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
             }),
             gitSha: remote.gitSha,
             gitSyncedAt: new Date(),
+            contentHash: hash,
+            gitSyncedHash: hash,
           };
           yield* articleRepo.create(createData);
           created.push(slug);
@@ -73,6 +78,8 @@ export const syncArticlesFromGit = (siteId: string, userId: string) =>
             tags: remote.tags,
             gitSha: remote.gitSha,
             gitSyncedAt: new Date(),
+            contentHash: hash,
+            gitSyncedHash: hash,
           });
           updated.push(slug);
         } else {

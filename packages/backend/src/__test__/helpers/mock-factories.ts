@@ -45,6 +45,8 @@ export const mockArticle = (overrides: Partial<Article> = {}): Article => ({
   publishedAt: null,
   gitSha: null,
   gitSyncedAt: null,
+  contentHash: null,
+  gitSyncedHash: null,
   createdAt: now,
   updatedAt: now,
   ...overrides,

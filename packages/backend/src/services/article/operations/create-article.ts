@@ -7,6 +7,7 @@ import {
 import { isUniqueConstraintError } from '../../../repositories/repository-error';
 import { SiteRepository } from '../../../repositories/site-repository';
 import { SiteAccessDeniedError } from '../../site/site-types';
+import { computeContentHash } from '../article-content-hash';
 import {
   ArticleCreationError,
   DuplicateSlugError,
@@ -35,6 +36,7 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
       });
     }
 
+    const tags = data.tags !== undefined ? normalizeTags(data.tags) : undefined;
     const repoData: ArticleCreateData = {
       siteId: data.siteId,
       title: data.title,
@@ -43,15 +45,20 @@ export const createArticle = (userId: string, data: CreateArticleData) =>
       ...(data.excerpt !== undefined && {
         excerpt: data.excerpt,
       }),
-      ...(data.tags !== undefined && {
-        tags: normalizeTags(data.tags),
-      }),
+      ...(tags !== undefined && { tags }),
       status: data.status ?? 'draft',
       publishedAt: data.publishedAt
         ? new Date(data.publishedAt)
         : data.status === 'published'
           ? new Date()
           : undefined,
+      contentHash: computeContentHash({
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        excerpt: data.excerpt,
+        tags,
+      }),
     };
     const article = yield* articleRepo.create(repoData).pipe(
       Effect.catchTag(

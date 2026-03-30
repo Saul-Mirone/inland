@@ -29,6 +29,7 @@ import { Separator } from '@/components/ui/separator';
 import { articlesModel } from '@/model/articles-model';
 import { ArticleService } from '@/services/article';
 import { runEffect } from '@/utils/effect-runtime';
+import { toKebabCase } from '@/utils/to-kebab-case';
 import { useObservable } from '@/utils/use-observable';
 
 type PropertyRowProps = {
@@ -114,7 +115,13 @@ export function ArticleEditPage() {
         <input
           id="title"
           value={editing.title}
-          onChange={(e) => updateField('title', e.target.value)}
+          onChange={(e) => {
+            const newTitle = e.target.value;
+            updateField('title', newTitle);
+            if (!editing.slug) {
+              updateField('slug', toKebabCase(newTitle));
+            }
+          }}
           placeholder="Untitled"
           className="w-full text-4xl font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/50"
         />

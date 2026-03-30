@@ -11,6 +11,8 @@ export interface Article {
   status: 'draft' | 'published';
   publishedAt: string | null;
   gitSyncedAt: string | null;
+  contentHash: string | null;
+  gitSyncedHash: string | null;
   siteId: string;
   createdAt: string;
   updatedAt: string;
@@ -77,10 +79,15 @@ export const articlesModel = instance;
 
 export function hasUnpublishedChanges(article: Article): boolean {
   if (article.status !== 'published') return false;
+
+  // Content-hash based comparison: both hashes are set by the
+  // backend — contentHash on every save, gitSyncedHash at publish.
+  if (article.contentHash && article.gitSyncedHash) {
+    return article.contentHash !== article.gitSyncedHash;
+  }
+
+  // Fallback for articles created before the hash columns existed
   if (!article.gitSyncedAt) return true;
-  // Use 1s tolerance because gitSyncedAt (app-layer Date) and
-  // updatedAt (Prisma @updatedAt) are set in the same operation
-  // but can differ by tens of milliseconds.
   const diff =
     new Date(article.updatedAt).getTime() -
     new Date(article.gitSyncedAt).getTime();

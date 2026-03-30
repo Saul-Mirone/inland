@@ -8,6 +8,7 @@ import { GitProviderRepository } from '../../../repositories/git-provider-reposi
 import { SiteRepository } from '../../../repositories/site-repository';
 import { AuthService } from '../../auth';
 import { SiteAccessDeniedError } from '../../site/site-types';
+import { computeContentHash } from '../article-content-hash';
 import { GitRepositoryError } from '../article-types';
 
 export const importArticlesFromGit = (siteId: string, userId: string) =>
@@ -67,6 +68,7 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
           return null;
         }
 
+        const hash = computeContentHash(articleData);
         const repoData: ArticleCreateData = {
           siteId: site.id,
           title: articleData.title,
@@ -80,6 +82,8 @@ export const importArticlesFromGit = (siteId: string, userId: string) =>
           }),
           gitSha: articleData.gitSha,
           gitSyncedAt: new Date(),
+          contentHash: hash,
+          gitSyncedHash: hash,
         };
         const article = yield* articleRepo.create(repoData);
 

@@ -6,6 +6,7 @@ import {
 } from '../../../repositories/article-repository';
 import { GitProviderRepository } from '../../../repositories/git-provider-repository';
 import { AuthService } from '../../auth';
+import { computeContentHash } from '../article-content-hash';
 import { buildArticleMarkdown } from '../article-markdown';
 import {
   ArticleNotFoundError,
@@ -67,11 +68,15 @@ export const publishArticleToGit = (articleId: string, userId: string) =>
       `Article published to Git repository: ${article.title} -> ${result.filePath}`
     );
 
+    const syncedHash = computeContentHash(article);
+
     const repoData: ArticleUpdateData = {
       status: 'published',
       ...(!article.publishedAt && { publishedAt: new Date() }),
       gitSha: result.blobSha,
       gitSyncedAt: new Date(),
+      contentHash: syncedHash,
+      gitSyncedHash: syncedHash,
     };
     const updatedArticle = yield* articleRepo.update(articleId, repoData);
 

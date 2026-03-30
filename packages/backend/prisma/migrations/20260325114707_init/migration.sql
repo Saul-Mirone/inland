@@ -55,6 +55,8 @@ CREATE TABLE "articles" (
     "published_at" TIMESTAMP(3),
     "git_sha" TEXT,
     "git_synced_at" TIMESTAMP(3),
+    "content_hash" TEXT,
+    "git_synced_hash" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

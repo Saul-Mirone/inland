@@ -35,12 +35,11 @@ export const updateArticleRoute = async (fastify: FastifyInstance) => {
 
       const effect = Effect.gen(function* () {
         const articleService = yield* ArticleService;
-        const article = yield* articleService.updateArticle(
+        return yield* articleService.updateArticle(
           id,
           userPayload.userId,
           updateData
         );
-        return { article };
       });
 
       return runRouteEffect(
