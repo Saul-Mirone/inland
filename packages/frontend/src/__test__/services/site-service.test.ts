@@ -400,6 +400,58 @@ describe('SiteService', () => {
     });
   });
 
+  describe('fetchRepoConfig', () => {
+    it('should return config when repo has inland.config.json', async () => {
+      const config = {
+        name: 'My Blog',
+        description: 'A cool blog',
+        url: 'https://user.github.io/my-blog',
+        author: 'testuser',
+        avatarUrl: 'https://github.com/testuser.png',
+        authorUrl: 'https://github.com/testuser',
+      };
+      mockApi.get.mockReturnValue(apiSuccess({ config }));
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.fetchRepoConfig('user/my-blog');
+        })
+      );
+
+      expect(result).toEqual(config);
+      expect(mockApi.get).toHaveBeenCalledWith(
+        '/sites/repo-config?repo=user%2Fmy-blog'
+      );
+    });
+
+    it('should return null when repo has no config', async () => {
+      mockApi.get.mockReturnValue(apiSuccess({ config: null }));
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.fetchRepoConfig('user/no-config');
+        })
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null on error', async () => {
+      mockApi.get.mockReturnValue(apiError(404, 'Not found'));
+
+      const result = await testRuntime.runPromise(
+        Effect.gen(function* () {
+          const service = yield* SiteService;
+          return yield* service.fetchRepoConfig('user/missing');
+        })
+      );
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('forceSyncSite', () => {
     it('should force sync and return result', async () => {
       mockApi.post.mockReturnValue(

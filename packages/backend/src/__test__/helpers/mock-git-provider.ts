@@ -147,6 +147,9 @@ export const makeMockGitProvider = (): GitProviderRepositoryService => ({
 
   checkRepoExists: (_accessToken: string, _repoFullName: string) =>
     Effect.succeed(true),
+
+  getSiteConfig: (_accessToken: string, _repoFullName: string) =>
+    Effect.succeed(null),
 });
 
 // Mock layer for testing

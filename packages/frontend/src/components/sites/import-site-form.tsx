@@ -13,10 +13,12 @@ const slugify = (text: string): string =>
     .replace(/[^a-z0-9-_.]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+const repoPattern = /^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/;
+
 const initialFormState = {
+  gitRepoFullName: '',
   displayName: '',
   name: '',
-  gitRepoFullName: '',
   description: '',
   setupWorkflow: true,
   enablePages: true,
@@ -26,11 +28,59 @@ const initialFormState = {
 export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
   const [form, setForm] = useState(initialFormState);
   const [nameManuallyEdited, setNameManuallyEdited] = useState(false);
+  const [displayNameManuallyEdited, setDisplayNameManuallyEdited] =
+    useState(false);
+  const [descriptionManuallyEdited, setDescriptionManuallyEdited] =
+    useState(false);
   const [loading, setLoading] = useState(false);
+  const [configLoading, setConfigLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchConfigForRepo = (repo: string) => {
+    if (!repoPattern.test(repo.trim())) return;
+
+    setConfigLoading(true);
+    runEffect(
+      Effect.flatMap(SiteService, (svc) => svc.fetchRepoConfig(repo.trim()))
+    )
+      .then(
+        (config) => {
+          if (!config) return;
+
+          setForm((prev) => ({
+            ...prev,
+            ...(!displayNameManuallyEdited &&
+              config.name && { displayName: config.name }),
+            ...(!nameManuallyEdited &&
+              config.name && {
+                name: slugify(config.name),
+              }),
+            ...(!descriptionManuallyEdited &&
+              config.description !== undefined && {
+                description: config.description,
+              }),
+          }));
+          return undefined;
+        },
+        () => undefined
+      )
+      .finally(() => setConfigLoading(false));
+  };
+
+  const updateRepo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({
+      ...prev,
+      gitRepoFullName: e.target.value,
+    }));
+  };
+
+  const handleRepoBlur = () => {
+    fetchConfigForRepo(form.gitRepoFullName);
+  };
 
   const updateDisplayName = (e: React.ChangeEvent<HTMLInputElement>) => {
     const displayName = e.target.value;
+    setDisplayNameManuallyEdited(true);
     setForm((prev) => ({
       ...prev,
       displayName,
@@ -45,10 +95,13 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
     setForm((prev) => ({ ...prev, name: e.target.value }));
   };
 
-  const updateTextField =
-    (field: 'gitRepoFullName' | 'description') =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const updateDescription = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDescriptionManuallyEdited(true);
+    setForm((prev) => ({
+      ...prev,
+      description: e.target.value,
+    }));
+  };
 
   const updateCheckbox =
     (field: 'setupWorkflow' | 'enablePages' | 'overrideExistingFiles') =>
@@ -61,20 +114,18 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!form.displayName.trim()) {
-      setError('Please enter a site name');
-      return;
-    }
-
     if (!form.gitRepoFullName.trim()) {
       setError('Please enter the repository full name (owner/repo)');
       return;
     }
 
-    if (
-      !/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/.test(form.gitRepoFullName.trim())
-    ) {
+    if (!repoPattern.test(form.gitRepoFullName.trim())) {
       setError('Invalid repository format. Use: owner/repo-name');
+      return;
+    }
+
+    if (!form.displayName.trim()) {
+      setError('Please enter a site name');
       return;
     }
 
@@ -98,6 +149,8 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
         () => {
           setForm(initialFormState);
           setNameManuallyEdited(false);
+          setDisplayNameManuallyEdited(false);
+          setDescriptionManuallyEdited(false);
           onSuccess();
           return undefined;
         },
@@ -111,6 +164,25 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+      <div className="space-y-1.5">
+        <label className="flex flex-col gap-1.5 text-sm font-medium">
+          Repository (owner/repo)
+          <Input
+            type="text"
+            value={form.gitRepoFullName}
+            onChange={updateRepo}
+            onBlur={handleRepoBlur}
+            placeholder="username/my-existing-repo"
+            disabled={loading}
+          />
+          {configLoading && (
+            <span className="text-xs text-muted-foreground">
+              Detecting config...
+            </span>
+          )}
+        </label>
+      </div>
+
       <div className="space-y-1.5">
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           Site Name
@@ -142,24 +214,11 @@ export function ImportSiteForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="space-y-1.5">
         <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Repository (owner/repo)
-          <Input
-            type="text"
-            value={form.gitRepoFullName}
-            onChange={updateTextField('gitRepoFullName')}
-            placeholder="username/my-existing-repo"
-            disabled={loading}
-          />
-        </label>
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
           Description
           <Input
             type="text"
             value={form.description}
-            onChange={updateTextField('description')}
+            onChange={updateDescription}
             placeholder="My awesome blog"
             disabled={loading}
           />

@@ -1,9 +1,32 @@
-import { ManagedRuntime, Exit } from 'effect';
+import { Effect, Layer, ManagedRuntime, Exit } from 'effect';
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import {
+  GitProviderRepository,
+  type GitProviderRepositoryService,
+  type SiteConfig,
+} from '../../repositories/git-provider-repository';
+import { PrismaArticleRepositoryLive } from '../../repositories/implementations/prisma-article-repository';
+import { PrismaMediaRepositoryLive } from '../../repositories/implementations/prisma-media-repository';
+import { PrismaSiteRepositoryLive } from '../../repositories/implementations/prisma-site-repository';
+import { PrismaUserRepositoryLive } from '../../repositories/implementations/prisma-user-repository';
+import { AuthServiceLive } from '../../services/auth/auth-service-live';
+import { makeConfigService } from '../../services/config-service';
+import { MediaServiceLive } from '../../services/media';
+import { SessionServiceLive } from '../../services/session/session-service-live';
 import * as SiteService from '../../services/site';
-import { mockPrisma, resetMockPrisma } from '../helpers/mock-database';
+import { SiteServiceLive } from '../../services/site/site-service-live';
+import { UserServiceLive } from '../../services/user/user-service-live';
+import { MockArticleServiceLive } from '../helpers/mock-article-service';
+import { MockAuthProviderLive } from '../helpers/mock-auth-provider';
+import {
+  mockPrisma,
+  resetMockPrisma,
+  TestDatabaseServiceLayer,
+} from '../helpers/mock-database';
 import { mockGitIntegration, mockSite } from '../helpers/mock-factories';
+import { makeMockGitProvider } from '../helpers/mock-git-provider';
+import { TestRedisServiceLayer } from '../helpers/mock-redis';
 import { TestRepositoryLayer } from '../helpers/test-layers';
 
 // Create test runtime
@@ -446,6 +469,76 @@ describe('SiteService', () => {
           description: undefined,
         }),
       });
+    });
+  });
+
+  describe('getRepoConfig', () => {
+    it('should return null when repo has no config', async () => {
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      const result = await testRuntime.runPromise(
+        SiteService.getRepoConfig('user-1', 'testuser/no-config-repo')
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('should return config when repo has inland.config.json', async () => {
+      const mockConfig: SiteConfig = {
+        name: 'My Blog',
+        description: 'A cool blog',
+        url: 'https://testuser.github.io/my-blog',
+        author: 'testuser',
+        avatarUrl: 'https://github.com/testuser.png',
+        authorUrl: 'https://github.com/testuser',
+      };
+
+      const configGitProvider: GitProviderRepositoryService = {
+        ...makeMockGitProvider(),
+        getSiteConfig: () => Effect.succeed(mockConfig),
+      };
+
+      const ConfigLayer = makeConfigService;
+      const RepositoryLayer = Layer.mergeAll(
+        PrismaArticleRepositoryLive,
+        PrismaMediaRepositoryLive,
+        PrismaSiteRepositoryLive,
+        PrismaUserRepositoryLive
+      ).pipe(Layer.provide(TestDatabaseServiceLayer));
+      const SessionLayer = SessionServiceLive.pipe(
+        Layer.provide(Layer.merge(TestRedisServiceLayer, ConfigLayer))
+      );
+
+      const WithConfigLayer = Layer.mergeAll(
+        TestRedisServiceLayer,
+        ConfigLayer,
+        RepositoryLayer,
+        Layer.succeed(GitProviderRepository, configGitProvider),
+        MockAuthProviderLive,
+        MockArticleServiceLive,
+        AuthServiceLive,
+        MediaServiceLive,
+        SessionLayer,
+        SiteServiceLive,
+        UserServiceLive
+      );
+
+      const configRuntime = ManagedRuntime.make(WithConfigLayer);
+
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      const result = await configRuntime.runPromise(
+        SiteService.getRepoConfig('user-1', 'testuser/my-blog')
+      );
+
+      expect(result).toEqual(mockConfig);
+      expect(result!.name).toBe('My Blog');
+      expect(result!.description).toBe('A cool blog');
+      expect(result!.author).toBe('testuser');
     });
   });
 

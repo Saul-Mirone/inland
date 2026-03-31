@@ -217,6 +217,14 @@ export interface GitProviderRepositoryService {
   ) => Effect.Effect<{ filePath: string; commitSha: string }, GitProviderError>;
 
   /**
+   * Read inland.config.json from the repository, returns null if not found
+   */
+  readonly getSiteConfig: (
+    accessToken: string,
+    repoFullName: string
+  ) => Effect.Effect<SiteConfig | null, GitProviderError>;
+
+  /**
    * Delete a file from the repository
    */
   readonly deleteFileFromRepo: (

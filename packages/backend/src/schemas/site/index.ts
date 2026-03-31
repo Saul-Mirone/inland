@@ -60,7 +60,12 @@ export const TemplateData = S.Struct({
   githubUsername: S.String,
 });
 
+export const RepoConfigQuery = S.Struct({
+  repo: S.String.pipe(S.pattern(/^[a-zA-Z0-9_-]+\/[a-zA-Z0-9_.-]+$/)),
+});
+
 // Export types
+export type RepoConfigQuery = S.Schema.Type<typeof RepoConfigQuery>;
 export type SiteStatus = S.Schema.Type<typeof SiteStatus>;
 export type CreateSiteData = S.Schema.Type<typeof CreateSiteData>;
 export type ImportRepoData = S.Schema.Type<typeof ImportRepoData>;

@@ -3,6 +3,7 @@ export type {
   CreateSiteData,
   ForceSyncResult,
   ImportSiteData,
+  RepoConfig,
   UpdateSiteData,
   SiteServiceInterface,
   SyncResult,

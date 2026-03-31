@@ -866,4 +866,32 @@ export const makeGitHubApiRepository = (config?: {
 
       return { filePath, commitSha: commit.sha };
     }),
+
+  getSiteConfig: (accessToken: string, repoFullName: string) =>
+    Effect.gen(function* () {
+      const file = yield* getFileOrNull(
+        accessToken,
+        repoFullName,
+        'inland.config.json'
+      );
+      if (!file) return null;
+
+      const decoded = Buffer.from(file.content, 'base64').toString('utf-8');
+      const parsed = yield* assertFields<{
+        name: string;
+        description: string;
+        url: string;
+        author: string;
+        avatarUrl: string;
+        authorUrl: string;
+      }>(JSON.parse(decoded), ['name'], 'inland.config.json');
+      return {
+        name: parsed.name,
+        description: parsed.description,
+        url: parsed.url,
+        author: parsed.author,
+        avatarUrl: parsed.avatarUrl,
+        authorUrl: parsed.authorUrl,
+      } satisfies SiteConfig;
+    }).pipe(Effect.catchAll(() => Effect.succeed(null))),
 });

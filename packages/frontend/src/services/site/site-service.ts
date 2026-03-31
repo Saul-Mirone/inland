@@ -31,6 +31,15 @@ export interface UpdateSiteData {
 
 // ── Service interface ───────────────────────────────────────────────
 
+export interface RepoConfig {
+  name: string;
+  description: string;
+  url: string;
+  author: string;
+  avatarUrl: string;
+  authorUrl: string;
+}
+
 export interface SiteServiceInterface {
   readonly bootstrap: () => Effect.Effect<void>;
   readonly fetchSites: (page?: number, limit?: number) => Effect.Effect<void>;
@@ -51,6 +60,7 @@ export interface SiteServiceInterface {
   readonly forceSyncSite: (
     siteId: string
   ) => Effect.Effect<ForceSyncResult | undefined>;
+  readonly fetchRepoConfig: (repo: string) => Effect.Effect<RepoConfig | null>;
 }
 
 export interface SyncResult {

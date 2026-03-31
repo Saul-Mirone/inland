@@ -1,9 +1,32 @@
-import { ManagedRuntime } from 'effect';
+import { Effect, Layer, ManagedRuntime } from 'effect';
 import { describe, it, expect, beforeEach } from 'vitest';
 
+import {
+  GitProviderRepository,
+  type GitProviderRepositoryService,
+  type SiteConfig,
+} from '../../repositories/git-provider-repository';
+import { PrismaArticleRepositoryLive } from '../../repositories/implementations/prisma-article-repository';
+import { PrismaMediaRepositoryLive } from '../../repositories/implementations/prisma-media-repository';
+import { PrismaSiteRepositoryLive } from '../../repositories/implementations/prisma-site-repository';
+import { PrismaUserRepositoryLive } from '../../repositories/implementations/prisma-user-repository';
+import { AuthServiceLive } from '../../services/auth/auth-service-live';
+import { makeConfigService } from '../../services/config-service';
+import { MediaServiceLive } from '../../services/media';
+import { SessionServiceLive } from '../../services/session/session-service-live';
 import * as SiteService from '../../services/site';
-import { mockPrisma, resetMockPrisma } from '../helpers/mock-database';
+import { SiteServiceLive } from '../../services/site/site-service-live';
+import { UserServiceLive } from '../../services/user/user-service-live';
+import { MockArticleServiceLive } from '../helpers/mock-article-service';
+import { MockAuthProviderLive } from '../helpers/mock-auth-provider';
+import {
+  mockPrisma,
+  resetMockPrisma,
+  TestDatabaseServiceLayer,
+} from '../helpers/mock-database';
 import { mockGitIntegration, mockSite } from '../helpers/mock-factories';
+import { makeMockGitProvider } from '../helpers/mock-git-provider';
+import { TestRedisServiceLayer } from '../helpers/mock-redis';
 import { TestRepositoryLayer } from '../helpers/test-layers';
 
 /**
@@ -339,6 +362,83 @@ describe('Sites API Contracts', () => {
       expect(result.site.gitUrl).toBe(
         'https://github.com/testuser/gitlab-repo'
       ); // Expected: Mock uses GitHub format regardless of platform
+    });
+  });
+
+  describe('GET /sites/repo-config', () => {
+    it('should return config object when repo has inland.config.json', async () => {
+      const mockConfig: SiteConfig = {
+        name: 'My Blog',
+        description: 'A cool blog',
+        url: 'https://testuser.github.io/my-blog',
+        author: 'testuser',
+        avatarUrl: 'https://github.com/testuser.png',
+        authorUrl: 'https://github.com/testuser',
+      };
+
+      const configGitProvider: GitProviderRepositoryService = {
+        ...makeMockGitProvider(),
+        getSiteConfig: () => Effect.succeed(mockConfig),
+      };
+
+      const ConfigLayer = makeConfigService;
+      const RepositoryLayer = Layer.mergeAll(
+        PrismaArticleRepositoryLive,
+        PrismaMediaRepositoryLive,
+        PrismaSiteRepositoryLive,
+        PrismaUserRepositoryLive
+      ).pipe(Layer.provide(TestDatabaseServiceLayer));
+      const SessionLayer = SessionServiceLive.pipe(
+        Layer.provide(Layer.merge(TestRedisServiceLayer, ConfigLayer))
+      );
+
+      const WithConfigLayer = Layer.mergeAll(
+        TestRedisServiceLayer,
+        ConfigLayer,
+        RepositoryLayer,
+        Layer.succeed(GitProviderRepository, configGitProvider),
+        MockAuthProviderLive,
+        MockArticleServiceLive,
+        AuthServiceLive,
+        MediaServiceLive,
+        SessionLayer,
+        SiteServiceLive,
+        UserServiceLive
+      );
+
+      const configRuntime = ManagedRuntime.make(WithConfigLayer);
+
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      const result = await configRuntime.runPromise(
+        SiteService.getRepoConfig('user-1', 'testuser/my-blog')
+      );
+
+      // Frontend expects { config: SiteConfig | null }
+      // The route wraps this as { config: result }
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
+      expect(typeof result!.name).toBe('string');
+      expect(typeof result!.description).toBe('string');
+      expect(typeof result!.url).toBe('string');
+      expect(typeof result!.author).toBe('string');
+      expect(typeof result!.avatarUrl).toBe('string');
+      expect(typeof result!.authorUrl).toBe('string');
+    });
+
+    it('should return null when repo has no config file', async () => {
+      mockPrisma.gitIntegration.findFirst.mockResolvedValue(
+        mockGitIntegration()
+      );
+
+      const result = await testRuntime.runPromise(
+        SiteService.getRepoConfig('user-1', 'testuser/no-config')
+      );
+
+      // Frontend should handle null config gracefully
+      expect(result).toBeNull();
     });
   });
 

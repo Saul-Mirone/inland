@@ -15,6 +15,7 @@ import type {
   CreateSiteData,
   ForceSyncResult,
   ImportSiteData,
+  RepoConfig,
   UpdateSiteData,
   SiteServiceInterface,
   SyncResult,
@@ -151,6 +152,14 @@ export class SiteServiceImpl implements SiteServiceInterface {
         })
       )
     );
+
+  fetchRepoConfig = (repo: string): Effect.Effect<RepoConfig | null> =>
+    Effect.gen(this, function* () {
+      const result = yield* this.api.get<{ config: RepoConfig | null }>(
+        `/sites/repo-config?repo=${encodeURIComponent(repo)}`
+      );
+      return result.config;
+    }).pipe(Effect.catchAll(() => Effect.succeed(null)));
 
   forceSyncSite = (
     siteId: string
