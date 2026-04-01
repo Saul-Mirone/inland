@@ -1,5 +1,12 @@
 import { Effect } from 'effect';
-import { ChevronsUpDown, Globe, Plus, Settings, Trash2 } from 'lucide-react';
+import {
+  ChevronsUpDown,
+  ExternalLink,
+  Globe,
+  Plus,
+  Settings,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -161,6 +168,23 @@ export function SiteSelector() {
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
+                    {selectedSite.deployUrl != null && (
+                      <DropdownMenuItem
+                        className="gap-2 p-2"
+                        onClick={() => {
+                          const url = selectedSite.deployUrl;
+                          if (url)
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
+                      >
+                        <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                          <ExternalLink className="size-4" />
+                        </div>
+                        <span className="font-medium text-muted-foreground">
+                          Visit site
+                        </span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       className="gap-2 p-2"
                       onClick={() => setSettingsOpen(true)}

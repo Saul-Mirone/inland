@@ -9,6 +9,7 @@ export interface SiteWithCounts {
   gitRepo: string;
   platform: string;
   deployStatus: string;
+  deployUrl?: string | null;
   createdAt: string;
   _count: {
     articles: number;

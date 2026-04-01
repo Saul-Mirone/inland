@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { sitesModel } from '@/model/sites-model';
+import { type SiteWithCounts, sitesModel } from '@/model/sites-model';
 import { SiteService } from '@/services/site';
 import { runEffect } from '@/utils/effect-runtime';
 import { useObservable } from '@/utils/use-observable';
@@ -60,13 +60,10 @@ function SiteSettingsForm({
   site,
   onSuccess,
 }: {
-  site: {
-    id: string;
-    name: string;
-    displayName?: string | null;
-    description?: string | null;
-    gitRepo: string;
-  };
+  site: Pick<
+    SiteWithCounts,
+    'id' | 'name' | 'displayName' | 'description' | 'gitRepo' | 'deployUrl'
+  >;
   onSuccess: () => void;
 }) {
   const [form, setForm] = useState({
@@ -88,8 +85,14 @@ function SiteSettingsForm({
     runEffect(
       Effect.flatMap(SiteService, (svc) =>
         svc.updateSite(site.id, {
-          displayName: form.displayName.trim() || undefined,
-          description: form.description.trim() || undefined,
+          displayName:
+            form.displayName.trim() !== ''
+              ? form.displayName.trim()
+              : undefined,
+          description:
+            form.description.trim() !== ''
+              ? form.description.trim()
+              : undefined,
         })
       )
     )
@@ -115,6 +118,23 @@ function SiteSettingsForm({
           <span className="text-xs text-muted-foreground">{site.gitRepo}</span>
         </label>
       </div>
+
+      {site.deployUrl && (
+        <div className="space-y-1.5">
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            Published Site
+            <a
+              href={site.deployUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-normal text-primary hover:underline"
+            >
+              {site.deployUrl}
+              <ExternalLink className="size-3.5" />
+            </a>
+          </label>
+        </div>
+      )}
 
       <div className="space-y-1.5">
         <label className="flex flex-col gap-1.5 text-sm font-medium">
