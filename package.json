@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "eslint-plugin-react-hooks": "^7.0.1",
-    "oxfmt": "^0.47.0",
+    "oxfmt": "^0.48.0",
     "oxlint-tsgolint": "^0.22.0"
   },
   "lint-staged": {
