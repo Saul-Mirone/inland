@@ -24,8 +24,8 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
-    "@commitlint/cli": "^20.0.0",
-    "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/cli": "^21.0.0",
+    "@commitlint/config-conventional": "^21.0.0",
     "@inland/dev": "workspace:*",
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^4.0.0",
