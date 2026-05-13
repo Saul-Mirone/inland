@@ -1,0 +1,16 @@
+node_modules
+dist
+lib
+generated
+.git
+.gitignore
+.husky
+.vscode
+.idea
+*.log
+*.md
+dev-container
+coverage
+.eslintcache
+.env
+.env.*
