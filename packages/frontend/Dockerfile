@@ -8,7 +8,7 @@ FROM base AS deps
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY packages/frontend/package.json packages/frontend/
 COPY packages/dev/package.json packages/dev/
-RUN yarn workspaces focus @inland/frontend --production=false
+RUN yarn workspaces focus @inland/frontend
 
 # ---- Build ----
 FROM deps AS build

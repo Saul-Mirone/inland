@@ -1,7 +1,8 @@
 name: inland
 
-# Usage: cp .env.production.example .env.production && docker compose up -d
-env_file: .env.production
+# Usage:
+#   cp .env.production.example .env.production
+#   docker compose --env-file .env.production up -d
 
 services:
   postgres:
@@ -54,7 +55,7 @@ services:
       APP_URL: ${APP_URL:?Set APP_URL}
       API_URL: ${API_URL:?Set API_URL}
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:3001/health || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:3001/health || exit 1']
       interval: 10s
       timeout: 5s
       retries: 5

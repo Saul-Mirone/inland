@@ -8,7 +8,7 @@ FROM base AS deps
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY packages/backend/package.json packages/backend/
 COPY packages/dev/package.json packages/dev/
-RUN yarn workspaces focus @inland/backend --production=false
+RUN yarn workspaces focus @inland/backend
 
 # ---- Build ----
 FROM deps AS build
@@ -32,10 +32,10 @@ RUN apk add --no-cache tini
 WORKDIR /app
 
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=prod-deps /app/packages/backend/node_modules ./packages/backend/node_modules
 COPY --from=build /app/packages/backend/dist ./packages/backend/dist
 COPY --from=build /app/packages/backend/generated ./packages/backend/generated
 COPY --from=build /app/packages/backend/prisma ./packages/backend/prisma
+COPY --from=build /app/packages/backend/prisma.config.ts ./packages/backend/
 COPY packages/backend/package.json ./packages/backend/
 COPY package.json ./
 
