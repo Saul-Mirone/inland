@@ -31,17 +31,18 @@ RUN corepack enable && corepack prepare yarn@4.13.0 --activate
 RUN apk add --no-cache tini
 WORKDIR /app
 
-COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=build /app/packages/backend/dist ./packages/backend/dist
-COPY --from=build /app/packages/backend/generated ./packages/backend/generated
-COPY --from=build /app/packages/backend/prisma ./packages/backend/prisma
-COPY --from=build /app/packages/backend/prisma.config.ts ./packages/backend/
-COPY packages/backend/package.json ./packages/backend/
-COPY package.json ./
+COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/packages/backend/dist ./packages/backend/dist
+COPY --from=build --chown=node:node /app/packages/backend/generated ./packages/backend/generated
+COPY --from=build --chown=node:node /app/packages/backend/prisma ./packages/backend/prisma
+COPY --from=build --chown=node:node /app/packages/backend/prisma.config.ts ./packages/backend/
+COPY --chown=node:node packages/backend/package.json ./packages/backend/
+COPY --chown=node:node package.json ./
 
-COPY packages/backend/docker-entrypoint.sh /docker-entrypoint.sh
+COPY --chown=node:node packages/backend/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
+USER node
 ENV NODE_ENV=production
 EXPOSE 3001
 
