@@ -15,6 +15,9 @@ FROM deps AS build
 COPY packages/backend/ packages/backend/
 COPY packages/dev/ packages/dev/
 COPY tsconfig.json ./
+# prisma.config.ts requires DATABASE_URL at load time; db:generate doesn't connect,
+# so a dummy value is enough. Real URL is injected at runtime.
+ENV DATABASE_URL=postgresql://build:build@build:5432/build
 RUN yarn workspace @inland/backend db:generate \
  && yarn workspace @inland/backend build
 
