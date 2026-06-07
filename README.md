@@ -32,13 +32,13 @@ cp .env.production.example .env.production
 
 Edit `.env.production` and fill in:
 
-| Variable                                 | Description                                                            |
-| ---------------------------------------- | ---------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD`                      | Database password (any strong value)                                   |
-| `JWT_SECRET`, `SESSION_SECRET`           | Random secrets, ≥32 bytes each (`openssl rand -hex 32`)                |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 1                                                          |
-| `AUTH_CALLBACK_URL`, `APP_URL`, `API_URL` | Public URLs of your deployment                                        |
-| `PORT`                                   | Host port for the frontend (default `80`)                              |
+| Variable                                   | Description                                             |
+| ------------------------------------------ | ------------------------------------------------------- |
+| `POSTGRES_PASSWORD`                        | Database password (any strong value)                    |
+| `JWT_SECRET`, `SESSION_SECRET`             | Random secrets, ≥32 bytes each (`openssl rand -hex 32`) |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 1                                             |
+| `AUTH_CALLBACK_URL`, `APP_URL`, `API_URL`  | Public URLs of your deployment                          |
+| `PORT`                                     | Host port for the frontend (default `80`)               |
 
 ### 3. Run
 
