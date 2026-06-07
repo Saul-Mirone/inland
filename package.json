@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "eslint-plugin-react-hooks": "^7.0.1",
-    "oxfmt": "^0.52.0",
+    "oxfmt": "^0.53.0",
     "oxlint-tsgolint": "^0.23.0"
   },
   "lint-staged": {
@@ -54,5 +54,5 @@
       "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" eslint --cache --fix"
     ]
   },
-  "packageManager": "yarn@4.15.0"
+  "packageManager": "yarn@4.16.0"
 }
