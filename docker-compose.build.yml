@@ -1,0 +1,15 @@
+# Overlay for building images from source instead of pulling from GHCR.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml \
+#     --env-file .env.production up -d --build
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+
+  frontend:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
