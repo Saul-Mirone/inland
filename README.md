@@ -14,6 +14,8 @@ Inland ships as a Docker Compose stack. Pre-built images are published to GHCR:
 
 Tags: `latest` (main), `main`, `sha-<short>`, and semver (`X.Y.Z`, `X.Y`) on `v*` git tags.
 
+You do **not** need to clone the repo — just two files (`docker-compose.yml` and `.env.production`) are enough.
+
 ### 1. Create a GitHub OAuth App
 
 Inland uses GitHub for authentication.
@@ -24,11 +26,21 @@ Inland uses GitHub for authentication.
    - **Authorization callback URL** — `<homepage>/api/auth/github/callback`
 3. Generate a client secret. Keep the client ID and secret.
 
-### 2. Configure environment
+### 2. Download the stack files
 
 ```bash
-cp .env.production.example .env.production
+mkdir inland && cd inland
+
+# docker-compose.yml — defines the services
+curl -fsSL -o docker-compose.yml \
+  https://raw.githubusercontent.com/Saul-Mirone/inland/main/docker-compose.yml
+
+# .env.production — environment variables (template)
+curl -fsSL -o .env.production \
+  https://raw.githubusercontent.com/Saul-Mirone/inland/main/.env.production.example
 ```
+
+### 3. Configure environment
 
 Edit `.env.production` and fill in:
 
@@ -39,14 +51,15 @@ Edit `.env.production` and fill in:
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | From step 1                                             |
 | `AUTH_CALLBACK_URL`, `APP_URL`, `API_URL`  | Public URLs of your deployment                          |
 | `PORT`                                     | Host port for the frontend (default `80`)               |
+| `INLAND_TAG`                               | Image tag to deploy (`latest`, `X.Y.Z`, or `sha-...`)   |
 
-### 3. Run
+### 4. Run
 
 ```bash
 docker compose --env-file .env.production up -d
 ```
 
-This brings up PostgreSQL, Redis, the backend (runs database migrations on startup), and the frontend (nginx serving the SPA and reverse-proxying `/api/` to the backend).
+This pulls the GHCR images and brings up PostgreSQL, Redis, the backend (runs database migrations on startup), and the frontend (nginx serving the SPA and reverse-proxying `/api/` to the backend).
 
 Check status:
 

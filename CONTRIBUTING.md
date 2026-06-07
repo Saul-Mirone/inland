@@ -97,8 +97,9 @@ scripts/        repo scripts (codegen, init-db.sql)
 
 Production images are built and pushed by `.github/workflows/docker.yml` on every push to `main` and on `v*` git tags. See `packages/backend/Dockerfile` and `packages/frontend/Dockerfile`.
 
-To build locally:
+`docker-compose.yml` pulls images from GHCR by default. To build from local source instead (e.g. to test a change before pushing), overlay `docker-compose.build.yml`:
 
 ```bash
-docker compose --env-file .env.production build
+docker compose -f docker-compose.yml -f docker-compose.build.yml \
+  --env-file .env.production up -d --build
 ```
