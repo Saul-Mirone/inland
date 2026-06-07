@@ -97,9 +97,15 @@ scripts/        repo scripts (codegen, init-db.sql)
 
 Production images are built and pushed by `.github/workflows/docker.yml` on every push to `main` and on `v*` git tags. See `packages/backend/Dockerfile` and `packages/frontend/Dockerfile`.
 
-`docker-compose.yml` pulls images from GHCR by default. To build from local source instead (e.g. to test a change before pushing), overlay `docker-compose.build.yml`:
+`docker-compose.yml` pulls images from GHCR by default. To smoke-test the production stack against local source, use the build overlay via `yarn docker:build`:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.build.yml \
-  --env-file .env.production up -d --build
+cp .env.production.example .env.production   # fill in secrets + OAuth creds
+
+yarn docker:build   # build from source and start
+yarn docker:up      # start using GHCR images
+yarn docker:logs    # tail logs
+yarn docker:down    # stop the stack
 ```
+
+The build overlay (`docker-compose.build.yml`) layers `build:` directives on top of the base compose file.
