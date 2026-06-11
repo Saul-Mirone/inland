@@ -1811,13 +1811,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/redis@npm:^7.0.2":
-  version: 7.2.0
-  resolution: "@fastify/redis@npm:7.2.0"
+"@fastify/redis@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "@fastify/redis@npm:8.0.0"
   dependencies:
     fastify-plugin: "npm:^5.0.0"
     ioredis: "npm:^5.3.2"
-  checksum: 10/8d62fa3bcd128a94a639a4c3bf78f69d9b3903bd26201204eaae7fb14fb6c4c2992d0a190c8b85eeed9730ee5e0aa5a902b622e778fe8e19f34440a1eccf2528
+  checksum: 10/a90e9ee2309f0d150976e86dfcb8e9d7edd116d76fd9cd04c1043d2cf33cd6a948b4a921925a33e8777c61e5ecab60703e9437d7330985243e0829e55c57ab45
   languageName: node
   linkType: hard
 
@@ -2007,7 +2007,7 @@ __metadata:
     "@fastify/jwt": "npm:^10.0.0"
     "@fastify/multipart": "npm:^10.0.0"
     "@fastify/oauth2": "npm:^8.1.2"
-    "@fastify/redis": "npm:^7.0.2"
+    "@fastify/redis": "npm:^8.0.0"
     "@fastify/session": "npm:^11.1.0"
     "@prisma/adapter-pg": "npm:^7.4.2"
     "@prisma/client": "npm:7"
@@ -6457,14 +6457,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"date-fns@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "date-fns@npm:4.1.0"
-  checksum: 10/d5f6e9de5bbc52310f786099e18609289ed5e30af60a71e0646784c8185ddd1d0eebcf7c96b7faaaefc4a8366f3a3a4244d099b6d0866ee2bec80d1361e64342
-  languageName: node
-  linkType: hard
-
-"date-fns@npm:^4.4.0":
+"date-fns@npm:^4.1.0, date-fns@npm:^4.4.0":
   version: 4.4.0
   resolution: "date-fns@npm:4.4.0"
   checksum: 10/ae702acea42fb8452abe74f6d133c2360de9a14f00985645684b0df9c12280276649e95b52298a4fd7dabcc3b38799eb111107da99320d1cd94ba1d8a3d1c174
