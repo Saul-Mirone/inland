@@ -2017,7 +2017,7 @@ __metadata:
     "@types/jsonwebtoken": "npm:^9.0.10"
     "@types/lodash-es": "npm:^4.17.12"
     "@types/pg": "npm:^8.18.0"
-    dotenv: "npm:^17.3.1"
+    dotenv: "npm:^18.0.0"
     effect: "npm:^3.17.8"
     esbuild: "npm:^0.28.0"
     fastify: "npm:^5.5.0"
@@ -6665,10 +6665,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^17.2.1, dotenv@npm:^17.3.1":
+"dotenv@npm:^17.2.1":
   version: 17.3.1
   resolution: "dotenv@npm:17.3.1"
   checksum: 10/4dde6571dff22c2323a3e33ac25e1e7d51c4b6d60dc884f59e3efe85c8fd3cc8800d6b3925d05c46b19dca08cba821a0a24e22f75a1b9b768c859b98bb927b04
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^18.0.0":
+  version: 18.0.10
+  resolution: "dotenv@npm:18.0.10"
+  bin:
+    dotenv: dist/cli.cjs
+  checksum: 10/8db13d5c35b3d0635aa461f88029371d9b0d5adebe5d77abc4f81a87a1c1c69cd589dfd16eaac5cea3f868cff93cdef290f936acdacaab6151b307ca73f73633
   languageName: node
   linkType: hard
 
